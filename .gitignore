@@ -41,6 +41,7 @@
 /[Aa]ssets/Plugins/Editor/JetBrains*
 # Jetbrains Rider personal-layer settings
 *.DotSettings.user
+.idea/
 
 # Visual Studio cache directory
 .vs/
@@ -112,3 +113,10 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Ignore everything in Assets except Assets/_Project
+/[Aa]ssets/*
+!/[Aa]ssets/_Project/
+!/[Aa]ssets/_Project/**
+!/[Aa]ssets/_Project.meta
+
