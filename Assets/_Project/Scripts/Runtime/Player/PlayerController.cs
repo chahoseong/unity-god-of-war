@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GodOfWar.CameraSystem;
 using GodOfWar.Characters;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Player.States;
@@ -20,8 +21,8 @@ namespace GodOfWar.Player
 
         [SerializeField] private LocomotionSettings _settings = new LocomotionSettings();
 
-        [Tooltip("이동 입력의 기준 방향. 이 Transform의 Yaw만 사용한다 (보통 카메라).")]
-        [SerializeField] private Transform _movementReference;
+        [Tooltip("이동 입력의 기준 방향을 제공하는 카메라 피벗. 이 피벗의 Yaw를 기준으로 이동한다.")]
+        [SerializeField] private CameraLook _cameraLook;
 
         [SerializeField] private Animator _animator;
 
@@ -30,7 +31,8 @@ namespace GodOfWar.Player
         private CharacterMotor _motor;
 
         public LocomotionSettings Settings => _settings;
-        public Transform MovementReference => _movementReference;
+        /// <summary>이동 입력의 기준 Yaw(도).</summary>
+        public float MovementYaw => _cameraLook.Yaw;
 
         public T Get<T>() where T : class, IState
         {
@@ -57,10 +59,10 @@ namespace GodOfWar.Player
 
         private void Awake()
         {
-            if (_movementReference == null)
+            if (_cameraLook == null)
             {
                 throw new InvalidOperationException(
-                    $"'{name}' has no movement reference. Assign the camera transform.");
+                    $"'{name}' has no {nameof(CameraLook)} assigned. Assign the camera pivot.");
             }
 
             if (_animator == null)

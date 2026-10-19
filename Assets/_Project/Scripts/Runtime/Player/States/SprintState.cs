@@ -62,7 +62,7 @@ namespace GodOfWar.Player.States
                 return;
             }
 
-            float referenceYaw = _owner.MovementReference.eulerAngles.y;
+            float referenceYaw = _owner.MovementYaw;
             Vector3 direction = Quaternion.Euler(0f, referenceYaw, 0f)
                 * new Vector3(move.x, 0f, move.y).normalized;
 

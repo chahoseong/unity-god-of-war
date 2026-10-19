@@ -39,7 +39,7 @@ namespace GodOfWar.Player.States
 
         public void Tick(float deltaTime)
         {
-            float referenceYaw = _owner.MovementReference.eulerAngles.y;
+            float referenceYaw = _owner.MovementYaw;
             Vector2 move = _input.Move;
 
             Vector3 target = Quaternion.Euler(0f, referenceYaw, 0f)
