@@ -14,7 +14,7 @@
 ## 3. 핵심 구현 범위 (Core MVP Scope)
 - **카메라 및 캐릭터 이동 (Camera & Character Locomotion)**
   - 캐릭터 등 뒤에 밀착된 **숄더뷰(Over-the-Shoulder View)**를 기본으로 하며, 특정 적을 중심으로 시점을 고정하는 **락온(Lock-On)**을 지원한다.
-  - 평상시 항상 카메라 정면을 바라보며 8방향으로 발을 옮기는 **스트레이프 이동(Strafe Locomotion)**을 기본으로 하며, **스프린트(Sprint)** 입력 시에만 이동 방향으로 몸을 틀어 달린다.
+  - 항상 카메라 정면을 바라보며 8방향으로 발을 옮기는 **스트레이프 이동(Strafe Locomotion)**을 기본으로 하며, 전방 이동 중 **스프린트(Sprint)** 입력 시에만 전방으로 빠르게 질주한다.
 - **2단 회피 시스템 (Two-Stage Evasion)**
   - 회피 1회 입력 시 근접 거리를 유지하는 짧은 **스텝 회피(Quick Step)**가 나가고, 스텝 도중 연속 입력 시 거리를 크게 벌리는 **구르기 회피(Dodge Roll)**로 이어진다.
 - **콤보 및 캔슬 시스템 (Combo & Cancel System)**
