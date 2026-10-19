@@ -9,6 +9,7 @@ namespace GodOfWar.Player.States
     /// 전방 질주 상태. 이 상태에 있는 것 자체가 스프린트 래치이며,
     /// <see cref="CanSprint"/>를 만족하지 못하면 <see cref="LocomotionState"/>로 돌아간다.
     /// 질주 중에는 입력 방향으로 이동하고 이동 방향을 바라본다.
+    /// 질주 중 Sprint 재입력은 의도적으로 무시한다 (게임패드 L3 오입력·키 연타로 질주가 끊기지 않게).
     /// </summary>
     public sealed class SprintState : IState
     {
