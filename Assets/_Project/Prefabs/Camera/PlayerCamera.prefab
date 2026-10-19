@@ -93,7 +93,7 @@ MonoBehaviour:
   ShoulderOffset: {x: 0.5, y: 0.1, z: 0}
   VerticalArmLength: 0.2
   CameraSide: 1
-  CameraDistance: 2.2
+  CameraDistance: 2.3
   AvoidObstacles:
     Enabled: 1
     CollisionFilter:
@@ -101,7 +101,7 @@ MonoBehaviour:
       m_Bits: 1
     IgnoreTag: Player
     CameraRadius: 0.2
-    DampingIntoCollision: 0
+    DampingIntoCollision: 0.2
     DampingFromCollision: 0.4
 --- !u!114 &7482619820485005582
 MonoBehaviour:
