@@ -19,8 +19,10 @@ namespace GodOfWar.Player.States
         private readonly IPlayerInput _input;
         private readonly CharacterMotor _motor;
         private readonly LocomotionSettings _settings;
+        private readonly DodgeSettings _dodgeSettings;
 
         private LocomotionState _locomotion;
+        private QuickStepState _quickStep;
 
         public SprintState(PlayerController owner, StateMachine machine)
         {
@@ -30,6 +32,7 @@ namespace GodOfWar.Player.States
             _input = owner.GetRequiredComponent<IPlayerInput>();
             _motor = owner.GetRequiredComponent<CharacterMotor>();
             _settings = owner.Settings;
+            _dodgeSettings = owner.DodgeSettings;
         }
 
         /// <summary>
@@ -51,6 +54,8 @@ namespace GodOfWar.Player.States
         public void Enter()
         {
             _locomotion ??= _locator.Get<LocomotionState>();
+            _quickStep ??= _locator.Get<QuickStepState>();
+            _input.ActionTriggered += OnActionTriggered;
         }
 
         public void Tick(float deltaTime)
@@ -76,6 +81,18 @@ namespace GodOfWar.Player.States
 
         public void Exit()
         {
+            _input.ActionTriggered -= OnActionTriggered;
+        }
+
+        private void OnActionTriggered(PlayerActionEvent e)
+        {
+            // 질주 속도는 이어받지 않고 스텝 프로필대로 이동한다.
+            if (e.Action == PlayerAction.Dodge
+                && e.Phase == ActionPhase.Pressed
+                && DodgeDirection.TryFromInput(_input.Move, _dodgeSettings.MinInput, out _))
+            {
+                _machine.ChangeState(_quickStep);
+            }
         }
     }
 }

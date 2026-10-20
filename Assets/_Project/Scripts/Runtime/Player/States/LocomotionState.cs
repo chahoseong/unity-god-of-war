@@ -17,8 +17,10 @@ namespace GodOfWar.Player.States
         private readonly IPlayerInput _input;
         private readonly CharacterMotor _motor;
         private readonly LocomotionSettings _settings;
+        private readonly DodgeSettings _dodgeSettings;
 
         private SprintState _sprint;
+        private QuickStepState _quickStep;
 
         public LocomotionState(PlayerController owner, StateMachine machine)
         {
@@ -28,12 +30,14 @@ namespace GodOfWar.Player.States
             _input = owner.GetRequiredComponent<IPlayerInput>();
             _motor = owner.GetRequiredComponent<CharacterMotor>();
             _settings = owner.Settings;
+            _dodgeSettings = owner.DodgeSettings;
         }
 
         public void Enter()
         {
             // 생성 시점에는 다른 상태가 아직 등록되지 않았을 수 있어 첫 진입에서 찾는다.
             _sprint ??= _locator.Get<SprintState>();
+            _quickStep ??= _locator.Get<QuickStepState>();
             _input.ActionTriggered += OnActionTriggered;
         }
 
@@ -66,6 +70,13 @@ namespace GodOfWar.Player.States
                 && SprintState.CanSprint(_input.Move, _settings))
             {
                 _machine.ChangeState(_sprint);
+            }
+            // 정지 중(이동 입력이 MinInput 미만)에는 회피하지 않는다.
+            else if (e.Action == PlayerAction.Dodge
+                && e.Phase == ActionPhase.Pressed
+                && DodgeDirection.TryFromInput(_input.Move, _dodgeSettings.MinInput, out _))
+            {
+                _machine.ChangeState(_quickStep);
             }
         }
     }
