@@ -10,15 +10,19 @@ namespace GodOfWar.Player.States
     public sealed class DodgeMotion
     {
         private DodgeProfile _profile;
+        private AnimationCurve _curve;
         private Vector3 _direction;
 
         public float Elapsed { get; private set; }
         public bool IsFinished => Elapsed >= _profile.Duration;
 
-        /// <summary>월드 Yaw <paramref name="moveYaw"/>(도) 방향으로 새 회피 이동을 시작한다.</summary>
-        public void Begin(DodgeProfile profile, float moveYaw)
+        /// <summary>
+        /// <paramref name="cardinal"/> 클립의 변위 커브로, 월드 Yaw <paramref name="moveYaw"/>(도) 방향의 새 회피 이동을 시작한다.
+        /// </summary>
+        public void Begin(DodgeProfile profile, DodgeCardinal cardinal, float moveYaw)
         {
             _profile = profile ?? throw new ArgumentNullException(nameof(profile));
+            _curve = profile.GetDisplacementCurve(cardinal);
             _direction = Quaternion.Euler(0f, moveYaw, 0f) * Vector3.forward;
             Elapsed = 0f;
         }
@@ -39,8 +43,7 @@ namespace GodOfWar.Player.States
             Elapsed = Mathf.Min(Elapsed + deltaTime, duration);
             float to = Elapsed / duration;
 
-            AnimationCurve curve = _profile.DisplacementCurve;
-            float displacement = (curve.Evaluate(to) - curve.Evaluate(from)) * _profile.Distance;
+            float displacement = (_curve.Evaluate(to) - _curve.Evaluate(from)) * _profile.Distance;
             return _direction * (displacement / deltaTime);
         }
     }

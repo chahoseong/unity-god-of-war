@@ -20,9 +20,29 @@ namespace GodOfWar.Tests.Player.States
         public void SetUp()
         {
             // 선형 커브는 고정 속도(거리/시간)로도 통과하므로, 커브 차분을 검증하려고 비선형 커브를 쓴다.
-            _profile = new DodgeProfile(Distance, Duration, AnimationCurve.EaseInOut(0f, 0f, 1f, 1f));
+            AnimationCurve curve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+            _profile = new DodgeProfile(Distance, Duration, curve, curve, curve, curve);
             _motion = new DodgeMotion();
-            _motion.Begin(_profile, MoveYaw);
+            _motion.Begin(_profile, DodgeCardinal.Forward, MoveYaw);
+        }
+
+        // 방향마다 중간 지점(t = 0.5)의 변위가 다른 커브를 넣어, 고른 커브를 중간 변위로 구분한다.
+        [TestCase(DodgeCardinal.Forward, 0.1f)]
+        [TestCase(DodgeCardinal.Backward, 0.2f)]
+        [TestCase(DodgeCardinal.Left, 0.3f)]
+        [TestCase(DodgeCardinal.Right, 0.4f)]
+        public void Begin_WithCardinal_UsesDisplacementCurveForCardinal(DodgeCardinal cardinal, float expectedHalfway)
+        {
+            var profile = new DodgeProfile(
+                Distance, Duration,
+                Halfway(0.1f), Halfway(0.2f), Halfway(0.3f), Halfway(0.4f));
+            var motion = new DodgeMotion();
+            motion.Begin(profile, cardinal, MoveYaw);
+
+            float halfDuration = Duration * 0.5f;
+            Vector3 displacement = motion.Tick(halfDuration) * halfDuration;
+
+            Assert.That(displacement.magnitude, Is.EqualTo(expectedHalfway * Distance).Within(Tolerance));
         }
 
         private static IEnumerable<TestCaseData> DeltaTimeSequences()
@@ -62,6 +82,12 @@ namespace GodOfWar.Tests.Player.States
             _motion.Tick(Duration);
 
             Assert.That(_motion.IsFinished, Is.True);
+        }
+
+        /// <summary>t = 0.5에서 <paramref name="value"/>를 지나는 커브. 키 시점의 평가값은 탄젠트와 무관하게 키 값이다.</summary>
+        private static AnimationCurve Halfway(float value)
+        {
+            return new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(0.5f, value), new Keyframe(1f, 1f));
         }
 
         private static float[] Repeat(float value, int count)
