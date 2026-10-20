@@ -36,7 +36,7 @@
 | `GodOfWar.Tests.Editor` | `Assets/_Project/Scripts/Tests/Editor/` | EditMode 테스트 |
 | `GodOfWar.Tests.Runtime` | `Assets/_Project/Scripts/Tests/Runtime/` | PlayMode 테스트 |
 
-`GodOfWar.Runtime`은 `autoReferenced` 옵션을 `false`로 설정하여, `Assembly-CSharp`나 외부 스크립트가 우리 게임 타입을 무분별하게 자동으로 참조하는 것을 방지한다. 또한 패키지 참조는 실제로 사용하는 것만 최소한으로 연결하며, 현재는 `Unity.InputSystem`만 참조로 등록한다.
+`GodOfWar.Runtime`은 `autoReferenced` 옵션을 `false`로 설정하여, `Assembly-CSharp`나 외부 스크립트가 우리 게임 타입을 무분별하게 자동으로 참조하는 것을 방지한다. 또한 패키지 참조는 실제로 사용하는 것만 최소한으로 연결합니다.
 
 이러한 결정을 내린 이유는 서드파티 코드와 컴파일 경계를 만들고 자동화 테스트를 붙일 수 있게 하면서도, 게임 규칙상 서로 맞물린 전투 기능들 사이의 의존 방향이 어셈블리 구성에 묶이지 않도록 유연성을 확보하기 위함이다.
 
