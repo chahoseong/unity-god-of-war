@@ -23,6 +23,7 @@ namespace GodOfWar.Player.States
 
         private LocomotionState _locomotion;
         private QuickStepState _quickStep;
+        private AttackState _attack;
 
         public SprintState(PlayerController owner, StateMachine machine)
         {
@@ -55,6 +56,7 @@ namespace GodOfWar.Player.States
         {
             _locomotion ??= _locator.Get<LocomotionState>();
             _quickStep ??= _locator.Get<QuickStepState>();
+            _attack ??= _locator.Get<AttackState>();
             _input.ActionTriggered += OnActionTriggered;
         }
 
@@ -92,6 +94,12 @@ namespace GodOfWar.Player.States
                 && DodgeDirection.TryFromInput(_input.Move, _dodgeSettings.MinInput, out _))
             {
                 _machine.ChangeState(_quickStep);
+            }
+            // 질주 중 공격도 이동 중과 같은 1타로 시작한다.
+            else if (AttackState.IsAttackPress(e))
+            {
+                _attack.Prepare(e.Action);
+                _machine.ChangeState(_attack);
             }
         }
     }

@@ -25,6 +25,7 @@ namespace GodOfWar.Player
 
         [SerializeField] private LocomotionSettings _settings = new LocomotionSettings();
         [SerializeField] private DodgeSettings _dodgeSettings = new DodgeSettings();
+        [SerializeField] private AttackSettings _attackSettings = new AttackSettings();
 
         [Tooltip("이동 입력의 기준 방향을 제공하는 카메라 피벗. 이 피벗의 Yaw를 기준으로 이동한다.")]
         [SerializeField] private CameraLook _cameraLook;
@@ -42,6 +43,7 @@ namespace GodOfWar.Player
 
         public LocomotionSettings Settings => _settings;
         public DodgeSettings DodgeSettings => _dodgeSettings;
+        public AttackSettings AttackSettings => _attackSettings;
         /// <summary>상태가 자기 클립으로 크로스페이드할 때 쓰는 애니메이터.</summary>
         public Animator Animator => _animator;
         /// <summary>이동 입력의 기준 Yaw(도).</summary>
@@ -95,6 +97,7 @@ namespace GodOfWar.Player
             Register(new SprintState(this, _machine));
             Register(new QuickStepState(this, _machine));
             Register(new DodgeRollState(this, _machine));
+            Register(new AttackState(this, _machine));
         }
 
         private void Start()
