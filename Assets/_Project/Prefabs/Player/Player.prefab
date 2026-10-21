@@ -116,6 +116,11 @@ MonoBehaviour:
     _crossFadeDuration: 0.1
     _quickStep: {fileID: 11400000, guid: 67d43783d09cf564f805db9270b767c5, type: 2}
     _dodgeRoll: {fileID: 11400000, guid: d7d65018efcca3741847a8c3f92697d4, type: 2}
+  _attackSettings:
+    _lightEntry: {fileID: 11400000, guid: 504e395b0bb59344ab83442242b3d408, type: 2}
+    _heavyEntry: {fileID: 11400000, guid: 733231d6c5adf33418c254ecaa7446e6, type: 2}
+    _minInput: 0.1
+    _turnSpeed: 720
   _cameraLook: {fileID: 3435074741861571896}
   _animator: {fileID: 7842684084486267006}
   _swordPoseBlendDuration: 0.1

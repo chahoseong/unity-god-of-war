@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using GodOfWar.CameraSystem;
 using GodOfWar.Characters;
 using GodOfWar.Core.StateMachines;
+using GodOfWar.Input;
 using GodOfWar.Player.States;
 using UnityEngine;
 
@@ -89,6 +90,13 @@ namespace GodOfWar.Player
             {
                 throw new InvalidOperationException(
                     $"'{name}' has no dodge actions assigned. Assign QuickStep and DodgeRoll in Dodge Settings.");
+            }
+
+            if (_attackSettings.GetEntry(PlayerAction.LightAttack) == null
+                || _attackSettings.GetEntry(PlayerAction.HeavyAttack) == null)
+            {
+                throw new InvalidOperationException(
+                    $"'{name}' has no entry attacks assigned. Assign both entries in Attack Settings.");
             }
 
             _motor = GetComponent<CharacterMotor>();

@@ -23,7 +23,8 @@ namespace GodOfWar.Combat
         [Tooltip("복귀 상태의 클립. 길이가 복귀 구간의 길이다.")]
         [SerializeField] private AnimationClip _returnClip;
 
-        [Tooltip("공격·복귀·이동 상태로 넘어갈 때의 크로스페이드 시간(초).")]
+        [Tooltip("이 액션으로 들어올 때(이전 상태 → 공격 상태), 공격에서 복귀로, 복귀에서 이동 상태로 넘어갈 때의 크로스페이드 시간(초). "
+                 + "다른 타에서 이어질 때는 나가는 타가 아니라 들어오는 이 액션의 값이 쓰인다.")]
         [SerializeField, Min(0f)] private float _crossFadeDuration = 0.1f;
 
         [Tooltip("이 시각까지 목표 방향으로 몸을 돌린다. 보통 선딜레이(WindUp)가 끝나는 시각이다.")]
@@ -38,6 +39,9 @@ namespace GodOfWar.Combat
         [Tooltip("공격 구간 동안의 전진 이동.")]
         [SerializeField] private BakedRootMotion _movement;
 
+        [Tooltip("복귀 구간 동안의 이동.")]
+        [SerializeField] private BakedRootMotion _returnMovement;
+
         [Tooltip("같은 버튼을 다시 눌렀을 때 이어지는 다음 타. 비우면 같은 버튼은 1타부터 다시 시작한다.")]
         [SerializeField] private AttackAction _next;
 
@@ -50,6 +54,7 @@ namespace GodOfWar.Combat
         public float ComboWindowStart => _comboWindowStart;
         public float ComboWindowEnd => _comboWindowEnd;
         public BakedRootMotion Movement => _movement;
+        public BakedRootMotion ReturnMovement => _returnMovement;
         public AttackAction Next => _next;
 
         /// <summary>공격 구간의 길이(초).</summary>

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcdfee21b50ee2b449116d5ef73733da, type: 3}
+  m_Name: LightAttack1
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.AttackAction
+  _stateName: LightAttack_1
+  _returnStateName: LightAttack_1_Return
+  _clip: {fileID: -7717634560727564301, guid: 9f773338b2a96174ebe9b63870034ca3, type: 3}
+  _returnClip: {fileID: -8265974341663887746, guid: 149ce20164ff14e43b1bafa61f1c1402, type: 3}
+  _crossFadeDuration: 0.25
+  _trackingEnd: 0.33333334
+  _comboWindowStart: 0.33333334
+  _comboWindowEnd: 1.0000001
+  _movement: {fileID: 11400000, guid: 1b5c8f1db6710e345a374d7193e5531d, type: 2}
+  _returnMovement: {fileID: 11400000, guid: 98c1fbc9aa7848a4da9c6c75f0225fc3, type: 2}
+  _next: {fileID: 11400000, guid: 9c85831e851dd094cbc767cb5c2fa9fe, type: 2}

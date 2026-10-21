@@ -116,11 +116,10 @@ namespace GodOfWar.Player.States
                 _motor.RotateTowards(_targetYaw, _settings.TurnSpeed * deltaTime);
             }
 
+            _motor.Move(_movement.Tick(deltaTime), deltaTime);
+
             if (_isReturning)
             {
-                // 복귀 중에는 제자리에 서고 중력만 적용한다.
-                _motor.Move(Vector3.zero, deltaTime);
-
                 if (_elapsed >= _action.Duration + _action.ReturnDuration)
                 {
                     _animator.CrossFadeInFixedTime(LocomotionHash, _action.CrossFadeDuration);
@@ -129,8 +128,6 @@ namespace GodOfWar.Player.States
 
                 return;
             }
-
-            _motor.Move(_movement.Tick(deltaTime), deltaTime);
 
             if (_elapsed >= _action.Duration)
             {
@@ -143,6 +140,8 @@ namespace GodOfWar.Player.States
                 _isReturning = true;
                 _animator.CrossFadeInFixedTime(
                     Animator.StringToHash(_action.ReturnStateName), _action.CrossFadeDuration);
+                // 복귀 클립은 공격을 마친 순간의 캐릭터 정면을 기준으로 재생된다.
+                _movement.Begin(_action.ReturnMovement, _motor.transform.eulerAngles.y);
             }
         }
 
