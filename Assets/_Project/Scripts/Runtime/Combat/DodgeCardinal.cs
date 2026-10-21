@@ -1,4 +1,4 @@
-namespace GodOfWar.Player.States
+namespace GodOfWar.Combat
 {
     /// <summary>
     /// 회피 클립의 캐릭터 로컬 방향.

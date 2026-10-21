@@ -1,4 +1,5 @@
 using GodOfWar.Characters;
+using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
 using UnityEngine;
@@ -30,7 +31,7 @@ namespace GodOfWar.Player.States
         private readonly CharacterMotor _motor;
         private readonly Animator _animator;
         private readonly DodgeSettings _settings;
-        private readonly DodgeMotion _motion = new DodgeMotion();
+        private readonly ActionMovement _movement = new ActionMovement();
 
         private LocomotionState _locomotion;
         private QuickStepState _quickStep;
@@ -71,14 +72,14 @@ namespace GodOfWar.Player.States
 
             _motor.RotateTowards(bodyYaw, 180f);
             _animator.CrossFadeInFixedTime(RollHashes[(int)cardinal], _settings.CrossFadeDuration);
-            _motion.Begin(_settings.Roll, cardinal, moveYaw);
+            _movement.Begin(_settings.DodgeRoll.GetRootMotion(cardinal), moveYaw);
         }
 
         public void Tick(float deltaTime)
         {
-            _motor.Move(_motion.Tick(deltaTime), deltaTime);
+            _motor.Move(_movement.Tick(deltaTime), deltaTime);
 
-            if (_motion.IsFinished)
+            if (_movement.IsFinished)
             {
                 _animator.CrossFadeInFixedTime(LocomotionHash, _settings.CrossFadeDuration);
                 _machine.ChangeState(_locomotion);

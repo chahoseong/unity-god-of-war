@@ -1,4 +1,5 @@
 using GodOfWar.Characters;
+using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
 using UnityEngine;
@@ -30,7 +31,7 @@ namespace GodOfWar.Player.States
         private readonly CharacterMotor _motor;
         private readonly Animator _animator;
         private readonly DodgeSettings _settings;
-        private readonly DodgeMotion _motion = new DodgeMotion();
+        private readonly ActionMovement _movement = new ActionMovement();
 
         private LocomotionState _locomotion;
         private DodgeRollState _roll;
@@ -76,16 +77,16 @@ namespace GodOfWar.Player.States
             // 최대 회전량 180°로 어떤 방향이든 즉시 맞춘다. 회피 동안에는 회전하지 않는다.
             _motor.RotateTowards(BodyYaw, 180f);
             _animator.CrossFadeInFixedTime(StepHashes[(int)Cardinal], _settings.CrossFadeDuration);
-            _motion.Begin(_settings.Step, Cardinal, MoveYaw);
+            _movement.Begin(_settings.QuickStep.GetRootMotion(Cardinal), MoveYaw);
 
             _input.ActionTriggered += OnActionTriggered;
         }
 
         public void Tick(float deltaTime)
         {
-            _motor.Move(_motion.Tick(deltaTime), deltaTime);
+            _motor.Move(_movement.Tick(deltaTime), deltaTime);
 
-            if (_motion.IsFinished)
+            if (_movement.IsFinished)
             {
                 // 복귀 크로스페이드는 시간이 다 된 경로에서만 한다. 구르기로 이어질 때는 구르기가 자기 클립으로 덮는다.
                 _animator.CrossFadeInFixedTime(LocomotionHash, _settings.CrossFadeDuration);

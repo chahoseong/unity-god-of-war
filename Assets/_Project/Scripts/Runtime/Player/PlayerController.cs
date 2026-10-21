@@ -74,6 +74,12 @@ namespace GodOfWar.Player
                 throw new InvalidOperationException($"'{name}' has no Animator assigned.");
             }
 
+            if (_dodgeSettings.QuickStep == null || _dodgeSettings.DodgeRoll == null)
+            {
+                throw new InvalidOperationException(
+                    $"'{name}' has no dodge actions assigned. Assign QuickStep and DodgeRoll in Dodge Settings.");
+            }
+
             _motor = GetComponent<CharacterMotor>();
             _machine = new StateMachine();
             Register(new LocomotionState(this, _machine));

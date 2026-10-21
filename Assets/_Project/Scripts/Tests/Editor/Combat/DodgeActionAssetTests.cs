@@ -1,0 +1,51 @@
+using System.Collections.Generic;
+using GodOfWar.Characters;
+using GodOfWar.Combat;
+using NUnit.Framework;
+using UnityEditor;
+
+namespace GodOfWar.Tests.Combat
+{
+    /// <summary>
+    /// 회피 액션 에셋의 방향 슬롯이 같은 방향의 클립에서 구운 변위를 가리키는지 검사한다.
+    /// 슬롯이 어긋나도 이동 방향은 입력으로 정해져 플레이로는 잘 드러나지 않는다.
+    /// 원본 클립은 Synty 에셋이므로 Synty가 없는 환경에서는 실패한다.
+    /// </summary>
+    public class DodgeActionAssetTests
+    {
+        private static IEnumerable<TestCaseData> Slots()
+        {
+            var tags = new Dictionary<DodgeCardinal, string>
+            {
+                { DodgeCardinal.Forward, "_F_" },
+                { DodgeCardinal.Backward, "_B_" },
+                { DodgeCardinal.Left, "_L_" },
+                { DodgeCardinal.Right, "_R_" }
+            };
+
+            foreach (string guid in AssetDatabase.FindAssets("t:" + nameof(DodgeAction)))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                foreach (KeyValuePair<DodgeCardinal, string> tag in tags)
+                {
+                    yield return new TestCaseData(path, tag.Key, tag.Value)
+                        .SetName($"{{m}}({System.IO.Path.GetFileNameWithoutExtension(path)}, {tag.Key})");
+                }
+            }
+        }
+
+        [TestCaseSource(nameof(Slots))]
+        public void GetRootMotion_ForCardinal_ReturnsRootMotionFromClipOfSameCardinal(
+            string path, DodgeCardinal cardinal, string clipTag)
+        {
+            var action = AssetDatabase.LoadAssetAtPath<DodgeAction>(path);
+
+            BakedRootMotion rootMotion = action.GetRootMotion(cardinal);
+
+            Assert.That(rootMotion, Is.Not.Null, $"'{action.name}' has no root motion in the {cardinal} slot.");
+            Assert.That(rootMotion.SourceClip, Is.Not.Null,
+                $"'{rootMotion.name}' has no source clip. The Synty assets may be missing.");
+            Assert.That(rootMotion.SourceClip.name, Does.Contain(clipTag));
+        }
+    }
+}
