@@ -8,7 +8,7 @@ using UnityEngine;
 namespace GodOfWar.EditorTools.Characters
 {
     /// <summary>
-    /// Humanoid 클립의 루트 궤적(RootT)을 직선 변위로 구워 <see cref="BakedRootMotion"/>에 채운다.
+    /// Humanoid 클립의 루트 수평 궤적(RootT XZ)을 축별 커브로 구워 <see cref="BakedRootMotion"/>에 채운다.
     /// 어떤 액션에 쓰일지는 모르며, 클립 하나에서 에셋 하나를 만든다.
     /// </summary>
     public static class BakedRootMotionExtractor
@@ -17,27 +17,23 @@ namespace GodOfWar.EditorTools.Characters
 
         private const string MenuPath = "Assets/GodOfWar/Bake Root Motion";
 
-        // 이보다 짧은 순 이동은 제자리 클립으로 보고 거리 0으로 굽는다 (휴먼 정규화 단위).
-        private const float MinNetDisplacement = 1e-3f;
-
-        /// <summary>순수 변환 결과. 거리는 미터, 커브는 정규화 시간 → 정규화 변위.</summary>
+        /// <summary>순수 변환 결과. 커브는 시간(초) → 시작점 기준 로컬 변위(m).</summary>
         public readonly struct Result
         {
-            public Result(float distance, float duration, AnimationCurve curve)
+            public Result(float duration, AnimationCurve x, AnimationCurve z)
             {
-                Distance = distance;
                 Duration = duration;
-                Curve = curve;
+                X = x;
+                Z = z;
             }
 
-            public float Distance { get; }
             public float Duration { get; }
-            public AnimationCurve Curve { get; }
+            public AnimationCurve X { get; }
+            public AnimationCurve Z { get; }
         }
 
         /// <summary>
-        /// 프레임마다 균등하게 샘플링한 루트 수평 위치(XZ, 휴먼 정규화 단위)를 순 이동 방향(끝 − 시작)에 투영해
-        /// 정규화 변위 커브를 만든다. 원본 모션의 미세한 반동(1 초과·0 미만)은 그대로 담는다.
+        /// 프레임마다 균등하게 샘플링한 루트 수평 위치(XZ, 휴먼 정규화 단위)를 시작점 기준 변위(m)의 축별 커브로 만든다.
         /// </summary>
         public static Result Extract(IReadOnlyList<Vector2> rootPositions, float frameRate, float humanScale)
         {
@@ -51,41 +47,30 @@ namespace GodOfWar.EditorTools.Characters
                 throw new ArgumentException("At least two samples are required.", nameof(rootPositions));
             }
 
-            int last = rootPositions.Count - 1;
-            float duration = last / frameRate;
             Vector2 start = rootPositions[0];
-            Vector2 net = rootPositions[last] - start;
-            float netLength = net.magnitude;
-
-            if (netLength < MinNetDisplacement)
+            var x = new float[rootPositions.Count];
+            var z = new float[rootPositions.Count];
+            for (int i = 0; i < rootPositions.Count; i++)
             {
-                return new Result(0f, duration, AnimationCurve.Linear(0f, 0f, 1f, 1f));
+                Vector2 displacement = (rootPositions[i] - start) * humanScale;
+                x[i] = displacement.x;
+                z[i] = displacement.y;
             }
 
-            Vector2 direction = net / netLength;
-            var samples = new float[rootPositions.Count];
-            for (int i = 0; i <= last; i++)
-            {
-                samples[i] = Vector2.Dot(rootPositions[i] - start, direction) / netLength;
-            }
-
-            return new Result(netLength * humanScale, duration, FromFrameSamples(samples));
+            float duration = (rootPositions.Count - 1) / frameRate;
+            return new Result(duration, FromFrameSamples(x, frameRate), FromFrameSamples(z, frameRate));
         }
 
         /// <summary><paramref name="clip"/>의 루트 궤적을 구워 <paramref name="target"/>에 덮어쓴다 (Undo 가능).</summary>
         public static void Bake(BakedRootMotion target, AnimationClip clip)
         {
             Result result = Extract(SampleRootPositions(clip), clip.frameRate, GetHumanScale(clip));
-            if (result.Distance <= 0f)
-            {
-                Debug.LogWarning($"'{clip.name}' has no net root displacement. Baked as distance 0.", target);
-            }
 
             var serialized = new SerializedObject(target);
             FindProperty(serialized, "_sourceClip").objectReferenceValue = clip;
-            FindProperty(serialized, "_distance").floatValue = result.Distance;
             FindProperty(serialized, "_duration").floatValue = result.Duration;
-            FindProperty(serialized, "_curve").animationCurveValue = result.Curve;
+            FindProperty(serialized, "_x").animationCurveValue = result.X;
+            FindProperty(serialized, "_z").animationCurveValue = result.Z;
             serialized.ApplyModifiedProperties();
         }
 
@@ -122,7 +107,8 @@ namespace GodOfWar.EditorTools.Characters
                 }
 
                 Bake(asset, clip);
-                Debug.Log($"Baked '{clip.name}' → {path} ({asset.Distance:F3} m, {asset.Duration:F3} s)", asset);
+                Vector3 end = asset.Sample(asset.Duration);
+                Debug.Log($"Baked '{clip.name}' → {path} (end {end.x:F3}, {end.z:F3} m, {asset.Duration:F3} s)", asset);
             }
 
             AssetDatabase.SaveAssets();
@@ -234,18 +220,18 @@ namespace GodOfWar.EditorTools.Characters
         }
 
         /// <summary>
-        /// 0~1 정규화 시간에 균등 배치한 샘플을 선형 탄젠트로 잇는다.
+        /// 프레임 간격으로 놓인 샘플을 선형 탄젠트로 잇는다.
         /// 탄젠트를 0으로 두면 키마다 속도가 0으로 떨어져 매 프레임 멈칫거린다.
         /// </summary>
-        private static AnimationCurve FromFrameSamples(float[] samples)
+        private static AnimationCurve FromFrameSamples(float[] samples, float frameRate)
         {
             int last = samples.Length - 1;
             var keys = new Keyframe[samples.Length];
             for (int i = 0; i <= last; i++)
             {
-                float inSlope = i > 0 ? (samples[i] - samples[i - 1]) * last : 0f;
-                float outSlope = i < last ? (samples[i + 1] - samples[i]) * last : 0f;
-                keys[i] = new Keyframe((float)i / last, samples[i], inSlope, outSlope);
+                float inSlope = i > 0 ? (samples[i] - samples[i - 1]) * frameRate : 0f;
+                float outSlope = i < last ? (samples[i + 1] - samples[i]) * frameRate : 0f;
+                keys[i] = new Keyframe(i / frameRate, samples[i], inSlope, outSlope);
             }
 
             return new AnimationCurve(keys);

@@ -8,7 +8,7 @@ namespace GodOfWar.Player.States
 {
     /// <summary>
     /// 2단 회피의 1단계인 짧은 스텝 회피.
-    /// 진입 순간의 이동 입력으로 클립 방향과 몸 Yaw를 정해 회피 동안 고정하고, 프로필 거리만큼 이동한 뒤
+    /// 진입 순간의 이동 입력으로 클립 방향과 몸 Yaw를 정해 회피 동안 고정하고, 클립 루트 궤적대로 이동한 뒤
     /// <see cref="LocomotionState"/>로 돌아간다. 스텝 도중 Dodge를 다시 누르면 즉시 <see cref="DodgeRollState"/>로 이어진다.
     /// </summary>
     public sealed class QuickStepState : IState
@@ -53,9 +53,6 @@ namespace GodOfWar.Player.States
         /// <summary>마지막 스텝의 몸 월드 Yaw(도).</summary>
         public float BodyYaw { get; private set; }
 
-        /// <summary>마지막 스텝의 이동 월드 Yaw(도).</summary>
-        public float MoveYaw { get; private set; }
-
         public void Enter()
         {
             // 생성 시점에는 다른 상태가 아직 등록되지 않았을 수 있어 첫 진입에서 찾는다.
@@ -72,12 +69,12 @@ namespace GodOfWar.Player.States
             float referenceYaw = _owner.MovementYaw;
             Cardinal = direction.Cardinal;
             BodyYaw = referenceYaw + direction.ResidualYaw;
-            MoveYaw = referenceYaw + direction.InputYaw;
 
             // 최대 회전량 180°로 어떤 방향이든 즉시 맞춘다. 회피 동안에는 회전하지 않는다.
+            // 클립의 로컬 이동을 몸 Yaw로 돌리면 입력 방향이 된다 (몸 Yaw + 클립 방향 = 입력 방향).
             _motor.RotateTowards(BodyYaw, 180f);
             _animator.CrossFadeInFixedTime(StepHashes[(int)Cardinal], _settings.CrossFadeDuration);
-            _movement.Begin(_settings.QuickStep.GetRootMotion(Cardinal), MoveYaw);
+            _movement.Begin(_settings.QuickStep.GetRootMotion(Cardinal), BodyYaw);
 
             _input.ActionTriggered += OnActionTriggered;
         }

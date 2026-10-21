@@ -9,9 +9,9 @@ namespace GodOfWar.Tests.Player.States
 {
     public class ActionMovementTests
     {
-        // 구르기 커브는 비선형이라, 고정 속도(거리/시간)로는 통과할 수 없어 커브 차분을 검증할 수 있다.
+        // 구르기 궤적은 비선형이라, 고정 속도(거리/시간)로는 통과할 수 없어 궤적 차분을 검증할 수 있다.
         private const string RootMotionPath = "Assets/_Project/Data/RootMotion/DodgeRoll_F.asset";
-        private const float MoveYaw = 90f;
+        private const float Yaw = 90f;
         private const float Tolerance = 1e-4f;
 
         private BakedRootMotion _rootMotion;
@@ -23,7 +23,7 @@ namespace GodOfWar.Tests.Player.States
             _rootMotion = AssetDatabase.LoadAssetAtPath<BakedRootMotion>(RootMotionPath);
             Assert.That(_rootMotion, Is.Not.Null, $"Missing baked root motion at '{RootMotionPath}'.");
             _movement = new ActionMovement();
-            _movement.Begin(_rootMotion, MoveYaw);
+            _movement.Begin(_rootMotion, Yaw);
         }
 
         private static IEnumerable<TestCaseData> DeltaTimePatterns()
@@ -45,8 +45,8 @@ namespace GodOfWar.Tests.Player.States
                 displacement += _movement.Tick(deltaTime) * deltaTime;
             }
 
-            // MoveYaw 90°는 월드 +X 방향이다.
-            Vector3 expected = Vector3.right * _rootMotion.Distance;
+            // 궤적 끝을 Yaw 90°(로컬 정면 → 월드 +X)로 돌린 위치에 도착해야 한다.
+            Vector3 expected = Quaternion.Euler(0f, Yaw, 0f) * _rootMotion.Sample(_rootMotion.Duration);
             Assert.That(Vector3.Distance(displacement, expected), Is.EqualTo(0f).Within(Tolerance));
         }
 

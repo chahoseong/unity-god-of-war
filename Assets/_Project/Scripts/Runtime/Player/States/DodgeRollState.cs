@@ -54,25 +54,22 @@ namespace GodOfWar.Player.States
 
             DodgeCardinal cardinal;
             float bodyYaw;
-            float moveYaw;
             if (DodgeDirection.TryFromInput(_input.Move, _settings.MinInput, out DodgeDirection direction))
             {
                 float referenceYaw = _owner.MovementYaw;
                 cardinal = direction.Cardinal;
                 bodyYaw = referenceYaw + direction.ResidualYaw;
-                moveYaw = referenceYaw + direction.InputYaw;
             }
             else
             {
                 // 스텝 도중 카메라를 돌렸어도 스텝과 같은 월드 방향으로 이어 구른다.
                 cardinal = _quickStep.Cardinal;
                 bodyYaw = _quickStep.BodyYaw;
-                moveYaw = _quickStep.MoveYaw;
             }
 
             _motor.RotateTowards(bodyYaw, 180f);
             _animator.CrossFadeInFixedTime(RollHashes[(int)cardinal], _settings.CrossFadeDuration);
-            _movement.Begin(_settings.DodgeRoll.GetRootMotion(cardinal), moveYaw);
+            _movement.Begin(_settings.DodgeRoll.GetRootMotion(cardinal), bodyYaw);
         }
 
         public void Tick(float deltaTime)
