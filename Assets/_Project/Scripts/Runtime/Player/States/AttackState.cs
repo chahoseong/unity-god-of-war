@@ -11,7 +11,9 @@ namespace GodOfWar.Player.States
     /// 약공격·강공격 콤보 상태. 공격 한 타마다 이 상태에 다시 진입한다.
     /// 공격 클립 → 복귀 클립 순으로 진행하고, 연계 구간 안에서 공격 버튼을 누르면 다음 타로 이어진다.
     /// 공격 클립이 끝나기 전의 입력은 예약했다가 클립 끝에서, 끝난 뒤의 입력은 즉시 잇는다.
-    /// 약공격·강공격 버튼으로 진입하며, 공격 동안 다른 액션은 끼어들 수 없다.
+    /// 약공격·강공격 버튼으로 진입한다. 선딜레이·스윙 동안은 다른 액션이 끼어들 수 없고,
+    /// 후딜레이(<see cref="AttackAction.RecoveryStart"/> 이후)에는 회피 등으로 캔슬할 수 있다.
+    /// 연계 구간이 끝난 뒤 예약된 타 없이 이동 입력이 있으면 복귀 클립을 끝까지 기다리지 않고 이동으로 돌아간다.
     /// </summary>
     public sealed class AttackState : IState, ICancellable, IChainable
     {
@@ -57,7 +59,8 @@ namespace GodOfWar.Player.States
                 PlayerAction.HeavyAttack, this, () => true, prepare: e => Prepare(e.Action)));
         }
 
-        public bool IsCancelWindowOpen => false;
+        // 예약된 다음 타가 있어도 연다. 회피는 연계가 아니라 라우터로 넘어가, 상태를 나가면서 예약이 사라진다.
+        public bool IsCancelWindowOpen => _action.IsInRecovery(_elapsed);
 
         /// <summary>
         /// 연계 구간 안에서 <paramref name="pressed"/>를 눌렀을 때 이어질 액션을 고른다.
@@ -96,7 +99,6 @@ namespace GodOfWar.Player.States
                 $"{nameof(AttackState)} was entered without an action. Call {nameof(Prepare)} first.");
             _chainInput = _pendingInput;
             _pendingAction = null;
-
             _elapsed = 0f;
             _isReturning = false;
             _queuedAction = null;
@@ -118,12 +120,20 @@ namespace GodOfWar.Player.States
 
             _motor.Move(_movement.Tick(deltaTime), deltaTime);
 
+            // 연계 구간의 마지막 순간까지는 공격 입력이 우선이므로, 구간이 끝난 뒤부터 이동으로 일찍 복귀한다.
+            if (_queuedAction == null
+                && _elapsed > _action.ComboWindowEnd
+                && _input.Move.magnitude >= _settings.MinInput)
+            {
+                ReturnToLocomotion();
+                return;
+            }
+
             if (_isReturning)
             {
                 if (_elapsed >= _action.Duration + _action.ReturnDuration)
                 {
-                    _animator.CrossFadeInFixedTime(LocomotionHash, _action.CrossFadeDuration);
-                    _machine.ChangeState(_locomotion);
+                    ReturnToLocomotion();
                 }
 
                 return;
@@ -175,6 +185,12 @@ namespace GodOfWar.Player.States
         {
             return e.Phase == ActionPhase.Pressed
                 && (e.Action == PlayerAction.LightAttack || e.Action == PlayerAction.HeavyAttack);
+        }
+
+        private void ReturnToLocomotion()
+        {
+            _animator.CrossFadeInFixedTime(LocomotionHash, _action.CrossFadeDuration);
+            _machine.ChangeState(_locomotion);
         }
 
         private void Chain(AttackAction next, PlayerAction input)

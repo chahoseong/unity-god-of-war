@@ -62,6 +62,15 @@ namespace GodOfWar.Tests.Combat
             AssertBakedFromRootMotionVersion(action.ReturnMovement, action.ReturnClip);
         }
 
+        // 비워 두면 첫 프레임부터 캔슬이 열리고, 클립보다 길면 캔슬이 조용히 사라진다. 몇 타에만 생기면 플레이로 잘 드러나지 않는다.
+        [TestCaseSource(nameof(Actions))]
+        public void RecoveryStart_ForAction_IsBetweenTrackingEndAndClipEnd(string path)
+        {
+            var action = AssetDatabase.LoadAssetAtPath<AttackAction>(path);
+
+            Assert.That(action.RecoveryStart, Is.InRange(action.TrackingEnd, action.Duration));
+        }
+
         private static Motion FindStateMotion(string stateName)
         {
             var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);

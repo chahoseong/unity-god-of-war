@@ -18,6 +18,7 @@ MonoBehaviour:
   _returnClip: {fileID: -7354800201745137062, guid: 20aa50f251da63047ab4ac1045839566, type: 3}
   _crossFadeDuration: 0.25
   _trackingEnd: 0.96666664
+  _recoveryStart: 1.2666667
   _comboWindowStart: 0.96666664
   _comboWindowEnd: 2.2333336
   _movement: {fileID: 11400000, guid: 94541bef1e670d94a9b88ebeb56dad63, type: 2}

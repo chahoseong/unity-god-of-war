@@ -41,5 +41,17 @@ namespace GodOfWar.Tests.Combat
         {
             Assert.That(_action.IsInComboWindow(_action.ComboWindowEnd + Epsilon), Is.False);
         }
+
+        [Test]
+        public void IsInRecovery_AtRecoveryStart_ReturnsTrue()
+        {
+            Assert.That(_action.IsInRecovery(_action.RecoveryStart), Is.True);
+        }
+
+        [Test]
+        public void IsInRecovery_BeforeRecoveryStart_ReturnsFalse()
+        {
+            Assert.That(_action.IsInRecovery(_action.RecoveryStart - Epsilon), Is.False);
+        }
     }
 }

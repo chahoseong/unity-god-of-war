@@ -30,6 +30,9 @@ namespace GodOfWar.Combat
         [Tooltip("이 시각까지 목표 방향으로 몸을 돌린다. 보통 선딜레이(WindUp)가 끝나는 시각이다.")]
         [SerializeField, Min(0f)] private float _trackingEnd;
 
+        [Tooltip("스윙이 끝나 후딜레이 캔슬 구간이 열리는 시각. 이때부터 액션이 끝날 때까지 회피 등 다른 액션으로 캔슬할 수 있다.")]
+        [SerializeField, Min(0f)] private float _recoveryStart;
+
         [Tooltip("후속 입력을 받기 시작하는 시각.")]
         [SerializeField, Min(0f)] private float _comboWindowStart;
 
@@ -51,6 +54,7 @@ namespace GodOfWar.Combat
         public AnimationClip ReturnClip => _returnClip;
         public float CrossFadeDuration => _crossFadeDuration;
         public float TrackingEnd => _trackingEnd;
+        public float RecoveryStart => _recoveryStart;
         public float ComboWindowStart => _comboWindowStart;
         public float ComboWindowEnd => _comboWindowEnd;
         public BakedRootMotion Movement => _movement;
@@ -67,6 +71,12 @@ namespace GodOfWar.Combat
         public bool IsInComboWindow(float elapsed)
         {
             return elapsed >= _comboWindowStart && elapsed <= _comboWindowEnd;
+        }
+
+        /// <summary><paramref name="elapsed"/>가 후딜레이 캔슬 구간 안인지 판정한다. 시작 시각을 포함한다.</summary>
+        public bool IsInRecovery(float elapsed)
+        {
+            return elapsed >= _recoveryStart;
         }
     }
 }
