@@ -9,6 +9,7 @@ namespace GodOfWar.Player.States
 {
     /// <summary>
     /// 약공격·강공격 콤보 상태. 공격 한 타마다 이 상태에 다시 진입한다.
+    /// 공격은 항상 카메라 정면으로 나가며, 선딜레이 동안 카메라를 돌려 조준을 고칠 수 있다.
     /// 공격 클립 → 복귀 클립 순으로 진행하고, 연계 구간 안에서 공격 버튼을 누르면 다음 타로 이어진다.
     /// 공격 클립이 끝나기 전의 입력은 예약했다가 클립 끝에서, 끝난 뒤의 입력은 즉시 잇는다.
     /// 약공격·강공격 버튼으로 진입한다. 선딜레이·스윙 동안은 다른 액션이 끼어들 수 없고,
@@ -37,7 +38,6 @@ namespace GodOfWar.Player.States
         private AttackAction _action;
         private PlayerAction _chainInput;
         private float _elapsed;
-        private float _targetYaw;
         private bool _isReturning;
         private AttackAction _queuedAction;
         private PlayerAction _queuedInput;
@@ -99,23 +99,26 @@ namespace GodOfWar.Player.States
                 $"{nameof(AttackState)} was entered without an action. Call {nameof(Prepare)} first.");
             _chainInput = _pendingInput;
             _pendingAction = null;
+
             _elapsed = 0f;
             _isReturning = false;
             _queuedAction = null;
 
-            // 타마다 그 순간의 입력으로 방향을 다시 정해, 타격 사이에 방향을 틀 수 있게 한다.
-            _targetYaw = GetTargetYaw();
             _animator.CrossFadeInFixedTime(Animator.StringToHash(_action.StateName), _action.CrossFadeDuration);
-            _movement.Begin(_action.Movement, _targetYaw);
+            // 공격 궤적은 몸 정면 기준으로 구워져 있으므로 몸이 바라보는 방향으로 내딛는다.
+            _movement.Begin(_action.Movement, _motor.transform.eulerAngles.y);
         }
 
         public void Tick(float deltaTime)
         {
             _elapsed += deltaTime;
 
+            // 선딜레이 동안은 카메라 정면을 계속 따라가 조준을 고칠 수 있고, 스윙에 들어가면 방향이 고정된다.
+            // 몸은 회전 속도만큼 늦게 따라가므로, 궤적은 카메라가 아니라 몸의 현재 정면에 맞춘다.
             if (_elapsed < _action.TrackingEnd)
             {
-                _motor.RotateTowards(_targetYaw, _settings.TurnSpeed * deltaTime);
+                _motor.RotateTowards(_owner.MovementYaw, _settings.TurnSpeed * deltaTime);
+                _movement.SetYaw(_motor.transform.eulerAngles.y);
             }
 
             _motor.Move(_movement.Tick(deltaTime), deltaTime);
@@ -203,19 +206,6 @@ namespace GodOfWar.Player.States
         {
             _pendingAction = action;
             _pendingInput = input;
-        }
-
-        /// <summary>이동 입력이 충분하면 카메라 기준 입력 방향, 아니면 카메라 정면의 월드 Yaw(도).</summary>
-        private float GetTargetYaw()
-        {
-            float referenceYaw = _owner.MovementYaw;
-            Vector2 move = _input.Move;
-            if (move.magnitude < _settings.MinInput)
-            {
-                return referenceYaw;
-            }
-
-            return referenceYaw + Mathf.Atan2(move.x, move.y) * Mathf.Rad2Deg;
         }
     }
 }

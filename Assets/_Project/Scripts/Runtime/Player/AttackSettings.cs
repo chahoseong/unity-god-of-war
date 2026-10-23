@@ -17,7 +17,7 @@ namespace GodOfWar.Player
         [Tooltip("강공격 버튼으로 시작하는 콤보의 1타.")]
         [SerializeField] private AttackAction _heavyEntry;
 
-        [Tooltip("유의미한 이동 입력의 최소 크기. 이보다 작으면 카메라 정면으로 공격하고, 이 이상이면 연계 구간이 끝난 뒤 이동으로 일찍 복귀한다.")]
+        [Tooltip("연계 구간이 끝난 뒤 이동으로 일찍 복귀하는 최소 이동 입력 크기.")]
         [SerializeField, Range(0f, 1f)] private float _minInput = 0.1f;
 
         [Tooltip("선딜레이 동안 목표 방향으로 도는 속도(도/초).")]

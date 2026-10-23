@@ -27,6 +27,15 @@ namespace GodOfWar.Player.States
         }
 
         /// <summary>
+        /// 진행 중인 궤적의 로컬 정면이 월드 Yaw <paramref name="yaw"/>(도)를 향하게 바꾼다.
+        /// 이후 프레임의 변위만 새 방향으로 회전하며, 이미 이동한 거리는 그대로 둔다.
+        /// </summary>
+        public void SetYaw(float yaw)
+        {
+            _rotation = Quaternion.Euler(0f, yaw, 0f);
+        }
+
+        /// <summary>
         /// 시간을 진행하고, 이번 프레임에 <c>속도 × deltaTime</c>이 궤적 구간의 변위가 되는 수평 속도(m/s)를 반환한다.
         /// </summary>
         public Vector3 Tick(float deltaTime)
