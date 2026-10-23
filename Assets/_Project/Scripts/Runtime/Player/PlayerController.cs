@@ -36,8 +36,13 @@ namespace GodOfWar.Player
         [Tooltip("검 든 자세 레이어가 꺼지고 켜지는 데 걸리는 시간(초).")]
         [SerializeField, Min(0.01f)] private float _swordPoseBlendDuration = 0.1f;
 
+        [Header("Debug")]
+        [Tooltip("켜면 시작할 때 액션 라우터가 수집한 라우팅 테이블을 콘솔에 출력한다. 에디터와 개발 빌드에서만 동작한다.")]
+        [SerializeField] private bool _logActionRoutes;
+
         private readonly Dictionary<Type, IState> _states = new Dictionary<Type, IState>();
         private StateMachine _machine;
+        private ActionRouter _router;
         private CharacterMotor _motor;
         private int[] _swordPoseLayers;
         private float[] _swordPoseWeights;
@@ -49,6 +54,8 @@ namespace GodOfWar.Player
         public Animator Animator => _animator;
         /// <summary>이동 입력의 기준 Yaw(도).</summary>
         public float MovementYaw => _cameraLook.Yaw;
+        /// <summary>상태가 생성될 때 자신의 진입 트리거를 선언하는 액션 라우터.</summary>
+        public ActionRouter Router => _router;
 
         public T Get<T>() where T : class, IState
         {
@@ -101,6 +108,8 @@ namespace GodOfWar.Player
 
             _motor = GetComponent<CharacterMotor>();
             _machine = new StateMachine();
+            // 상태가 생성자에서 진입 트리거를 선언하므로 상태보다 먼저 만든다.
+            _router = new ActionRouter(_machine, GetRequiredComponent<IPlayerInput>());
             Register(new LocomotionState(this, _machine));
             Register(new SprintState(this, _machine));
             Register(new QuickStepState(this, _machine));
@@ -114,6 +123,13 @@ namespace GodOfWar.Player
             // 애니메이터 레이어도 자식 Animator가 초기화된 뒤에 읽는다.
             FindSwordPoseLayers();
             _machine.ChangeState(Get<LocomotionState>());
+            LogActionRoutes();
+        }
+
+        private void OnDestroy()
+        {
+            // Awake 검증에서 실패하면 라우터가 만들어지지 않는다.
+            _router?.Dispose();
         }
 
         private void Update()
@@ -164,9 +180,19 @@ namespace GodOfWar.Player
             }
         }
 
-        private void Register(IState state)
+        // 캔슬 윈도우 선언을 빠뜨린 상태는 여기서 컴파일 에러가 난다 (ADR-004 3절).
+        private void Register<T>(T state) where T : class, IState, ICancellable
         {
             _states.Add(state.GetType(), state);
+        }
+
+        private void LogActionRoutes()
+        {
+            // 에디터와 개발 빌드에서만 출력한다. 에디터에서는 항상 isDebugBuild가 참이다.
+            if (_logActionRoutes && Debug.isDebugBuild)
+            {
+                Debug.Log(_router.Describe(), this);
+            }
         }
     }
 }

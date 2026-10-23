@@ -9,9 +9,10 @@ namespace GodOfWar.Player.States
     /// 전방 질주 상태. 이 상태에 있는 것 자체가 스프린트 래치이며,
     /// <see cref="CanSprint"/>를 만족하지 못하면 <see cref="LocomotionState"/>로 돌아간다.
     /// 질주 중에는 입력 방향으로 이동하고 이동 방향을 바라본다.
-    /// 질주 중 Sprint 재입력은 의도적으로 무시한다 (게임패드 L3 오입력·키 연타로 질주가 끊기지 않게).
+    /// <see cref="LocomotionState"/>의 연계로만 진입하며, 질주 중 Sprint 재입력은 받을 곳이 없어 무시된다
+    /// (게임패드 L3 오입력·키 연타로 질주가 끊기지 않게). 회피·공격은 언제든 끼어들 수 있다.
     /// </summary>
-    public sealed class SprintState : IState
+    public sealed class SprintState : IState, ICancellable
     {
         private readonly PlayerController _owner;
         private readonly StateMachine _machine;
@@ -19,11 +20,8 @@ namespace GodOfWar.Player.States
         private readonly IPlayerInput _input;
         private readonly CharacterMotor _motor;
         private readonly LocomotionSettings _settings;
-        private readonly DodgeSettings _dodgeSettings;
 
         private LocomotionState _locomotion;
-        private QuickStepState _quickStep;
-        private AttackState _attack;
 
         public SprintState(PlayerController owner, StateMachine machine)
         {
@@ -33,8 +31,9 @@ namespace GodOfWar.Player.States
             _input = owner.GetRequiredComponent<IPlayerInput>();
             _motor = owner.GetRequiredComponent<CharacterMotor>();
             _settings = owner.Settings;
-            _dodgeSettings = owner.DodgeSettings;
         }
+
+        public bool IsCancelWindowOpen => true;
 
         /// <summary>
         /// 이동 입력이 전방 콘 안에 있고 충분히 큰지 판정한다.
@@ -55,9 +54,6 @@ namespace GodOfWar.Player.States
         public void Enter()
         {
             _locomotion ??= _locator.Get<LocomotionState>();
-            _quickStep ??= _locator.Get<QuickStepState>();
-            _attack ??= _locator.Get<AttackState>();
-            _input.ActionTriggered += OnActionTriggered;
         }
 
         public void Tick(float deltaTime)
@@ -83,24 +79,6 @@ namespace GodOfWar.Player.States
 
         public void Exit()
         {
-            _input.ActionTriggered -= OnActionTriggered;
-        }
-
-        private void OnActionTriggered(PlayerActionEvent e)
-        {
-            // 질주 속도는 이어받지 않고 스텝 프로필대로 이동한다.
-            if (e.Action == PlayerAction.Dodge
-                && e.Phase == ActionPhase.Pressed
-                && DodgeDirection.TryFromInput(_input.Move, _dodgeSettings.MinInput, out _))
-            {
-                _machine.ChangeState(_quickStep);
-            }
-            // 질주 중 공격도 이동 중과 같은 1타로 시작한다.
-            else if (AttackState.IsAttackPress(e))
-            {
-                _attack.Prepare(e.Action);
-                _machine.ChangeState(_attack);
-            }
         }
     }
 }

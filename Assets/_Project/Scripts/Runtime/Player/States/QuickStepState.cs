@@ -10,8 +10,9 @@ namespace GodOfWar.Player.States
     /// 2단 회피의 1단계인 짧은 스텝 회피.
     /// 진입 순간의 이동 입력으로 클립 방향과 몸 Yaw를 정해 회피 동안 고정하고, 클립 루트 궤적대로 이동한 뒤
     /// <see cref="LocomotionState"/>로 돌아간다. 스텝 도중 Dodge를 다시 누르면 즉시 <see cref="DodgeRollState"/>로 이어진다.
+    /// 이동 입력이 있을 때 Dodge로 진입하며, 스텝 동안 다른 액션은 끼어들 수 없다.
     /// </summary>
-    public sealed class QuickStepState : IState
+    public sealed class QuickStepState : IState, ICancellable, IChainable
     {
         private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
 
@@ -45,7 +46,14 @@ namespace GodOfWar.Player.States
             _motor = owner.GetRequiredComponent<CharacterMotor>();
             _animator = owner.Animator;
             _settings = owner.DodgeSettings;
+
+            // 정지 중(이동 입력이 MinInput 미만)에는 회피하지 않는다.
+            owner.Router.Declare(new ActionTrigger(
+                PlayerAction.Dodge, this,
+                () => DodgeDirection.TryFromInput(_input.Move, _settings.MinInput, out _)));
         }
+
+        public bool IsCancelWindowOpen => false;
 
         /// <summary>마지막 스텝의 클립 방향. 무입력 구르기가 이어받는다.</summary>
         public DodgeCardinal Cardinal { get; private set; }
@@ -59,7 +67,7 @@ namespace GodOfWar.Player.States
             _locomotion ??= _locator.Get<LocomotionState>();
             _roll ??= _locator.Get<DodgeRollState>();
 
-            // 진입 측에서 같은 판정을 통과한 경우에만 들어오지만, 판정이 어긋나면 회피하지 않고 돌아간다.
+            // 진입 트리거의 같은 판정을 통과한 경우에만 들어오지만, 판정이 어긋나면 회피하지 않고 돌아간다.
             if (!DodgeDirection.TryFromInput(_input.Move, _settings.MinInput, out DodgeDirection direction))
             {
                 _machine.ChangeState(_locomotion);
@@ -75,8 +83,6 @@ namespace GodOfWar.Player.States
             _motor.RotateTowards(BodyYaw, 180f);
             _animator.CrossFadeInFixedTime(StepHashes[(int)Cardinal], _settings.CrossFadeDuration);
             _movement.Begin(_settings.QuickStep.GetRootMotion(Cardinal), BodyYaw);
-
-            _input.ActionTriggered += OnActionTriggered;
         }
 
         public void Tick(float deltaTime)
@@ -93,15 +99,17 @@ namespace GodOfWar.Player.States
 
         public void Exit()
         {
-            _input.ActionTriggered -= OnActionTriggered;
         }
 
-        private void OnActionTriggered(PlayerActionEvent e)
+        public bool TryChain(PlayerActionEvent e)
         {
-            if (e.Action == PlayerAction.Dodge && e.Phase == ActionPhase.Pressed)
+            if (e.Action != PlayerAction.Dodge || e.Phase != ActionPhase.Pressed)
             {
-                _machine.ChangeState(_roll);
+                return false;
             }
+
+            _machine.ChangeState(_roll);
+            return true;
         }
     }
 }

@@ -11,8 +11,9 @@ namespace GodOfWar.Player.States
     /// 약공격·강공격 콤보 상태. 공격 한 타마다 이 상태에 다시 진입한다.
     /// 공격 클립 → 복귀 클립 순으로 진행하고, 연계 구간 안에서 공격 버튼을 누르면 다음 타로 이어진다.
     /// 공격 클립이 끝나기 전의 입력은 예약했다가 클립 끝에서, 끝난 뒤의 입력은 즉시 잇는다.
+    /// 약공격·강공격 버튼으로 진입하며, 공격 동안 다른 액션은 끼어들 수 없다.
     /// </summary>
-    public sealed class AttackState : IState
+    public sealed class AttackState : IState, ICancellable, IChainable
     {
         private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
 
@@ -48,14 +49,15 @@ namespace GodOfWar.Player.States
             _motor = owner.GetRequiredComponent<CharacterMotor>();
             _animator = owner.Animator;
             _settings = owner.AttackSettings;
+
+            // 진입한 버튼이 콤보의 1타와 이후 연계를 정하므로, 전이 직전에 그 버튼으로 준비한다.
+            owner.Router.Declare(new ActionTrigger(
+                PlayerAction.LightAttack, this, () => true, prepare: e => Prepare(e.Action)));
+            owner.Router.Declare(new ActionTrigger(
+                PlayerAction.HeavyAttack, this, () => true, prepare: e => Prepare(e.Action)));
         }
 
-        /// <summary>공격 버튼(약·강)을 누른 순간인지 판정한다.</summary>
-        public static bool IsAttackPress(PlayerActionEvent e)
-        {
-            return e.Phase == ActionPhase.Pressed
-                && (e.Action == PlayerAction.LightAttack || e.Action == PlayerAction.HeavyAttack);
-        }
+        public bool IsCancelWindowOpen => false;
 
         /// <summary>
         /// 연계 구간 안에서 <paramref name="pressed"/>를 눌렀을 때 이어질 액션을 고른다.
@@ -72,8 +74,8 @@ namespace GodOfWar.Player.States
             return settings.GetEntry(pressed);
         }
 
-        /// <summary><paramref name="input"/> 버튼의 1타로 다음 진입을 준비한다. 진입 측이 호출한 뒤 이 상태로 전환한다.</summary>
-        public void Prepare(PlayerAction input)
+        /// <summary><paramref name="input"/> 버튼의 1타로 다음 진입을 준비한다. 진입 트리거가 전이 직전에 호출한다.</summary>
+        private void Prepare(PlayerAction input)
         {
             AttackAction entry = _settings.GetEntry(input);
             if (entry == null)
@@ -103,8 +105,6 @@ namespace GodOfWar.Player.States
             _targetYaw = GetTargetYaw();
             _animator.CrossFadeInFixedTime(Animator.StringToHash(_action.StateName), _action.CrossFadeDuration);
             _movement.Begin(_action.Movement, _targetYaw);
-
-            _input.ActionTriggered += OnActionTriggered;
         }
 
         public void Tick(float deltaTime)
@@ -147,27 +147,34 @@ namespace GodOfWar.Player.States
 
         public void Exit()
         {
-            _input.ActionTriggered -= OnActionTriggered;
         }
 
-        private void OnActionTriggered(PlayerActionEvent e)
+        public bool TryChain(PlayerActionEvent e)
         {
-            // 구간 밖 입력은 버리고, 회피·가드 등 다른 입력도 받지 않는다.
+            // 연계 구간 밖의 공격과 회피 등 다른 입력은 라우터의 판정에 맡긴다.
             if (!IsAttackPress(e) || !_action.IsInComboWindow(_elapsed))
             {
-                return;
+                return false;
             }
 
             AttackAction next = ResolveFollowUp(_action, _chainInput, e.Action, _settings);
             if (_isReturning)
             {
                 Chain(next, e.Action);
-                return;
+                return true;
             }
 
             // 공격 클립이 끝나야 다음 타의 시작 포즈와 맞물리므로 그때까지 미룬다. 나중 입력이 앞선 예약을 덮는다.
             _queuedAction = next;
             _queuedInput = e.Action;
+            return true;
+        }
+
+        /// <summary>공격 버튼(약·강)을 누른 순간인지 판정한다.</summary>
+        private static bool IsAttackPress(PlayerActionEvent e)
+        {
+            return e.Phase == ActionPhase.Pressed
+                && (e.Action == PlayerAction.LightAttack || e.Action == PlayerAction.HeavyAttack);
         }
 
         private void Chain(AttackAction next, PlayerAction input)

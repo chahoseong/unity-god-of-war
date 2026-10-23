@@ -11,7 +11,7 @@ namespace GodOfWar.Player.States
     /// 진입 순간의 이동 입력으로 방향을 다시 정하고, 입력이 없으면 스텝의 방향을 그대로 잇는다.
     /// 구르기 중 입력은 받지 않으며, 끝나면 <see cref="LocomotionState"/>로 돌아간다.
     /// </summary>
-    public sealed class DodgeRollState : IState
+    public sealed class DodgeRollState : IState, ICancellable
     {
         private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
 
@@ -46,6 +46,8 @@ namespace GodOfWar.Player.States
             _animator = owner.Animator;
             _settings = owner.DodgeSettings;
         }
+
+        public bool IsCancelWindowOpen => false;
 
         public void Enter()
         {
