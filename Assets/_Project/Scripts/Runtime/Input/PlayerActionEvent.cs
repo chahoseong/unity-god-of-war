@@ -1,7 +1,7 @@
 namespace GodOfWar.Input
 {
     /// <summary>
-    /// 플레이어 버튼 액션의 누름/뗌 한 건.
+    /// 플레이어 버튼 액션의 누름/뗌/유지 한 건.
     /// </summary>
     public readonly struct PlayerActionEvent
     {

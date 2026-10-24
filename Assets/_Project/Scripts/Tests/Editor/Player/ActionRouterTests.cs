@@ -230,12 +230,77 @@ namespace GodOfWar.Tests.Player
         }
 
         [Test]
+        public void ActionTriggered_WithHeldPhaseAndHeldTrigger_EntersTarget()
+        {
+            _router.Declare(new ActionTrigger(PlayerAction.Guard, _low, () => true, phase: ActionPhase.Held));
+
+            _input.Raise(PlayerAction.Guard, ActionPhase.Held);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_low));
+        }
+
+        // 버튼을 누르고 있는 것만으로 누르는 순간에 시작하는 행동이 반복되면 안 된다.
+        [Test]
+        public void ActionTriggered_WithHeldPhaseAndPressedTrigger_KeepsCurrentState()
+        {
+            _router.Declare(new ActionTrigger(PlayerAction.LightAttack, _low, () => true));
+
+            _input.Raise(PlayerAction.LightAttack, ActionPhase.Held);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_current));
+        }
+
+        [Test]
+        public void ActionTriggered_WithPressedPhaseAndHeldTrigger_KeepsCurrentState()
+        {
+            _router.Declare(new ActionTrigger(PlayerAction.Guard, _low, () => true, phase: ActionPhase.Held));
+
+            _input.Raise(PlayerAction.Guard);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_current));
+        }
+
+        // 유지는 눌려 있는 동안 매 프레임 다시 오므로 보관하지 않는다.
+        [Test]
+        public void ActionTriggered_WithHeldPhaseAndCancelWindowClosed_DoesNotBuffer()
+        {
+            _current.IsCancelWindowOpen = false;
+            _router.Declare(new ActionTrigger(PlayerAction.Guard, _low, () => true, phase: ActionPhase.Held));
+
+            _input.Raise(PlayerAction.Guard, ActionPhase.Held);
+
+            Assert.That(_router.HasBufferedInput, Is.False);
+        }
+
+        // 다른 버튼을 누르고 있어도 앞서 보관한 누름이 사라지면 안 된다. 보관한 누름을 대신하는 것은 새 누름뿐이다.
+        [Test]
+        public void ActionTriggered_WithHeldPhaseAndBufferedPress_KeepsBufferedPress()
+        {
+            _current.IsCancelWindowOpen = false;
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+            _input.Raise(PlayerAction.Dodge);
+
+            _input.Raise(PlayerAction.Guard, ActionPhase.Held);
+
+            Assert.That((_router.HasBufferedInput, _router.BufferedAction), Is.EqualTo((true, PlayerAction.Dodge)));
+        }
+
+        [Test]
         public void Declare_WithSamePriorityForSameInput_ThrowsInvalidOperationException()
         {
             _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true, priority: 0));
 
             Assert.Throws<InvalidOperationException>(
                 () => _router.Declare(new ActionTrigger(PlayerAction.Dodge, _high, () => true, priority: 0)));
+        }
+
+        [Test]
+        public void Declare_WithSamePriorityForSameInputAndDifferentPhase_DoesNotThrow()
+        {
+            _router.Declare(new ActionTrigger(PlayerAction.Guard, _low, () => true, priority: 0));
+
+            Assert.DoesNotThrow(() => _router.Declare(new ActionTrigger(
+                PlayerAction.Guard, _high, () => true, priority: 0, phase: ActionPhase.Held)));
         }
     }
 }

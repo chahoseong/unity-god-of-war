@@ -20,7 +20,9 @@ namespace GodOfWar.Input
 
         bool IsHeld(PlayerAction action);
 
-        /// <summary>버튼 액션이 눌리거나 떼어질 때 한 번씩 발생한다. 누르고 있는 동안 반복하지 않는다.</summary>
+        /// <summary>
+        /// 버튼 액션이 눌리거나 떼어질 때 한 번씩 발생하고, 눌려 있는 동안에는 매 프레임 <see cref="ActionPhase.Held"/>로 발생한다.
+        /// </summary>
         event Action<PlayerActionEvent> ActionTriggered;
     }
 }

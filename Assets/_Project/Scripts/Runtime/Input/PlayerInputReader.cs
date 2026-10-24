@@ -7,8 +7,10 @@ namespace GodOfWar.Input
     /// <summary>
     /// GameInputActions의 Player 맵을 구독해 <see cref="IPlayerInput"/>으로 중계한다.
     /// 컴포넌트의 활성 상태가 Player 맵의 활성 상태를 결정한다.
+    /// 소비자가 같은 프레임의 입력을 보도록 다른 게임플레이 컴포넌트보다 먼저 갱신한다.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-100)]
     public sealed class PlayerInputReader : MonoBehaviour, IPlayerInput
     {
         private const string PlayerMapName = "Player";
@@ -94,6 +96,24 @@ namespace GodOfWar.Input
             {
                 _buttons[i].performed -= _pressedHandlers[i];
                 _buttons[i].canceled -= _releasedHandlers[i];
+            }
+        }
+
+        private void Update()
+        {
+            if (_playerMap == null)
+            {
+                return;
+            }
+
+            // Input System은 눌려 있는 동안 콜백을 반복하지 않으므로 유지 단계는 직접 발행한다.
+            double time = Time.realtimeSinceStartupAsDouble;
+            for (int i = 0; i < _buttons.Length; i++)
+            {
+                if (_buttons[i].IsPressed())
+                {
+                    Raise((PlayerAction)i, ActionPhase.Held, time);
+                }
             }
         }
 

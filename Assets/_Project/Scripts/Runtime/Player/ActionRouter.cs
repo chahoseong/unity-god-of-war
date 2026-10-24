@@ -8,10 +8,10 @@ namespace GodOfWar.Player
 {
     /// <summary>
     /// 플레이어의 버튼 입력으로 일어나는 상태 전이를 중재한다 (ADR-004).
-    /// 상태가 선언한 <see cref="ActionTrigger"/>를 모아 라우팅 테이블을 만들고, 입력이 들어오면
+    /// 상태가 선언한 <see cref="ActionTrigger"/>를 모아 (입력, 단계)별 라우팅 테이블을 만들고, 입력이 들어오면
     /// 현재 상태의 내부 연계 → 캔슬 윈도우 → 트리거 순으로 판정한다.
     /// 캔슬 윈도우가 닫혀 있어 거절된 누름은 선입력으로 잠시 보관했다가, <see cref="Tick"/>에서 다시 판정한다.
-    /// 이동 스틱 같은 유지 입력과 피격 등 강제 전이는 다루지 않는다.
+    /// 이동 스틱 같은 축 입력과 피격 등 강제 전이는 다루지 않는다.
     /// </summary>
     public sealed class ActionRouter : IDisposable
     {
@@ -19,9 +19,9 @@ namespace GodOfWar.Player
         private readonly IPlayerInput _input;
         private readonly float _bufferDuration;
 
-        // 입력별 트리거 목록. 우선순위 내림차순으로 유지한다.
-        private readonly Dictionary<PlayerAction, List<ActionTrigger>> _triggers =
-            new Dictionary<PlayerAction, List<ActionTrigger>>();
+        // (입력, 단계)별 트리거 목록. 우선순위 내림차순으로 유지한다.
+        private readonly Dictionary<(PlayerAction, ActionPhase), List<ActionTrigger>> _triggers =
+            new Dictionary<(PlayerAction, ActionPhase), List<ActionTrigger>>();
 
         // 선입력은 마지막 누름 하나만 보관한다.
         private PlayerActionEvent _buffered;
@@ -44,13 +44,14 @@ namespace GodOfWar.Player
         public PlayerAction BufferedAction => _buffered.Action;
 
         /// <summary>상태가 생성될 때 자신의 진입 트리거를 등록한다.</summary>
-        /// <exception cref="InvalidOperationException">같은 입력에 같은 우선순위가 이미 선언되어 있다.</exception>
+        /// <exception cref="InvalidOperationException">같은 입력·단계에 같은 우선순위가 이미 선언되어 있다.</exception>
         public void Declare(ActionTrigger trigger)
         {
-            if (!_triggers.TryGetValue(trigger.Input, out List<ActionTrigger> list))
+            (PlayerAction, ActionPhase) key = (trigger.Input, trigger.Phase);
+            if (!_triggers.TryGetValue(key, out List<ActionTrigger> list))
             {
                 list = new List<ActionTrigger>();
-                _triggers.Add(trigger.Input, list);
+                _triggers.Add(key, list);
             }
 
             int index = 0;
@@ -59,7 +60,7 @@ namespace GodOfWar.Player
                 if (list[index].Priority == trigger.Priority)
                 {
                     throw new InvalidOperationException(
-                        $"'{trigger.Target.GetType().Name}' declared {trigger.Input} with priority {trigger.Priority}, "
+                        $"'{trigger.Target.GetType().Name}' declared {trigger.Input} {trigger.Phase} with priority {trigger.Priority}, "
                         + $"which '{list[index].Target.GetType().Name}' already uses. Give them different priorities.");
                 }
 
@@ -73,11 +74,12 @@ namespace GodOfWar.Player
         public string Describe()
         {
             var builder = new StringBuilder($"[{nameof(ActionRouter)}] Routing table");
-            foreach (KeyValuePair<PlayerAction, List<ActionTrigger>> entry in _triggers)
+            foreach (KeyValuePair<(PlayerAction, ActionPhase), List<ActionTrigger>> entry in _triggers)
             {
                 foreach (ActionTrigger trigger in entry.Value)
                 {
-                    builder.Append($"\n  {entry.Key} → {trigger.Target.GetType().Name} (priority {trigger.Priority})");
+                    builder.Append(
+                        $"\n  {trigger.Input} {trigger.Phase} → {trigger.Target.GetType().Name} (priority {trigger.Priority})");
                 }
             }
 
@@ -128,7 +130,7 @@ namespace GodOfWar.Player
                 return;
             }
 
-            // 뗌은 보관하지 않고, 보관한 누름도 건드리지 않는다.
+            // 뗌과 유지는 보관하지 않고, 보관한 누름도 건드리지 않는다. 유지는 눌려 있는 동안 매 프레임 다시 온다.
             if (e.Phase != ActionPhase.Pressed)
             {
                 TryRoute(e);
@@ -158,12 +160,12 @@ namespace GodOfWar.Player
                 return true;
             }
 
-            if (e.Phase != ActionPhase.Pressed || !GetCancellable(current).IsCancelWindowOpen)
+            if (!GetCancellable(current).IsCancelWindowOpen)
             {
                 return false;
             }
 
-            if (!_triggers.TryGetValue(e.Action, out List<ActionTrigger> list))
+            if (!_triggers.TryGetValue((e.Action, e.Phase), out List<ActionTrigger> list))
             {
                 return false;
             }
