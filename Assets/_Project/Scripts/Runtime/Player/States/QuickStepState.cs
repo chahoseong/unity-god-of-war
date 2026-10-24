@@ -2,6 +2,7 @@ using GodOfWar.Characters;
 using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
+using GodOfWar.Player.Diagnostics;
 using UnityEngine;
 
 namespace GodOfWar.Player.States
@@ -12,7 +13,7 @@ namespace GodOfWar.Player.States
     /// <see cref="LocomotionState"/>로 돌아간다. 스텝 도중 Dodge를 다시 누르면 즉시 <see cref="DodgeRollState"/>로 이어진다.
     /// 이동 입력이 있을 때 Dodge로 진입하며, 스텝 동안 다른 액션은 끼어들 수 없다.
     /// </summary>
-    public sealed class QuickStepState : IState, ICancellable, IChainable
+    public sealed class QuickStepState : IState, ICancellable, IChainable, IActionProgress
     {
         private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
 
@@ -60,6 +61,12 @@ namespace GodOfWar.Player.States
 
         /// <summary>마지막 스텝의 몸 월드 Yaw(도).</summary>
         public float BodyYaw { get; private set; }
+
+        public string ActionName => $"QuickStep {Cardinal}";
+
+        public float Elapsed => _movement.Elapsed;
+
+        public float Duration => _movement.Duration;
 
         public void Enter()
         {

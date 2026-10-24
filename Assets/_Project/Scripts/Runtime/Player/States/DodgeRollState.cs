@@ -2,6 +2,7 @@ using GodOfWar.Characters;
 using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
+using GodOfWar.Player.Diagnostics;
 using UnityEngine;
 
 namespace GodOfWar.Player.States
@@ -11,7 +12,7 @@ namespace GodOfWar.Player.States
     /// 진입 순간의 이동 입력으로 방향을 다시 정하고, 입력이 없으면 스텝의 방향을 그대로 잇는다.
     /// 구르기 중 입력은 받지 않으며, 끝나면 <see cref="LocomotionState"/>로 돌아간다.
     /// </summary>
-    public sealed class DodgeRollState : IState, ICancellable
+    public sealed class DodgeRollState : IState, ICancellable, IActionProgress
     {
         private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
 
@@ -35,6 +36,7 @@ namespace GodOfWar.Player.States
 
         private LocomotionState _locomotion;
         private QuickStepState _quickStep;
+        private DodgeCardinal _cardinal;
 
         public DodgeRollState(PlayerController owner, StateMachine machine)
         {
@@ -48,6 +50,12 @@ namespace GodOfWar.Player.States
         }
 
         public bool IsCancelWindowOpen => false;
+
+        public string ActionName => $"DodgeRoll {_cardinal}";
+
+        public float Elapsed => _movement.Elapsed;
+
+        public float Duration => _movement.Duration;
 
         public void Enter()
         {
@@ -69,6 +77,7 @@ namespace GodOfWar.Player.States
                 bodyYaw = _quickStep.BodyYaw;
             }
 
+            _cardinal = cardinal;
             _motor.RotateTowards(bodyYaw, 180f);
             _animator.CrossFadeInFixedTime(RollHashes[(int)cardinal], _settings.CrossFadeDuration);
             _movement.Begin(_settings.DodgeRoll.GetRootMotion(cardinal), bodyYaw);

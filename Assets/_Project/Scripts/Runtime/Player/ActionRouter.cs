@@ -37,6 +37,12 @@ namespace GodOfWar.Player
             _input.ActionTriggered += OnActionTriggered;
         }
 
+        /// <summary>보관 중인 선입력이 있는지.</summary>
+        public bool HasBufferedInput => _hasBuffered;
+
+        /// <summary>보관 중인 선입력의 버튼. <see cref="HasBufferedInput"/>이 거짓이면 의미가 없다.</summary>
+        public PlayerAction BufferedAction => _buffered.Action;
+
         /// <summary>상태가 생성될 때 자신의 진입 트리거를 등록한다.</summary>
         /// <exception cref="InvalidOperationException">같은 입력에 같은 우선순위가 이미 선언되어 있다.</exception>
         public void Declare(ActionTrigger trigger)

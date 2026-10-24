@@ -3,6 +3,7 @@ using GodOfWar.Characters;
 using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
+using GodOfWar.Player.Diagnostics;
 using UnityEngine;
 
 namespace GodOfWar.Player.States
@@ -17,7 +18,7 @@ namespace GodOfWar.Player.States
     /// 후딜레이(<see cref="AttackAction.RecoveryStart"/> 이후)에는 회피 등으로 캔슬할 수 있다.
     /// 연계 구간이 끝난 뒤 예약된 타 없이 이동 입력이 있으면 복귀 클립을 끝까지 기다리지 않고 이동으로 돌아간다.
     /// </summary>
-    public sealed class AttackState : IState, ICancellable, IChainable
+    public sealed class AttackState : IState, ICancellable, IChainable, IComboWindow, IActionProgress
     {
         private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
 
@@ -62,6 +63,17 @@ namespace GodOfWar.Player.States
 
         // 예약된 다음 타가 있어도 연다. 회피는 연계가 아니라 라우터로 넘어가, 상태를 나가면서 예약이 사라진다.
         public bool IsCancelWindowOpen => _action.IsInRecovery(_elapsed);
+
+        public bool IsComboWindowOpen => _action.IsInComboWindow(_elapsed);
+
+        public bool HasQueuedFollowUp => _queuedAction != null;
+
+        public string ActionName => _action.name;
+
+        public float Elapsed => _elapsed;
+
+        // 이어지는 입력이 없을 때 복귀 클립까지 재생한 길이다.
+        public float Duration => _action.Duration + _action.ReturnDuration;
 
         /// <summary>
         /// 연계 구간 안에서 <paramref name="pressed"/>를 눌렀을 때 이어질 액션을 고른다.

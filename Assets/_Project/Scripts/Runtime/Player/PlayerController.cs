@@ -60,6 +60,8 @@ namespace GodOfWar.Player
         public float MovementYaw => _cameraLook.Yaw;
         /// <summary>상태가 생성될 때 자신의 진입 트리거를 선언하는 액션 라우터.</summary>
         public ActionRouter Router => _router;
+        /// <summary>현재 상태. 첫 상태에 진입하기 전에는 null이다.</summary>
+        public IState CurrentState => _machine?.CurrentState;
 
         public T Get<T>() where T : class, IState
         {

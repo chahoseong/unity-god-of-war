@@ -14,6 +14,7 @@ namespace GodOfWar.Player.States
         private Quaternion _rotation;
 
         public float Elapsed { get; private set; }
+        public float Duration => _rootMotion.Duration;
         public bool IsFinished => Elapsed >= _rootMotion.Duration;
 
         /// <summary>
