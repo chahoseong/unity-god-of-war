@@ -21,8 +21,14 @@ namespace GodOfWar.Player
         private static readonly int MoveZHash = Animator.StringToHash("MoveZ");
         private static readonly int FullBodyTagHash = Animator.StringToHash("FullBody");
 
+        private static readonly int GuardTagHash = Animator.StringToHash("Guard");
+        private static readonly int GuardEndTagHash = Animator.StringToHash("GuardEnd");
+
         // 이동 중 검을 든 팔·손 자세를 덮어쓰는 레이어. 전신 클립(FullBody 태그) 재생 중에는 끈다.
         private static readonly string[] SwordPoseLayerNames = { "SwordArm", "SwordHand" };
+
+        // 이동하는 다리 위에 가드 자세를 덮어쓰는 상체 레이어. 전신 클립 재생 중에는 끈다.
+        private const string GuardLayerName = "Guard";
 
         [SerializeField] private LocomotionSettings _settings = new LocomotionSettings();
         [SerializeField] private DodgeSettings _dodgeSettings = new DodgeSettings();
@@ -50,6 +56,7 @@ namespace GodOfWar.Player
         private CharacterMotor _motor;
         private int[] _swordPoseLayers;
         private float[] _swordPoseWeights;
+        private int _guardLayer = -1;
 
         public LocomotionSettings Settings => _settings;
         public DodgeSettings DodgeSettings => _dodgeSettings;
@@ -62,6 +69,8 @@ namespace GodOfWar.Player
         public ActionRouter Router => _router;
         /// <summary>현재 상태. 첫 상태에 진입하기 전에는 null이다.</summary>
         public IState CurrentState => _machine?.CurrentState;
+        /// <summary>상체 가드 레이어의 인덱스. 가중치는 이 컴포넌트가 재생 중인 상태에 맞춰 관리한다.</summary>
+        public int GuardLayer => _guardLayer;
 
         public T Get<T>() where T : class, IState
         {
@@ -128,6 +137,7 @@ namespace GodOfWar.Player
             // 다른 컴포넌트의 Awake가 모두 끝난 뒤 첫 상태에 진입한다.
             // 애니메이터 레이어도 자식 Animator가 초기화된 뒤에 읽는다.
             FindSwordPoseLayers();
+            _guardLayer = FindLayer(GuardLayerName);
             _machine.ChangeState(Get<LocomotionState>());
             LogActionRoutes();
         }
@@ -149,7 +159,9 @@ namespace GodOfWar.Player
             _animator.SetFloat(MoveXHash, localVelocity.x, dampTime, Time.deltaTime);
             _animator.SetFloat(MoveZHash, localVelocity.z, dampTime, Time.deltaTime);
 
-            UpdateSwordPoseLayers(Time.deltaTime);
+            bool isFullBody = IsFullBodyPlaying();
+            UpdateSwordPoseLayers(isFullBody, Time.deltaTime);
+            UpdateGuardLayer(isFullBody, Time.deltaTime);
         }
 
         /// <summary>검 든 자세 레이어를 찾고, 애니메이터에 설정된 기본 가중치를 켜졌을 때의 가중치로 기억한다.</summary>
@@ -159,26 +171,38 @@ namespace GodOfWar.Player
             _swordPoseWeights = new float[SwordPoseLayerNames.Length];
             for (int i = 0; i < SwordPoseLayerNames.Length; i++)
             {
-                int layer = _animator.GetLayerIndex(SwordPoseLayerNames[i]);
-                if (layer < 0)
-                {
-                    throw new InvalidOperationException(
-                        $"'{_animator.name}' has no '{SwordPoseLayerNames[i]}' animator layer.");
-                }
-
+                int layer = FindLayer(SwordPoseLayerNames[i]);
                 _swordPoseLayers[i] = layer;
                 _swordPoseWeights[i] = _animator.GetLayerWeight(layer);
             }
         }
 
-        private void UpdateSwordPoseLayers(float deltaTime)
+        private int FindLayer(string layerName)
         {
-            // 크로스페이드 중에는 들어가는 상태를 기준으로 미리 끄거나 켠다.
-            AnimatorStateInfo state = _animator.IsInTransition(0)
-                ? _animator.GetNextAnimatorStateInfo(0)
-                : _animator.GetCurrentAnimatorStateInfo(0);
-            bool isFullBody = state.tagHash == FullBodyTagHash;
+            int layer = _animator.GetLayerIndex(layerName);
+            if (layer < 0)
+            {
+                throw new InvalidOperationException($"'{_animator.name}' has no '{layerName}' animator layer.");
+            }
 
+            return layer;
+        }
+
+        private bool IsFullBodyPlaying()
+        {
+            return GetIncomingStateInfo(0).tagHash == FullBodyTagHash;
+        }
+
+        // 크로스페이드 중에는 들어가는 상태를 기준으로 삼아 레이어를 미리 끄거나 켠다.
+        private AnimatorStateInfo GetIncomingStateInfo(int layer)
+        {
+            return _animator.IsInTransition(layer)
+                ? _animator.GetNextAnimatorStateInfo(layer)
+                : _animator.GetCurrentAnimatorStateInfo(layer);
+        }
+
+        private void UpdateSwordPoseLayers(bool isFullBody, float deltaTime)
+        {
             for (int i = 0; i < _swordPoseLayers.Length; i++)
             {
                 int layer = _swordPoseLayers[i];
@@ -186,6 +210,20 @@ namespace GodOfWar.Player
                 float step = _swordPoseWeights[i] / _swordPoseBlendDuration * deltaTime;
                 _animator.SetLayerWeight(layer, Mathf.MoveTowards(_animator.GetLayerWeight(layer), target, step));
             }
+        }
+
+        private void UpdateGuardLayer(bool isFullBody, float deltaTime)
+        {
+            // 가드를 내리는 클립은 끝까지 보여 주고, 끝난 뒤에는 마지막 포즈를 유지한 채 가중치만 내린다.
+            // 모션 없는 상태로 넘기면 Write Defaults 때문에 상체가 기본 포즈 쪽으로 끌려간다.
+            AnimatorStateInfo state = GetIncomingStateInfo(_guardLayer);
+            bool isRaised = state.tagHash == GuardTagHash
+                || (state.tagHash == GuardEndTagHash && state.normalizedTime < 1f);
+            float target = !isFullBody && isRaised ? 1f : 0f;
+
+            float step = deltaTime / _swordPoseBlendDuration;
+            _animator.SetLayerWeight(
+                _guardLayer, Mathf.MoveTowards(_animator.GetLayerWeight(_guardLayer), target, step));
         }
 
         // 캔슬 윈도우 선언을 빠뜨린 상태는 여기서 컴파일 에러가 난다 (ADR-004 3절).
