@@ -9,6 +9,8 @@ namespace GodOfWar.Tests.Player
 {
     public class ActionRouterTests
     {
+        private const float BufferDuration = 0.2f;
+
         private List<string> _log;
         private StateMachine _machine;
         private FakePlayerInput _input;
@@ -23,7 +25,7 @@ namespace GodOfWar.Tests.Player
             _log = new List<string>();
             _machine = new StateMachine();
             _input = new FakePlayerInput();
-            _router = new ActionRouter(_machine, _input);
+            _router = new ActionRouter(_machine, _input, BufferDuration);
             _current = new FakeActionState("Current", _log);
             _low = new FakeActionState("Low", _log);
             _high = new FakeActionState("High", _log);
@@ -103,6 +105,128 @@ namespace GodOfWar.Tests.Player
             _input.Raise(PlayerAction.LightAttack);
 
             Assert.That(_log, Is.EqualTo(new[] { "Current.Exit", "Current.Enter" }));
+        }
+
+        [Test]
+        public void Tick_WithBufferedPressAndCancelWindowOpened_EntersTarget()
+        {
+            _current.IsCancelWindowOpen = false;
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+            _input.Raise(PlayerAction.Dodge);
+
+            _current.IsCancelWindowOpen = true;
+            _router.Tick(0f);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_low));
+        }
+
+        // 연계 구간이 열리기 직전의 공격이 구간이 열리는 프레임에 다음 타로 이어지는 경우다.
+        [Test]
+        public void Tick_WithBufferedPressChainedByCurrentState_ConsumesBufferedPress()
+        {
+            int chainCount = 0;
+            _current.IsCancelWindowOpen = false;
+            _input.Raise(PlayerAction.LightAttack);
+
+            _current.Chain = _ =>
+            {
+                chainCount++;
+                return true;
+            };
+            _router.Tick(0f);
+            _router.Tick(0f);
+
+            Assert.That(chainCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Tick_AfterBufferDurationElapsed_KeepsCurrentState()
+        {
+            _current.IsCancelWindowOpen = false;
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+            _input.Raise(PlayerAction.Dodge);
+            _router.Tick(BufferDuration);
+
+            _current.IsCancelWindowOpen = true;
+            _router.Tick(0f);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_current));
+        }
+
+        [Test]
+        public void Tick_AfterFlush_KeepsCurrentState()
+        {
+            _current.IsCancelWindowOpen = false;
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+            _input.Raise(PlayerAction.Dodge);
+            _router.Flush();
+
+            _current.IsCancelWindowOpen = true;
+            _router.Tick(0f);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_current));
+        }
+
+        [Test]
+        public void Tick_WithNewerPressBuffered_EntersNewerTarget()
+        {
+            _current.IsCancelWindowOpen = false;
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+            _router.Declare(new ActionTrigger(PlayerAction.LightAttack, _high, () => true));
+            _input.Raise(PlayerAction.Dodge);
+            _input.Raise(PlayerAction.LightAttack);
+
+            _current.IsCancelWindowOpen = true;
+            _router.Tick(0f);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_high));
+        }
+
+        // 새 누름이 바로 처리되면, 그보다 먼저 보관된 누름이 뒤늦게 나가면 안 된다.
+        [Test]
+        public void Tick_AfterNewerPressHandledImmediately_KeepsCurrentState()
+        {
+            _current.IsCancelWindowOpen = false;
+            _current.Chain = e => e.Action == PlayerAction.LightAttack;
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+            _input.Raise(PlayerAction.Dodge);
+            _input.Raise(PlayerAction.LightAttack);
+
+            _current.IsCancelWindowOpen = true;
+            _router.Tick(0f);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_current));
+        }
+
+        // 버퍼는 타이밍만 관용한다. 캔슬 윈도우가 열려 있는데 시작 조건이 안 맞은 누름은 보관하지 않는다.
+        [Test]
+        public void Tick_AfterPressRejectedByConditionWithCancelWindowOpen_KeepsCurrentState()
+        {
+            bool canStart = false;
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => canStart));
+            _input.Raise(PlayerAction.Dodge);
+
+            canStart = true;
+            _router.Tick(0f);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_current));
+        }
+
+        // 보관된 누름은 받을 수 있게 된 순간 한 번 판정되고, 거절되면 그 결과로 끝난다.
+        [Test]
+        public void Tick_AfterBufferedPressRejectedByConditionWithCancelWindowOpen_KeepsCurrentState()
+        {
+            bool canStart = false;
+            _current.IsCancelWindowOpen = false;
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => canStart));
+            _input.Raise(PlayerAction.Dodge);
+            _current.IsCancelWindowOpen = true;
+            _router.Tick(0f);
+
+            canStart = true;
+            _router.Tick(0f);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_current));
         }
 
         [Test]

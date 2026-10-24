@@ -36,6 +36,10 @@ namespace GodOfWar.Player
         [Tooltip("검 든 자세 레이어가 꺼지고 켜지는 데 걸리는 시간(초).")]
         [SerializeField, Min(0.01f)] private float _swordPoseBlendDuration = 0.1f;
 
+        [Tooltip("캔슬할 수 없는 동안 누른 버튼을 기억했다가 받을 수 있게 되면 실행하는 시간(초). 0이면 선입력을 쓰지 않는다. "
+                 + "시작할 때 읽으므로 플레이 중 바꾼 값은 다음 실행부터 적용된다.")]
+        [SerializeField, Min(0f)] private float _inputBufferDuration = 0.2f;
+
         [Header("Debug")]
         [Tooltip("켜면 시작할 때 액션 라우터가 수집한 라우팅 테이블을 콘솔에 출력한다. 에디터와 개발 빌드에서만 동작한다.")]
         [SerializeField] private bool _logActionRoutes;
@@ -109,7 +113,7 @@ namespace GodOfWar.Player
             _motor = GetComponent<CharacterMotor>();
             _machine = new StateMachine();
             // 상태가 생성자에서 진입 트리거를 선언하므로 상태보다 먼저 만든다.
-            _router = new ActionRouter(_machine, GetRequiredComponent<IPlayerInput>());
+            _router = new ActionRouter(_machine, GetRequiredComponent<IPlayerInput>(), _inputBufferDuration);
             Register(new LocomotionState(this, _machine));
             Register(new SprintState(this, _machine));
             Register(new QuickStepState(this, _machine));
@@ -135,6 +139,8 @@ namespace GodOfWar.Player
         private void Update()
         {
             _machine.Tick(Time.deltaTime);
+            // 이번 프레임에 열린 캔슬 윈도우나 끝난 행동에 선입력이 같은 프레임에 나가도록 상태 갱신 뒤에 판정한다.
+            _router.Tick(Time.deltaTime);
 
             Vector3 localVelocity = transform.InverseTransformDirection(_motor.HorizontalVelocity);
             float dampTime = _settings.AnimatorDampTime;
