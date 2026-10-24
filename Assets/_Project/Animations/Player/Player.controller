@@ -200,7 +200,7 @@ AnimatorState:
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
   m_Motion: {fileID: -1905609392677946133, guid: f0ff99e8eab4a414f9d77bc4eec20c58, type: 3}
-  m_Tag: Guard
+  m_Tag: GuardBegin
   m_SpeedParameter: 
   m_MirrorParameter: 
   m_CycleOffsetParameter: 

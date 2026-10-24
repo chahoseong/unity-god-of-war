@@ -6,6 +6,7 @@ using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
 using GodOfWar.Player.States;
 using UnityEngine;
+using UnityEngine.Animations.Rigging;
 
 namespace GodOfWar.Player
 {
@@ -21,6 +22,7 @@ namespace GodOfWar.Player
         private static readonly int MoveZHash = Animator.StringToHash("MoveZ");
         private static readonly int FullBodyTagHash = Animator.StringToHash("FullBody");
 
+        private static readonly int GuardBeginTagHash = Animator.StringToHash("GuardBegin");
         private static readonly int GuardTagHash = Animator.StringToHash("Guard");
         private static readonly int GuardEndTagHash = Animator.StringToHash("GuardEnd");
 
@@ -39,6 +41,9 @@ namespace GodOfWar.Player
         [SerializeField] private CameraLook _cameraLook;
 
         [SerializeField] private Animator _animator;
+
+        [Tooltip("가드 중 걷기 클립의 골반 흔들림이 상체로 번지지 않게 척추를 고정하는 리그. 가중치는 Guard 레이어에 맞춰 관리한다.")]
+        [SerializeField] private Rig _guardRig;
 
         [Tooltip("검 든 자세 레이어가 꺼지고 켜지는 데 걸리는 시간(초).")]
         [SerializeField, Min(0.01f)] private float _swordPoseBlendDuration = 0.1f;
@@ -108,6 +113,11 @@ namespace GodOfWar.Player
             if (_animator == null)
             {
                 throw new InvalidOperationException($"'{name}' has no Animator assigned.");
+            }
+
+            if (_guardRig == null)
+            {
+                throw new InvalidOperationException($"'{name}' has no guard Rig assigned.");
             }
 
             if (_dodgeSettings.QuickStep == null || _dodgeSettings.DodgeRoll == null)
@@ -220,13 +230,22 @@ namespace GodOfWar.Player
             // 가드를 내리는 클립은 끝까지 보여 주고, 끝난 뒤에는 마지막 포즈를 유지한 채 가중치만 내린다.
             // 모션 없는 상태로 넘기면 Write Defaults 때문에 상체가 기본 포즈 쪽으로 끌려간다.
             AnimatorStateInfo state = GetIncomingStateInfo(_guardLayer);
-            bool isRaised = state.tagHash == GuardTagHash
+            float progress = Mathf.Clamp01(state.normalizedTime);
+            bool isRaised = state.tagHash == GuardBeginTagHash
+                || state.tagHash == GuardTagHash
                 || (state.tagHash == GuardEndTagHash && state.normalizedTime < 1f);
             float target = !isFullBody && isRaised ? 1f : 0f;
 
             float step = deltaTime / _swordPoseBlendDuration;
-            _animator.SetLayerWeight(
-                _guardLayer, Mathf.MoveTowards(_animator.GetLayerWeight(_guardLayer), target, step));
+            float layerWeight = Mathf.MoveTowards(_animator.GetLayerWeight(_guardLayer), target, step);
+            _animator.SetLayerWeight(_guardLayer, layerWeight);
+
+            // 척추 고정 기준은 Loop 자세다. 몸을 트는 Begin·End 동안은 진행도만큼만 고정해 클립의 회전을 살린다.
+            float stabilize = state.tagHash == GuardBeginTagHash ? progress
+                : state.tagHash == GuardTagHash ? 1f
+                : state.tagHash == GuardEndTagHash ? 1f - progress
+                : 0f;
+            _guardRig.weight = stabilize * layerWeight;
         }
 
         // 캔슬 윈도우 선언을 빠뜨린 상태는 여기서 컴파일 에러가 난다 (ADR-004 3절).

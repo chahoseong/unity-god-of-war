@@ -3,7 +3,8 @@
     "rootNamespace": "GodOfWar",
     "references": [
         "Unity.InputSystem",
-        "Unity.Cinemachine"
+        "Unity.Cinemachine",
+        "Unity.Animation.Rigging"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
