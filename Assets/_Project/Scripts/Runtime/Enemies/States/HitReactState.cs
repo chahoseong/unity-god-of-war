@@ -29,12 +29,12 @@ namespace GodOfWar.Enemies.States
         private bool _hasMovement;
         private float _elapsed;
 
-        public HitReactState(TrainingDummy owner, StateMachine machine)
+        public HitReactState(ITrainingDummyStateContext context)
         {
-            _machine = machine;
-            _locator = owner;
-            _motor = owner.Motor;
-            _animator = owner.Animator;
+            _machine = context.Machine;
+            _locator = context.States;
+            _motor = context.Motor;
+            _animator = context.Animator;
         }
 
         /// <summary>다음 진입에서 재생할 반응을 정한다. 전이 직전에 호출한다.</summary>

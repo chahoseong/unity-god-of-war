@@ -12,9 +12,9 @@ namespace GodOfWar.Enemies.States
     {
         private readonly CharacterMotor _motor;
 
-        public IdleState(TrainingDummy owner)
+        public IdleState(ITrainingDummyStateContext context)
         {
-            _motor = owner.Motor;
+            _motor = context.Motor;
         }
 
         public void Enter()
