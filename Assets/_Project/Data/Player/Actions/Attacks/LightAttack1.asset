@@ -21,6 +21,9 @@ MonoBehaviour:
   _recoveryStart: 0.56666666
   _comboWindowStart: 0.33333334
   _comboWindowEnd: 1.0000001
+  _hitWindowStart: 0.33333334
+  _hitWindowEnd: 0.53333336
+  _hitStrength: 0
   _movement: {fileID: 11400000, guid: 1b5c8f1db6710e345a374d7193e5531d, type: 2}
   _returnMovement: {fileID: 11400000, guid: 98c1fbc9aa7848a4da9c6c75f0225fc3, type: 2}
   _next: {fileID: 11400000, guid: 9c85831e851dd094cbc767cb5c2fa9fe, type: 2}

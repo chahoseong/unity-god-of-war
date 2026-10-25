@@ -39,6 +39,15 @@ namespace GodOfWar.Combat
         [Tooltip("후속 입력을 받는 마지막 시각. 공격 클립 길이를 넘겨 복귀 구간까지 둘 수 있다.")]
         [SerializeField, Min(0f)] private float _comboWindowEnd;
 
+        [Tooltip("무기 판정이 열리는 시각. 조준이 끝난 뒤여야 한다.")]
+        [SerializeField, Min(0f)] private float _hitWindowStart;
+
+        [Tooltip("무기 판정이 닫히는 시각. 후딜레이 캔슬 구간이 열리기 전이어야 한다.")]
+        [SerializeField, Min(0f)] private float _hitWindowEnd;
+
+        [Tooltip("이 공격에 맞은 대상에게 전하는 타격 세기. 어떤 반응을 낼지는 피격자가 정한다.")]
+        [SerializeField] private HitStrength _hitStrength;
+
         [Tooltip("공격 구간 동안의 전진 이동.")]
         [SerializeField] private BakedRootMotion _movement;
 
@@ -57,6 +66,9 @@ namespace GodOfWar.Combat
         public float RecoveryStart => _recoveryStart;
         public float ComboWindowStart => _comboWindowStart;
         public float ComboWindowEnd => _comboWindowEnd;
+        public float HitWindowStart => _hitWindowStart;
+        public float HitWindowEnd => _hitWindowEnd;
+        public HitStrength HitStrength => _hitStrength;
         public BakedRootMotion Movement => _movement;
         public BakedRootMotion ReturnMovement => _returnMovement;
         public AttackAction Next => _next;
@@ -71,6 +83,12 @@ namespace GodOfWar.Combat
         public bool IsInComboWindow(float elapsed)
         {
             return elapsed >= _comboWindowStart && elapsed <= _comboWindowEnd;
+        }
+
+        /// <summary><paramref name="elapsed"/>가 무기 판정 구간 안인지 판정한다. 시작 시각은 포함하고 끝 시각은 포함하지 않는다.</summary>
+        public bool IsInHitWindow(float elapsed)
+        {
+            return elapsed >= _hitWindowStart && elapsed < _hitWindowEnd;
         }
 
         /// <summary><paramref name="elapsed"/>가 후딜레이 캔슬 구간 안인지 판정한다. 시작 시각을 포함한다.</summary>

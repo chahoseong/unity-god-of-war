@@ -71,6 +71,26 @@ namespace GodOfWar.Tests.Combat
             Assert.That(action.RecoveryStart, Is.InRange(action.TrackingEnd, action.Duration));
         }
 
+        // 조준이 끝나기 전에 열리면 몸을 돌리는 동안 옆 대상을 벤다. 구간이 뒤집히면 판정이 조용히 사라진다.
+        [TestCaseSource(nameof(Actions))]
+        public void HitWindowStart_ForAction_IsBetweenTrackingEndAndHitWindowEnd(string path)
+        {
+            var action = AssetDatabase.LoadAssetAtPath<AttackAction>(path);
+
+            Assert.That(action.HitWindowStart, Is.InRange(action.TrackingEnd, action.HitWindowEnd));
+        }
+
+        // 후딜레이 캔슬이 열린 뒤에도 판정이 남으면 회피로 캔슬하는 동안 칼이 대상을 벤다.
+        // 시작과 끝이 같으면 판정이 한 번도 열리지 않으므로 시작보다 커야 한다.
+        [TestCaseSource(nameof(Actions))]
+        public void HitWindowEnd_ForAction_IsAfterHitWindowStartAndAtOrBeforeRecoveryStart(string path)
+        {
+            var action = AssetDatabase.LoadAssetAtPath<AttackAction>(path);
+
+            Assert.That(action.HitWindowEnd,
+                Is.GreaterThan(action.HitWindowStart).And.AtMost(action.RecoveryStart));
+        }
+
         private static Motion FindStateMotion(string stateName)
         {
             var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
