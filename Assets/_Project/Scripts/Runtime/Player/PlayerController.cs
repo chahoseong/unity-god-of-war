@@ -73,8 +73,8 @@ namespace GodOfWar.Player
         public GuardSettings GuardSettings => _guardSettings;
         /// <summary>상태가 자기 클립으로 크로스페이드할 때 쓰는 애니메이터.</summary>
         public Animator Animator => _animator;
-        /// <summary>이동 입력의 기준 Yaw(도).</summary>
-        public float MovementYaw => _cameraLook.Yaw;
+        /// <summary>이동 입력의 기준 Yaw(도). 락온 중에는 카메라 보간과 무관하게 대상을 향한다.</summary>
+        public float MovementYaw => _cameraLook.ReferenceYaw;
         /// <summary>상태가 생성될 때 자신의 진입 트리거를 선언하는 액션 라우터.</summary>
         public ActionRouter Router => _router;
         /// <summary>현재 상태. 첫 상태에 진입하기 전에는 null이다.</summary>

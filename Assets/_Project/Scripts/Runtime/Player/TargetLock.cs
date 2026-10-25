@@ -19,7 +19,7 @@ namespace GodOfWar.Player
     {
         [SerializeField] private LockOnSettings _settings = new LockOnSettings();
 
-        [Tooltip("후보의 시야각 기준이 되는 카메라 피벗.")]
+        [Tooltip("후보의 시야각 기준이자, 락온 대상을 바라보게 할 카메라 피벗.")]
         [SerializeField] private CameraLook _cameraLook;
 
         private IPlayerInput _input;
@@ -207,6 +207,15 @@ namespace GodOfWar.Player
             }
 
             Current = target;
+            if (target != null)
+            {
+                _cameraLook.SetLookTarget(target.AimPoint);
+            }
+            else
+            {
+                _cameraLook.ClearLookTarget();
+            }
+
             TargetChanged?.Invoke(target);
         }
 
