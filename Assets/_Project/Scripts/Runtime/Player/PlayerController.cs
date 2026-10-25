@@ -32,6 +32,9 @@ namespace GodOfWar.Player
         // 이동하는 다리 위에 가드 자세를 덮어쓰는 상체 레이어. 전신 클립 재생 중에는 끈다.
         private const string GuardLayerName = "Guard";
 
+        // 상태 전이와 무관해 라우터가 다루지 않는 버튼. LockOn은 TargetLock이 직접 구독한다.
+        private static readonly PlayerAction[] NonRoutedActions = { PlayerAction.LockOn };
+
         [SerializeField] private LocomotionSettings _settings = new LocomotionSettings();
         [SerializeField] private DodgeSettings _dodgeSettings = new DodgeSettings();
         [SerializeField] private AttackSettings _attackSettings = new AttackSettings();
@@ -136,7 +139,8 @@ namespace GodOfWar.Player
             _motor = GetComponent<CharacterMotor>();
             _machine = new StateMachine();
             // 상태가 생성자에서 진입 트리거를 선언하므로 상태보다 먼저 만든다.
-            _router = new ActionRouter(_machine, GetRequiredComponent<IPlayerInput>(), _inputBufferDuration);
+            _router = new ActionRouter(
+                _machine, GetRequiredComponent<IPlayerInput>(), _inputBufferDuration, NonRoutedActions);
             Register(new LocomotionState(this, _machine));
             Register(new SprintState(this, _machine));
             Register(new QuickStepState(this, _machine));

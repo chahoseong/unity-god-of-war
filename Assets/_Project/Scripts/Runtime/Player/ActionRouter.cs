@@ -12,12 +12,14 @@ namespace GodOfWar.Player
     /// 현재 상태의 내부 연계 → 캔슬 윈도우 → 트리거 순으로 판정한다.
     /// 캔슬 윈도우가 닫혀 있어 거절된 누름은 선입력으로 잠시 보관했다가, <see cref="Tick"/>에서 다시 판정한다.
     /// 이동 스틱 같은 축 입력과 피격 등 강제 전이는 다루지 않는다.
+    /// 락온처럼 상태 전이와 무관한 버튼은 제외 목록으로 받아 판정·보관하지 않는다.
     /// </summary>
     public sealed class ActionRouter : IDisposable
     {
         private readonly StateMachine _machine;
         private readonly IPlayerInput _input;
         private readonly float _bufferDuration;
+        private readonly HashSet<PlayerAction> _ignoredActions;
 
         // (입력, 단계)별 트리거 목록. 우선순위 내림차순으로 유지한다.
         private readonly Dictionary<(PlayerAction, ActionPhase), List<ActionTrigger>> _triggers =
@@ -29,11 +31,17 @@ namespace GodOfWar.Player
         private float _bufferRemaining;
 
         /// <param name="bufferDuration">선입력을 보관하는 시간(초). 0이면 보관하지 않는다.</param>
-        public ActionRouter(StateMachine machine, IPlayerInput input, float bufferDuration)
+        /// <param name="ignoredActions">
+        /// 상태 전이와 무관해 라우팅하지 않는 버튼. 이 버튼의 누름은 보관 중인 선입력을 지우지도, 보관되지도 않는다.
+        /// </param>
+        public ActionRouter(
+            StateMachine machine, IPlayerInput input, float bufferDuration, IEnumerable<PlayerAction> ignoredActions)
         {
             _machine = machine ?? throw new ArgumentNullException(nameof(machine));
             _input = input ?? throw new ArgumentNullException(nameof(input));
             _bufferDuration = bufferDuration;
+            _ignoredActions = new HashSet<PlayerAction>(
+                ignoredActions ?? throw new ArgumentNullException(nameof(ignoredActions)));
             _input.ActionTriggered += OnActionTriggered;
         }
 
@@ -74,6 +82,11 @@ namespace GodOfWar.Player
         public string Describe()
         {
             var builder = new StringBuilder($"[{nameof(ActionRouter)}] Routing table");
+            if (_ignoredActions.Count > 0)
+            {
+                builder.Append($"\n  Ignored: {string.Join(", ", _ignoredActions)}");
+            }
+
             foreach (KeyValuePair<(PlayerAction, ActionPhase), List<ActionTrigger>> entry in _triggers)
             {
                 foreach (ActionTrigger trigger in entry.Value)
@@ -124,8 +137,8 @@ namespace GodOfWar.Player
 
         private void OnActionTriggered(PlayerActionEvent e)
         {
-            // 첫 상태에 진입하기 전의 입력은 받을 상태가 없다.
-            if (_machine.CurrentState == null)
+            // 제외된 버튼은 다른 컴포넌트가 처리한다. 첫 상태에 진입하기 전의 입력은 받을 상태가 없다.
+            if (_ignoredActions.Contains(e.Action) || _machine.CurrentState == null)
             {
                 return;
             }

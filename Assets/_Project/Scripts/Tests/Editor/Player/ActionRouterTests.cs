@@ -25,7 +25,7 @@ namespace GodOfWar.Tests.Player
             _log = new List<string>();
             _machine = new StateMachine();
             _input = new FakePlayerInput();
-            _router = new ActionRouter(_machine, _input, BufferDuration);
+            _router = new ActionRouter(_machine, _input, BufferDuration, new[] { PlayerAction.LockOn });
             _current = new FakeActionState("Current", _log);
             _low = new FakeActionState("Low", _log);
             _high = new FakeActionState("High", _log);
@@ -283,6 +283,29 @@ namespace GodOfWar.Tests.Player
             _input.Raise(PlayerAction.Guard, ActionPhase.Held);
 
             Assert.That((_router.HasBufferedInput, _router.BufferedAction), Is.EqualTo((true, PlayerAction.Dodge)));
+        }
+
+        // 공격 중 회피를 선입력한 뒤 락온을 눌러도 회피가 사라지면 안 된다.
+        [Test]
+        public void ActionTriggered_WithIgnoredActionPressed_KeepsBufferedInput()
+        {
+            _current.IsCancelWindowOpen = false;
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+            _input.Raise(PlayerAction.Dodge);
+
+            _input.Raise(PlayerAction.LockOn);
+
+            Assert.That((_router.HasBufferedInput, _router.BufferedAction), Is.EqualTo((true, PlayerAction.Dodge)));
+        }
+
+        [Test]
+        public void ActionTriggered_WithIgnoredActionPressedAndCancelWindowClosed_DoesNotBuffer()
+        {
+            _current.IsCancelWindowOpen = false;
+
+            _input.Raise(PlayerAction.LockOn);
+
+            Assert.That(_router.HasBufferedInput, Is.False);
         }
 
         [Test]

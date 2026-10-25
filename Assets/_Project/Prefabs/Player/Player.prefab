@@ -14,7 +14,8 @@ GameObject:
   - component: {fileID: 1799585692967938933}
   - component: {fileID: 1486200451303296691}
   - component: {fileID: 4861412650051217178}
-  m_Layer: 0
+  - component: {fileID: 8849128568346903225}
+  m_Layer: 8
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -146,6 +147,27 @@ MonoBehaviour:
   _visible: 0
   _toggleKey: 94
   _timeScaleKey: 95
+--- !u!114 &8849128568346903225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 168932584551449046}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb91f86656ff5ed48b84cd24ad45e547, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Player.TargetLock
+  _settings:
+    _acquireDistance: 15
+    _viewHalfAngle: 60
+    _distanceWeight: 1
+    _occlusionMask:
+      serializedVersion: 2
+      m_Bits: 1
+    _keepDistance: 20
+  _cameraLook: {fileID: 3435074741861571896}
 --- !u!1 &3286401700345617574
 GameObject:
   m_ObjectHideFlags: 0
