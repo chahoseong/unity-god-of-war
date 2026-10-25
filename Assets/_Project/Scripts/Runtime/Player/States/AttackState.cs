@@ -56,6 +56,8 @@ namespace GodOfWar.Player.States
             _motor = owner.GetRequiredComponent<CharacterMotor>();
             _animator = owner.Animator;
             _settings = owner.AttackSettings;
+            RequireEntry(PlayerAction.LightAttack);
+            RequireEntry(PlayerAction.HeavyAttack);
             // 칼은 손 본 아래에 있어 루트가 아니라 자식에서 찾는다.
             _hitbox = owner.GetRequiredComponentInChildren<Hitbox>();
 
@@ -98,14 +100,16 @@ namespace GodOfWar.Player.States
         /// <summary><paramref name="input"/> 버튼의 1타로 다음 진입을 준비한다. 진입 트리거가 전이 직전에 호출한다.</summary>
         private void Prepare(PlayerAction input)
         {
-            AttackAction entry = _settings.GetEntry(input);
-            if (entry == null)
-            {
-                throw new InvalidOperationException(
-                    $"'{_owner.name}' has no entry attack for {input}. Assign it in Attack Settings.");
-            }
+            // 1타가 비어 있으면 생성 시점에 이미 실패했다.
+            SetPending(_settings.GetEntry(input), input);
+        }
 
-            SetPending(entry, input);
+        private void RequireEntry(PlayerAction input)
+        {
+            if (_settings.GetEntry(input) == null)
+            {
+                throw new InvalidOperationException($"'{_settings.name}' has no entry attack for {input}.");
+            }
         }
 
         public void Enter()

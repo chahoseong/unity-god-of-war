@@ -1,3 +1,4 @@
+using System;
 using GodOfWar.Characters;
 using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
@@ -47,6 +48,11 @@ namespace GodOfWar.Player.States
             _motor = owner.GetRequiredComponent<CharacterMotor>();
             _animator = owner.Animator;
             _settings = owner.DodgeSettings;
+            if (_settings.QuickStep == null)
+            {
+                throw new InvalidOperationException(
+                    $"'{_settings.name}' has no {nameof(DodgeSettings.QuickStep)} action assigned.");
+            }
 
             // 정지 중(이동 입력이 MinInput 미만)에는 회피하지 않는다.
             owner.Router.Declare(new ActionTrigger(

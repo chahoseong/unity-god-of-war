@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ca951c00dccfa44c9eed0e9d53396bc, type: 3}
+  m_Name: Attack
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Player.AttackSettings
+  _lightEntry: {fileID: 11400000, guid: 504e395b0bb59344ab83442242b3d408, type: 2}
+  _heavyEntry: {fileID: 11400000, guid: 733231d6c5adf33418c254ecaa7446e6, type: 2}
+  _minInput: 0.1
+  _turnSpeed: 720

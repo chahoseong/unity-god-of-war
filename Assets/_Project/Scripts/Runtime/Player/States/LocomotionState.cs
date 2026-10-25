@@ -28,7 +28,7 @@ namespace GodOfWar.Player.States
             _locator = owner;
             _input = owner.GetRequiredComponent<IPlayerInput>();
             _motor = owner.GetRequiredComponent<CharacterMotor>();
-            _settings = owner.Settings;
+            _settings = owner.LocomotionSettings;
         }
 
         public bool IsCancelWindowOpen => true;

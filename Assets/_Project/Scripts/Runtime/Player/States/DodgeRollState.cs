@@ -1,3 +1,4 @@
+using System;
 using GodOfWar.Characters;
 using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
@@ -47,6 +48,11 @@ namespace GodOfWar.Player.States
             _motor = owner.GetRequiredComponent<CharacterMotor>();
             _animator = owner.Animator;
             _settings = owner.DodgeSettings;
+            if (_settings.DodgeRoll == null)
+            {
+                throw new InvalidOperationException(
+                    $"'{_settings.name}' has no {nameof(DodgeSettings.DodgeRoll)} action assigned.");
+            }
         }
 
         public bool IsCancelWindowOpen => false;

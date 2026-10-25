@@ -103,29 +103,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 738149e3f461cac4a845fb3f2fb667ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Player.PlayerController
-  _settings:
-    _runSpeed: 2.5
-    _sprintSpeed: 7
-    _acceleration: 20
-    _deceleration: 25
-    _turnSpeed: 720
-    _sprintTurnSpeed: 540
-    _sprintMaxAngle: 50
-    _sprintMinInput: 0.5
-    _animatorDampTime: 0.1
-  _dodgeSettings:
-    _minInput: 0.1
-    _crossFadeDuration: 0.1
-    _quickStep: {fileID: 11400000, guid: 67d43783d09cf564f805db9270b767c5, type: 2}
-    _dodgeRoll: {fileID: 11400000, guid: d7d65018efcca3741847a8c3f92697d4, type: 2}
-  _attackSettings:
-    _lightEntry: {fileID: 11400000, guid: 504e395b0bb59344ab83442242b3d408, type: 2}
-    _heavyEntry: {fileID: 11400000, guid: 733231d6c5adf33418c254ecaa7446e6, type: 2}
-    _minInput: 0.1
-    _turnSpeed: 720
-  _guardSettings:
-    _walkSpeed: 1.4
-    _crossFadeDuration: 0.1
+  _locomotionSettings: {fileID: 11400000, guid: 6e1e2fb2d0a3e7c42b719e9e9a6865f8, type: 2}
+  _dodgeSettings: {fileID: 11400000, guid: 8163bf57e1ec4e14ba77d504cb3d87e9, type: 2}
+  _attackSettings: {fileID: 11400000, guid: 143526dc6f15f0b4da6d24c322689ee5, type: 2}
+  _guardSettings: {fileID: 11400000, guid: 6051f296a3f6e1448b9c2001bf9df9e4, type: 2}
   _cameraLook: {fileID: 3435074741861571896}
   _animator: {fileID: 7842684084486267006}
   _guardRig: {fileID: 5516138986892443814}

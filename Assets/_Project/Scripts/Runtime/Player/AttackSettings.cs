@@ -8,8 +8,8 @@ namespace GodOfWar.Player
     /// <summary>
     /// 약공격·강공격 콤보가 공유하는 튜닝 값과 버튼별 1타 참조.
     /// </summary>
-    [Serializable]
-    public sealed class AttackSettings
+    [CreateAssetMenu(menuName = "GodOfWar/Player/Attack Settings", fileName = "AttackSettings")]
+    public sealed class AttackSettings : ScriptableObject
     {
         [Tooltip("약공격 버튼으로 시작하는 콤보의 1타.")]
         [SerializeField] private AttackAction _lightEntry;

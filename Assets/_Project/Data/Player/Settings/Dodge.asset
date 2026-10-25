@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f164aaed038b2a4a9aa34174a2ce718, type: 3}
+  m_Name: Dodge
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Player.DodgeSettings
+  _minInput: 0.1
+  _crossFadeDuration: 0.1
+  _quickStep: {fileID: 11400000, guid: 67d43783d09cf564f805db9270b767c5, type: 2}
+  _dodgeRoll: {fileID: 11400000, guid: d7d65018efcca3741847a8c3f92697d4, type: 2}

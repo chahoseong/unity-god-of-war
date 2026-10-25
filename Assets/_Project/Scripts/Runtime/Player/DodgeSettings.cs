@@ -1,4 +1,3 @@
-using System;
 using GodOfWar.Combat;
 using UnityEngine;
 
@@ -7,8 +6,8 @@ namespace GodOfWar.Player
     /// <summary>
     /// 스텝 회피와 구르기 회피가 공유하는 튜닝 값과 회피 액션 데이터 참조.
     /// </summary>
-    [Serializable]
-    public sealed class DodgeSettings
+    [CreateAssetMenu(menuName = "GodOfWar/Player/Dodge Settings", fileName = "DodgeSettings")]
+    public sealed class DodgeSettings : ScriptableObject
     {
         [Tooltip("회피를 허용하는 최소 이동 입력 크기. 이보다 작으면 정지로 보고 회피하지 않는다.")]
         [SerializeField, Range(0f, 1f)] private float _minInput = 0.1f;

@@ -36,10 +36,10 @@ namespace GodOfWar.Player
         // 상태 전이와 무관해 라우터가 다루지 않는 버튼. LockOn은 TargetLock이 직접 구독한다.
         private static readonly PlayerAction[] NonRoutedActions = { PlayerAction.LockOn };
 
-        [SerializeField] private LocomotionSettings _settings = new LocomotionSettings();
-        [SerializeField] private DodgeSettings _dodgeSettings = new DodgeSettings();
-        [SerializeField] private AttackSettings _attackSettings = new AttackSettings();
-        [SerializeField] private GuardSettings _guardSettings = new GuardSettings();
+        [SerializeField] private LocomotionSettings _locomotionSettings;
+        [SerializeField] private DodgeSettings _dodgeSettings;
+        [SerializeField] private AttackSettings _attackSettings;
+        [SerializeField] private GuardSettings _guardSettings;
 
         [Tooltip("이동 입력의 기준 방향을 제공하는 카메라 피벗. 이 피벗의 Yaw를 기준으로 이동한다.")]
         [SerializeField] private CameraLook _cameraLook;
@@ -68,7 +68,7 @@ namespace GodOfWar.Player
         private float[] _swordPoseWeights;
         private int _guardLayer = -1;
 
-        public LocomotionSettings Settings => _settings;
+        public LocomotionSettings LocomotionSettings => _locomotionSettings;
         public DodgeSettings DodgeSettings => _dodgeSettings;
         public AttackSettings AttackSettings => _attackSettings;
         public GuardSettings GuardSettings => _guardSettings;
@@ -140,18 +140,11 @@ namespace GodOfWar.Player
                 throw new InvalidOperationException($"'{name}' has no guard Rig assigned.");
             }
 
-            if (_dodgeSettings.QuickStep == null || _dodgeSettings.DodgeRoll == null)
-            {
-                throw new InvalidOperationException(
-                    $"'{name}' has no dodge actions assigned. Assign QuickStep and DodgeRoll in Dodge Settings.");
-            }
-
-            if (_attackSettings.GetEntry(PlayerAction.LightAttack) == null
-                || _attackSettings.GetEntry(PlayerAction.HeavyAttack) == null)
-            {
-                throw new InvalidOperationException(
-                    $"'{name}' has no entry attacks assigned. Assign both entries in Attack Settings.");
-            }
+            // 설정 내용은 그 값을 쓰는 상태가 생성 시점에 검사한다.
+            RequireAssigned(_locomotionSettings);
+            RequireAssigned(_dodgeSettings);
+            RequireAssigned(_attackSettings);
+            RequireAssigned(_guardSettings);
 
             _motor = GetComponent<CharacterMotor>();
             _machine = new StateMachine();
@@ -189,13 +182,21 @@ namespace GodOfWar.Player
             _router.Tick(Time.deltaTime);
 
             Vector3 localVelocity = transform.InverseTransformDirection(_motor.HorizontalVelocity);
-            float dampTime = _settings.AnimatorDampTime;
+            float dampTime = _locomotionSettings.AnimatorDampTime;
             _animator.SetFloat(MoveXHash, localVelocity.x, dampTime, Time.deltaTime);
             _animator.SetFloat(MoveZHash, localVelocity.z, dampTime, Time.deltaTime);
 
             bool isFullBody = IsFullBodyPlaying();
             UpdateSwordPoseLayers(isFullBody, Time.deltaTime);
             UpdateGuardLayer(isFullBody, Time.deltaTime);
+        }
+
+        private void RequireAssigned<T>(T settings) where T : ScriptableObject
+        {
+            if (settings == null)
+            {
+                throw new InvalidOperationException($"'{name}' has no {typeof(T).Name} assigned.");
+            }
         }
 
         /// <summary>검 든 자세 레이어를 찾고, 애니메이터에 설정된 기본 가중치를 켜졌을 때의 가중치로 기억한다.</summary>

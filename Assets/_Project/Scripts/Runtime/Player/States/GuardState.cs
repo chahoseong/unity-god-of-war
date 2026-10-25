@@ -38,7 +38,7 @@ namespace GodOfWar.Player.States
             _input = owner.GetRequiredComponent<IPlayerInput>();
             _motor = owner.GetRequiredComponent<CharacterMotor>();
             _animator = owner.Animator;
-            _locomotionSettings = owner.Settings;
+            _locomotionSettings = owner.LocomotionSettings;
             _settings = owner.GuardSettings;
 
             // Held는 눌려 있다는 사실 자체이므로 시작 조건이 없다. 누른 프레임에도 Held가 오므로 Pressed는 선언하지 않는다.

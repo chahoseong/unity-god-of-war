@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace GodOfWar.Player
@@ -7,8 +6,8 @@ namespace GodOfWar.Player
     /// 플레이어 이동 상태들이 공유하는 튜닝 값.
     /// 기본값은 Synty 로코모션 클립의 이동 속도에 맞춰 발 미끄러짐을 줄인 값이다.
     /// </summary>
-    [Serializable]
-    public sealed class LocomotionSettings
+    [CreateAssetMenu(menuName = "GodOfWar/Player/Locomotion Settings", fileName = "LocomotionSettings")]
+    public sealed class LocomotionSettings : ScriptableObject
     {
         [Header("Speed (m/s)")]
         [Tooltip("이동 입력 크기 1일 때의 스트레이프 속도. 입력 크기에 비례해 걷기~달리기로 블렌드된다.")]
@@ -31,16 +30,6 @@ namespace GodOfWar.Player
 
         [Header("Animator")]
         [SerializeField] private float _animatorDampTime = 0.1f;
-
-        public LocomotionSettings()
-        {
-        }
-
-        public LocomotionSettings(float sprintMaxAngle, float sprintMinInput)
-        {
-            _sprintMaxAngle = sprintMaxAngle;
-            _sprintMinInput = sprintMinInput;
-        }
 
         public float RunSpeed => _runSpeed;
         public float SprintSpeed => _sprintSpeed;

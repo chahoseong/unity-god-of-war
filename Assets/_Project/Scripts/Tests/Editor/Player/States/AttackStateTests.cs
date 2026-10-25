@@ -10,7 +10,7 @@ namespace GodOfWar.Tests.Player.States
 {
     public class AttackStateTests
     {
-        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Player/Player.prefab";
+        private const string AttackSettingsPath = "Assets/_Project/Data/Player/Settings/Attack.asset";
         private const string AttacksFolder = "Assets/_Project/Data/Player/Actions/Attacks/";
 
         private AttackSettings _settings;
@@ -18,9 +18,8 @@ namespace GodOfWar.Tests.Player.States
         [SetUp]
         public void SetUp()
         {
-            var player = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
-            Assert.That(player, Is.Not.Null, $"Missing player prefab at '{PlayerPrefabPath}'.");
-            _settings = player.GetComponent<PlayerController>().AttackSettings;
+            _settings = AssetDatabase.LoadAssetAtPath<AttackSettings>(AttackSettingsPath);
+            Assert.That(_settings, Is.Not.Null, $"Missing attack settings at '{AttackSettingsPath}'.");
         }
 
         [Test]
