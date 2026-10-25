@@ -91,5 +91,37 @@ namespace GodOfWar.Tests.Player
 
             Assert.That(result, Is.False);
         }
+
+        [Test]
+        public void TrySelectInDirection_WithCandidatesOnBothSides_ReturnsNarrowestAngleInFlickDirection()
+        {
+            var candidates = new[] { PointAt(70f, 5f), PointAt(-40f, 5f), PointAt(25f, 5f) };
+
+            TargetLock.TrySelectInDirection(Vector3.zero, PointAt(0f, 5f), candidates, 1, out int index);
+
+            Assert.That(index, Is.EqualTo(2));
+        }
+
+        // 오른쪽으로 튕겼는데 왼쪽 대상으로 넘어가면 방향 감각이 깨진다.
+        [Test]
+        public void TrySelectInDirection_WithNoCandidateInFlickDirection_ReturnsFalse()
+        {
+            var candidates = new[] { PointAt(-40f, 5f) };
+
+            bool result = TargetLock.TrySelectInDirection(Vector3.zero, PointAt(0f, 5f), candidates, 1, out _);
+
+            Assert.That(result, Is.False);
+        }
+
+        // 전환은 "저쪽 적"이라는 방향 의도가 분명하므로 거리를 보지 않는다.
+        [Test]
+        public void TrySelectInDirection_WithNearerCandidateAtWiderAngle_ReturnsNarrowerAngle()
+        {
+            var candidates = new[] { PointAt(50f, 3f), PointAt(20f, 12f) };
+
+            TargetLock.TrySelectInDirection(Vector3.zero, PointAt(0f, 5f), candidates, 1, out int index);
+
+            Assert.That(index, Is.EqualTo(1));
+        }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using GodOfWar.CameraSystem;
 using GodOfWar.Combat;
 using GodOfWar.Input;
@@ -8,6 +9,7 @@ namespace GodOfWar.Player
 {
     /// <summary>
     /// LockOn 입력으로 락온 대상을 고르고, 대상이 무효해지거나 멀어지면 다음 대상으로 넘기거나 해제한다.
+    /// 락온 중 시점 입력을 좌우로 튕기면 그 방향의 다음 대상으로 전환한다.
     /// 상태 전이가 아니므로 액션 라우터를 거치지 않고 입력을 직접 구독한다.
     /// </summary>
     /// <remarks>
@@ -22,8 +24,12 @@ namespace GodOfWar.Player
         [Tooltip("후보의 시야각 기준이자, 락온 대상을 바라보게 할 카메라 피벗.")]
         [SerializeField] private CameraLook _cameraLook;
 
+        private readonly List<LockOnTarget> _switchCandidates = new List<LockOnTarget>();
+        private readonly List<Vector3> _switchAimPoints = new List<Vector3>();
+
         private IPlayerInput _input;
         private Transform _viewOrigin;
+        private FlickDetector _flick;
 
         /// <summary>현재 락온 대상. 락온하지 않았으면 null이다.</summary>
         public LockOnTarget Current { get; private set; }
@@ -70,6 +76,38 @@ namespace GodOfWar.Player
             return offset.sqrMagnitude <= settings.KeepDistance * settings.KeepDistance;
         }
 
+        /// <summary>
+        /// 현재 대상 방향에서 <paramref name="direction"/> 쪽(+1 = 오른쪽, -1 = 왼쪽)으로 가장 적게 돈 후보의 인덱스를 찾는다.
+        /// 그 방향에 후보가 없으면 거짓을 반환한다. 각도는 <paramref name="origin"/> 기준 수평 각도이며 거리는 보지 않는다.
+        /// </summary>
+        public static bool TrySelectInDirection(
+            Vector3 origin, Vector3 currentAimPoint, IReadOnlyList<Vector3> candidateAimPoints,
+            int direction, out int index)
+        {
+            if (direction != 1 && direction != -1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(direction), direction, "Direction must be -1 or 1.");
+            }
+
+            index = -1;
+            float currentYaw = YawTo(origin, currentAimPoint);
+            float bestTurn = float.MaxValue;
+            for (int i = 0; i < candidateAimPoints.Count; i++)
+            {
+                // 플릭 방향으로 돈 각도. 반대쪽 후보는 음수가 되어 제외된다.
+                float turn = Mathf.DeltaAngle(currentYaw, YawTo(origin, candidateAimPoints[i])) * direction;
+                if (turn <= 0f || turn >= bestTurn)
+                {
+                    continue;
+                }
+
+                bestTurn = turn;
+                index = i;
+            }
+
+            return index >= 0;
+        }
+
         /// <summary>락온을 해제한다. 락온하지 않았으면 아무 일도 없다.</summary>
         public void Release()
         {
@@ -89,6 +127,8 @@ namespace GodOfWar.Player
             {
                 throw new InvalidOperationException($"'{name}' requires an {nameof(IPlayerInput)} component.");
             }
+
+            _flick = new FlickDetector(_settings);
         }
 
         private void Start()
@@ -141,6 +181,13 @@ namespace GodOfWar.Player
             if (!IsWithinKeepDistance(transform.position, Current.AimPoint.position, _settings))
             {
                 Release();
+                return;
+            }
+
+            int flick = _flick.Tick(_input.Look, _input.LookType, Time.deltaTime);
+            if (flick != 0)
+            {
+                SwitchTarget(flick);
             }
         }
 
@@ -193,6 +240,42 @@ namespace GodOfWar.Player
             return best;
         }
 
+        // 처음 고를 때와 같은 필터를 통과한 다른 대상 가운데, 플릭 방향으로 가장 적게 돈 대상으로 넘긴다.
+        private void SwitchTarget(int direction)
+        {
+            Vector3 origin = transform.position;
+            float viewYaw = _cameraLook.Yaw;
+
+            _switchCandidates.Clear();
+            _switchAimPoints.Clear();
+            foreach (LockOnTarget target in LockOnTarget.Active)
+            {
+                if (target == Current || !target.IsTargetable)
+                {
+                    continue;
+                }
+
+                Vector3 aimPoint = target.AimPoint.position;
+                if (!TryScore(origin, viewYaw, aimPoint, _settings, out _) || IsOccluded(aimPoint))
+                {
+                    continue;
+                }
+
+                _switchCandidates.Add(target);
+                _switchAimPoints.Add(aimPoint);
+            }
+
+            if (TrySelectInDirection(origin, Current.AimPoint.position, _switchAimPoints, direction, out int index))
+            {
+                SetTarget(_switchCandidates[index]);
+            }
+        }
+
+        private static float YawTo(Vector3 origin, Vector3 point)
+        {
+            return Mathf.Atan2(point.x - origin.x, point.z - origin.z) * Mathf.Rad2Deg;
+        }
+
         private bool IsOccluded(Vector3 aimPoint)
         {
             return Physics.Linecast(
@@ -206,6 +289,7 @@ namespace GodOfWar.Player
                 return;
             }
 
+            bool isNewLock = ReferenceEquals(Current, null) && target != null;
             Current = target;
             if (target != null)
             {
@@ -214,6 +298,12 @@ namespace GodOfWar.Player
             else
             {
                 _cameraLook.ClearLookTarget();
+            }
+
+            // 패드는 우스틱 누름으로 락온하므로, 누르는 동안 밀린 스틱이 곧바로 전환을 일으키지 않게 한다.
+            if (isNewLock)
+            {
+                _flick.Disarm();
             }
 
             TargetChanged?.Invoke(target);
