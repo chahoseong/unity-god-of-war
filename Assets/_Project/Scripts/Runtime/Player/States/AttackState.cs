@@ -24,7 +24,7 @@ namespace GodOfWar.Player.States
     {
         private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
 
-        private readonly PlayerController _owner;
+        private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
         private readonly IStateLocator _locator;
         private readonly IPlayerInput _input;
@@ -47,24 +47,23 @@ namespace GodOfWar.Player.States
         private AttackAction _queuedAction;
         private PlayerAction _queuedInput;
 
-        public AttackState(PlayerController owner, StateMachine machine)
+        public AttackState(IPlayerStateContext context, AttackSettings settings)
         {
-            _owner = owner;
-            _machine = machine;
-            _locator = owner;
-            _input = owner.GetRequiredComponent<IPlayerInput>();
-            _motor = owner.GetRequiredComponent<CharacterMotor>();
-            _animator = owner.Animator;
-            _settings = owner.AttackSettings;
+            _context = context;
+            _machine = context.Machine;
+            _locator = context.States;
+            _input = context.Input;
+            _motor = context.Motor;
+            _animator = context.Animator;
+            _settings = settings;
             RequireEntry(PlayerAction.LightAttack);
             RequireEntry(PlayerAction.HeavyAttack);
-            // 칼은 손 본 아래에 있어 루트가 아니라 자식에서 찾는다.
-            _hitbox = owner.GetRequiredComponentInChildren<Hitbox>();
+            _hitbox = context.Hitbox;
 
             // 진입한 버튼이 콤보의 1타와 이후 연계를 정하므로, 전이 직전에 그 버튼으로 준비한다.
-            owner.Router.Declare(new ActionTrigger(
+            context.Router.Declare(new ActionTrigger(
                 PlayerAction.LightAttack, this, () => true, prepare: e => Prepare(e.Action)));
-            owner.Router.Declare(new ActionTrigger(
+            context.Router.Declare(new ActionTrigger(
                 PlayerAction.HeavyAttack, this, () => true, prepare: e => Prepare(e.Action)));
         }
 
@@ -140,7 +139,7 @@ namespace GodOfWar.Player.States
             // 몸은 회전 속도만큼 늦게 따라가므로, 궤적은 카메라가 아니라 몸의 현재 정면에 맞춘다.
             if (_elapsed < _action.TrackingEnd)
             {
-                _motor.RotateTowards(_owner.MovementYaw, _settings.TurnSpeed * deltaTime);
+                _motor.RotateTowards(_context.MovementYaw, _settings.TurnSpeed * deltaTime);
                 _movement.SetYaw(_motor.transform.eulerAngles.y);
             }
 
@@ -217,7 +216,7 @@ namespace GodOfWar.Player.States
             bool isInWindow = _action.IsInHitWindow(_elapsed);
             if (isInWindow && !_hitbox.IsOpen)
             {
-                _hitbox.Open(_owner.transform, _action.HitStrength);
+                _hitbox.Open(_motor.transform, _action.HitStrength);
             }
             else if (!isInWindow && _hitbox.IsOpen)
             {

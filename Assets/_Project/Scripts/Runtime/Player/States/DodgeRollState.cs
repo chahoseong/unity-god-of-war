@@ -26,7 +26,7 @@ namespace GodOfWar.Player.States
             Animator.StringToHash("DodgeRoll_R")
         };
 
-        private readonly PlayerController _owner;
+        private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
         private readonly IStateLocator _locator;
         private readonly IPlayerInput _input;
@@ -39,15 +39,15 @@ namespace GodOfWar.Player.States
         private QuickStepState _quickStep;
         private DodgeCardinal _cardinal;
 
-        public DodgeRollState(PlayerController owner, StateMachine machine)
+        public DodgeRollState(IPlayerStateContext context, DodgeSettings settings)
         {
-            _owner = owner;
-            _machine = machine;
-            _locator = owner;
-            _input = owner.GetRequiredComponent<IPlayerInput>();
-            _motor = owner.GetRequiredComponent<CharacterMotor>();
-            _animator = owner.Animator;
-            _settings = owner.DodgeSettings;
+            _context = context;
+            _machine = context.Machine;
+            _locator = context.States;
+            _input = context.Input;
+            _motor = context.Motor;
+            _animator = context.Animator;
+            _settings = settings;
             if (_settings.DodgeRoll == null)
             {
                 throw new InvalidOperationException(
@@ -72,7 +72,7 @@ namespace GodOfWar.Player.States
             float bodyYaw;
             if (DodgeDirection.TryFromInput(_input.Move, _settings.MinInput, out DodgeDirection direction))
             {
-                float referenceYaw = _owner.MovementYaw;
+                float referenceYaw = _context.MovementYaw;
                 cardinal = direction.Cardinal;
                 bodyYaw = referenceYaw + direction.ResidualYaw;
             }

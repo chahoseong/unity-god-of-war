@@ -18,7 +18,7 @@ namespace GodOfWar.Player.States
         private static readonly int GuardBeginHash = Animator.StringToHash("Guard_Begin");
         private static readonly int GuardEndHash = Animator.StringToHash("Guard_End");
 
-        private readonly PlayerController _owner;
+        private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
         private readonly IStateLocator _locator;
         private readonly IPlayerInput _input;
@@ -30,19 +30,19 @@ namespace GodOfWar.Player.States
         private LocomotionState _locomotion;
         private int _guardLayer;
 
-        public GuardState(PlayerController owner, StateMachine machine)
+        public GuardState(IPlayerStateContext context, GuardSettings settings, LocomotionSettings locomotionSettings)
         {
-            _owner = owner;
-            _machine = machine;
-            _locator = owner;
-            _input = owner.GetRequiredComponent<IPlayerInput>();
-            _motor = owner.GetRequiredComponent<CharacterMotor>();
-            _animator = owner.Animator;
-            _locomotionSettings = owner.LocomotionSettings;
-            _settings = owner.GuardSettings;
+            _context = context;
+            _machine = context.Machine;
+            _locator = context.States;
+            _input = context.Input;
+            _motor = context.Motor;
+            _animator = context.Animator;
+            _locomotionSettings = locomotionSettings;
+            _settings = settings;
 
             // Held는 눌려 있다는 사실 자체이므로 시작 조건이 없다. 누른 프레임에도 Held가 오므로 Pressed는 선언하지 않는다.
-            owner.Router.Declare(new ActionTrigger(PlayerAction.Guard, this, () => true, phase: ActionPhase.Held));
+            context.Router.Declare(new ActionTrigger(PlayerAction.Guard, this, () => true, phase: ActionPhase.Held));
         }
 
         public bool IsCancelWindowOpen => false;
@@ -51,7 +51,7 @@ namespace GodOfWar.Player.States
         {
             // 생성 시점에는 다른 상태와 애니메이터 레이어가 아직 준비되지 않았을 수 있어 첫 진입에서 찾는다.
             _locomotion ??= _locator.Get<LocomotionState>();
-            _guardLayer = _owner.GuardLayer;
+            _guardLayer = _context.GuardLayer;
 
             // 공격 후딜에서 캔슬되면 다리가 공격 클립에 남아 있으므로 이동 클립으로 되돌린다.
             // 이미 이동 클립이면 블렌드 트리를 처음부터 다시 틀지 않는다.
@@ -72,7 +72,7 @@ namespace GodOfWar.Player.States
                 return;
             }
 
-            float referenceYaw = _owner.MovementYaw;
+            float referenceYaw = _context.MovementYaw;
             Vector2 move = _input.Move;
 
             Vector3 target = Quaternion.Euler(0f, referenceYaw, 0f)

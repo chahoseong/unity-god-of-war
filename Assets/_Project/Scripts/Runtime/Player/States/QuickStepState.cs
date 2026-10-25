@@ -27,7 +27,7 @@ namespace GodOfWar.Player.States
             Animator.StringToHash("QuickStep_R")
         };
 
-        private readonly PlayerController _owner;
+        private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
         private readonly IStateLocator _locator;
         private readonly IPlayerInput _input;
@@ -39,15 +39,15 @@ namespace GodOfWar.Player.States
         private LocomotionState _locomotion;
         private DodgeRollState _roll;
 
-        public QuickStepState(PlayerController owner, StateMachine machine)
+        public QuickStepState(IPlayerStateContext context, DodgeSettings settings)
         {
-            _owner = owner;
-            _machine = machine;
-            _locator = owner;
-            _input = owner.GetRequiredComponent<IPlayerInput>();
-            _motor = owner.GetRequiredComponent<CharacterMotor>();
-            _animator = owner.Animator;
-            _settings = owner.DodgeSettings;
+            _context = context;
+            _machine = context.Machine;
+            _locator = context.States;
+            _input = context.Input;
+            _motor = context.Motor;
+            _animator = context.Animator;
+            _settings = settings;
             if (_settings.QuickStep == null)
             {
                 throw new InvalidOperationException(
@@ -55,7 +55,7 @@ namespace GodOfWar.Player.States
             }
 
             // 정지 중(이동 입력이 MinInput 미만)에는 회피하지 않는다.
-            owner.Router.Declare(new ActionTrigger(
+            context.Router.Declare(new ActionTrigger(
                 PlayerAction.Dodge, this,
                 () => DodgeDirection.TryFromInput(_input.Move, _settings.MinInput, out _)));
         }
@@ -87,7 +87,7 @@ namespace GodOfWar.Player.States
                 return;
             }
 
-            float referenceYaw = _owner.MovementYaw;
+            float referenceYaw = _context.MovementYaw;
             Cardinal = direction.Cardinal;
             BodyYaw = referenceYaw + direction.ResidualYaw;
 

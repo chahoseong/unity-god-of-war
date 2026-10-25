@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
@@ -66,7 +67,11 @@ namespace GodOfWar.Player.Diagnostics
             }
 
             _controller = GetComponent<PlayerController>();
-            _input = _controller.GetRequiredComponent<IPlayerInput>();
+            // 인터페이스 타입은 Unity의 가짜 null을 == null로 거를 수 없어 TryGetComponent를 쓴다.
+            if (!TryGetComponent(out _input))
+            {
+                throw new InvalidOperationException($"'{name}' requires a {nameof(IPlayerInput)} component.");
+            }
         }
 
         private void OnEnable()
@@ -134,7 +139,7 @@ namespace GodOfWar.Player.Diagnostics
                     IsCancelWindowOpen = state is ICancellable cancellable && cancellable.IsCancelWindowOpen,
                     IsComboWindowOpen = combo != null && combo.IsComboWindowOpen,
                     HasQueuedFollowUp = combo != null && combo.HasQueuedFollowUp,
-                    HasBufferedInput = _controller.Router.HasBufferedInput
+                    HasBufferedInput = _controller.HasBufferedInput
                 });
             }
 
@@ -185,8 +190,7 @@ namespace GodOfWar.Player.Diagnostics
 
         private void DrawHeader(Rect rect)
         {
-            ActionRouter router = _controller.Router;
-            string buffered = router.HasBufferedInput ? $"   buffered: {router.BufferedAction}" : string.Empty;
+            string buffered = _controller.HasBufferedInput ? $"   buffered: {_controller.BufferedAction}" : string.Empty;
             string stateName = _controller.CurrentState?.GetType().Name ?? "-";
             Label(rect, $"state: {stateName}{buffered}");
 

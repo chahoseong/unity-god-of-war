@@ -14,7 +14,7 @@ namespace GodOfWar.Player.States
     /// </summary>
     public sealed class SprintState : IState, ICancellable
     {
-        private readonly PlayerController _owner;
+        private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
         private readonly IStateLocator _locator;
         private readonly IPlayerInput _input;
@@ -23,14 +23,14 @@ namespace GodOfWar.Player.States
 
         private LocomotionState _locomotion;
 
-        public SprintState(PlayerController owner, StateMachine machine)
+        public SprintState(IPlayerStateContext context, LocomotionSettings settings)
         {
-            _owner = owner;
-            _machine = machine;
-            _locator = owner;
-            _input = owner.GetRequiredComponent<IPlayerInput>();
-            _motor = owner.GetRequiredComponent<CharacterMotor>();
-            _settings = owner.LocomotionSettings;
+            _context = context;
+            _machine = context.Machine;
+            _locator = context.States;
+            _input = context.Input;
+            _motor = context.Motor;
+            _settings = settings;
         }
 
         public bool IsCancelWindowOpen => true;
@@ -65,7 +65,7 @@ namespace GodOfWar.Player.States
                 return;
             }
 
-            float referenceYaw = _owner.MovementYaw;
+            float referenceYaw = _context.MovementYaw;
             Vector3 direction = Quaternion.Euler(0f, referenceYaw, 0f)
                 * new Vector3(move.x, 0f, move.y).normalized;
 

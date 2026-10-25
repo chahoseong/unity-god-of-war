@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using GodOfWar.CameraSystem;
 using GodOfWar.Characters;
+using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
 using GodOfWar.Player.States;
@@ -12,12 +12,13 @@ namespace GodOfWar.Player
 {
     /// <summary>
     /// 플레이어 상태 머신의 컴포지션 루트.
-    /// 상태를 생성·등록하고 매 프레임 갱신하며, 상태들이 질의하는 Owner 역할을 한다.
+    /// 상태를 생성·등록하고 매 프레임 갱신하며, 상태들이 속한 Context다.
+    /// 상태에게는 <see cref="IPlayerStateContext"/>로만 구성 요소와 전이 수단을 열고, 공개 API는 관찰용만 둔다.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(ExecutionOrder.PlayerController)]
     [RequireComponent(typeof(CharacterMotor))]
-    public sealed class PlayerController : MonoBehaviour, IStateLocator
+    public sealed class PlayerController : MonoBehaviour, IPlayerStateContext
     {
         private static readonly int MoveXHash = Animator.StringToHash("MoveX");
         private static readonly int MoveZHash = Animator.StringToHash("MoveZ");
@@ -60,67 +61,34 @@ namespace GodOfWar.Player
         [Tooltip("켜면 시작할 때 액션 라우터가 수집한 라우팅 테이블을 콘솔에 출력한다. 에디터와 개발 빌드에서만 동작한다.")]
         [SerializeField] private bool _logActionRoutes;
 
-        private readonly Dictionary<Type, IState> _states = new Dictionary<Type, IState>();
+        private readonly StateRegistry _registry = new StateRegistry();
         private StateMachine _machine;
         private ActionRouter _router;
         private CharacterMotor _motor;
+        private IPlayerInput _input;
+        private Hitbox _hitbox;
         private int[] _swordPoseLayers;
         private float[] _swordPoseWeights;
         private int _guardLayer = -1;
 
-        public LocomotionSettings LocomotionSettings => _locomotionSettings;
-        public DodgeSettings DodgeSettings => _dodgeSettings;
-        public AttackSettings AttackSettings => _attackSettings;
-        public GuardSettings GuardSettings => _guardSettings;
-        /// <summary>상태가 자기 클립으로 크로스페이드할 때 쓰는 애니메이터.</summary>
-        public Animator Animator => _animator;
-        /// <summary>이동 입력의 기준 Yaw(도). 락온 중에는 카메라 보간과 무관하게 대상을 향한다.</summary>
-        public float MovementYaw => _cameraLook.ReferenceYaw;
-        /// <summary>상태가 생성될 때 자신의 진입 트리거를 선언하는 액션 라우터.</summary>
-        public ActionRouter Router => _router;
         /// <summary>현재 상태. 첫 상태에 진입하기 전에는 null이다.</summary>
         public IState CurrentState => _machine?.CurrentState;
-        /// <summary>상체 가드 레이어의 인덱스. 가중치는 이 컴포넌트가 재생 중인 상태에 맞춰 관리한다.</summary>
-        public int GuardLayer => _guardLayer;
 
-        public T Get<T>() where T : class, IState
-        {
-            if (_states.TryGetValue(typeof(T), out IState state))
-            {
-                return (T)state;
-            }
+        /// <summary>보관 중인 선입력이 있는지.</summary>
+        public bool HasBufferedInput => _router.HasBufferedInput;
 
-            throw new InvalidOperationException($"State '{typeof(T).Name}' is not registered.");
-        }
+        /// <summary>보관 중인 선입력의 버튼. <see cref="HasBufferedInput"/>이 거짓이면 의미가 없다.</summary>
+        public PlayerAction BufferedAction => _router.BufferedAction;
 
-        /// <summary>상태가 생성 시점에 필요한 컴포넌트를 질의한다. 없으면 즉시 실패한다.</summary>
-        public T GetRequiredComponent<T>()
-        {
-            // 인터페이스 타입은 Unity의 가짜 null을 == null로 거를 수 없어 TryGetComponent를 쓴다.
-            if (TryGetComponent(out T component))
-            {
-                return component;
-            }
-
-            throw new InvalidOperationException(
-                $"'{name}' requires a {typeof(T).Name} component.");
-        }
-
-        /// <summary>
-        /// 상태가 생성 시점에 자식(자신 포함)에 하나뿐인 컴포넌트를 질의한다. 없거나 둘 이상이면 즉시 실패한다.
-        /// 무기처럼 루트가 아닌 본 아래에 붙는 컴포넌트를 찾을 때 쓴다.
-        /// </summary>
-        public T GetRequiredComponentInChildren<T>()
-        {
-            T[] components = GetComponentsInChildren<T>(true);
-            if (components.Length != 1)
-            {
-                throw new InvalidOperationException(
-                    $"'{name}' requires exactly one {typeof(T).Name} in its children, but found {components.Length}.");
-            }
-
-            return components[0];
-        }
+        CharacterMotor IPlayerStateContext.Motor => _motor;
+        IPlayerInput IPlayerStateContext.Input => _input;
+        Animator IPlayerStateContext.Animator => _animator;
+        Hitbox IPlayerStateContext.Hitbox => _hitbox;
+        float IPlayerStateContext.MovementYaw => _cameraLook.ReferenceYaw;
+        StateMachine IPlayerStateContext.Machine => _machine;
+        IStateLocator IPlayerStateContext.States => _registry;
+        ActionRouter IPlayerStateContext.Router => _router;
+        int IPlayerStateContext.GuardLayer => _guardLayer;
 
         private void Awake()
         {
@@ -146,17 +114,19 @@ namespace GodOfWar.Player
             RequireAssigned(_attackSettings);
             RequireAssigned(_guardSettings);
 
+            // 상태가 생성자에서 창구의 값을 읽으므로 상태보다 먼저 준비한다.
             _motor = GetComponent<CharacterMotor>();
+            _input = FindRequiredInput();
+            _hitbox = FindRequiredHitbox();
             _machine = new StateMachine();
             // 상태가 생성자에서 진입 트리거를 선언하므로 상태보다 먼저 만든다.
-            _router = new ActionRouter(
-                _machine, GetRequiredComponent<IPlayerInput>(), _inputBufferDuration, NonRoutedActions);
-            Register(new LocomotionState(this, _machine));
-            Register(new SprintState(this, _machine));
-            Register(new QuickStepState(this, _machine));
-            Register(new DodgeRollState(this, _machine));
-            Register(new AttackState(this, _machine));
-            Register(new GuardState(this, _machine));
+            _router = new ActionRouter(_machine, _input, _inputBufferDuration, NonRoutedActions);
+            Register(new LocomotionState(this, _locomotionSettings));
+            Register(new SprintState(this, _locomotionSettings));
+            Register(new QuickStepState(this, _dodgeSettings));
+            Register(new DodgeRollState(this, _dodgeSettings));
+            Register(new AttackState(this, _attackSettings));
+            Register(new GuardState(this, _guardSettings, _locomotionSettings));
         }
 
         private void Start()
@@ -165,7 +135,7 @@ namespace GodOfWar.Player
             // 애니메이터 레이어도 자식 Animator가 초기화된 뒤에 읽는다.
             FindSwordPoseLayers();
             _guardLayer = FindLayer(GuardLayerName);
-            _machine.ChangeState(Get<LocomotionState>());
+            _machine.ChangeState(_registry.Get<LocomotionState>());
             LogActionRoutes();
         }
 
@@ -189,6 +159,30 @@ namespace GodOfWar.Player
             bool isFullBody = IsFullBodyPlaying();
             UpdateSwordPoseLayers(isFullBody, Time.deltaTime);
             UpdateGuardLayer(isFullBody, Time.deltaTime);
+        }
+
+        private IPlayerInput FindRequiredInput()
+        {
+            // 인터페이스 타입은 Unity의 가짜 null을 == null로 거를 수 없어 TryGetComponent를 쓴다.
+            if (TryGetComponent(out IPlayerInput input))
+            {
+                return input;
+            }
+
+            throw new InvalidOperationException($"'{name}' requires a {nameof(IPlayerInput)} component.");
+        }
+
+        // 칼은 손 본 아래에 있어 루트가 아니라 자식에서 찾는다.
+        private Hitbox FindRequiredHitbox()
+        {
+            Hitbox[] hitboxes = GetComponentsInChildren<Hitbox>(true);
+            if (hitboxes.Length != 1)
+            {
+                throw new InvalidOperationException(
+                    $"'{name}' requires exactly one {nameof(Hitbox)} in its children, but found {hitboxes.Length}.");
+            }
+
+            return hitboxes[0];
         }
 
         private void RequireAssigned<T>(T settings) where T : ScriptableObject
@@ -273,7 +267,7 @@ namespace GodOfWar.Player
         // 캔슬 윈도우 선언을 빠뜨린 상태는 여기서 컴파일 에러가 난다 (ADR-004 3절).
         private void Register<T>(T state) where T : class, IState, ICancellable
         {
-            _states.Add(state.GetType(), state);
+            _registry.Add(state);
         }
 
         private void LogActionRoutes()
