@@ -105,6 +105,22 @@ namespace GodOfWar.Player
                 $"'{name}' requires a {typeof(T).Name} component.");
         }
 
+        /// <summary>
+        /// 상태가 생성 시점에 자식(자신 포함)에 하나뿐인 컴포넌트를 질의한다. 없거나 둘 이상이면 즉시 실패한다.
+        /// 무기처럼 루트가 아닌 본 아래에 붙는 컴포넌트를 찾을 때 쓴다.
+        /// </summary>
+        public T GetRequiredComponentInChildren<T>()
+        {
+            T[] components = GetComponentsInChildren<T>(true);
+            if (components.Length != 1)
+            {
+                throw new InvalidOperationException(
+                    $"'{name}' requires exactly one {typeof(T).Name} in its children, but found {components.Length}.");
+            }
+
+            return components[0];
+        }
+
         private void Awake()
         {
             if (_cameraLook == null)

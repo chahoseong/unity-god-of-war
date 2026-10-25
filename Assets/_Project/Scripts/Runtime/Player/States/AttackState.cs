@@ -17,6 +17,8 @@ namespace GodOfWar.Player.States
     /// 약공격·강공격 버튼으로 진입한다. 선딜레이·스윙 동안은 다른 액션이 끼어들 수 없고,
     /// 후딜레이(<see cref="AttackAction.RecoveryStart"/> 이후)에는 회피 등으로 캔슬할 수 있다.
     /// 연계 구간이 끝난 뒤 예약된 타 없이 이동 입력이 있으면 복귀 클립을 끝까지 기다리지 않고 이동으로 돌아간다.
+    /// 무기 판정은 타격 구간(<see cref="AttackAction.HitWindowStart"/>~<see cref="AttackAction.HitWindowEnd"/>) 동안만 열고,
+    /// 어떤 경로로 상태를 나가든 닫는다.
     /// </summary>
     public sealed class AttackState : IState, ICancellable, IChainable, IComboWindow, IActionProgress
     {
@@ -29,6 +31,7 @@ namespace GodOfWar.Player.States
         private readonly CharacterMotor _motor;
         private readonly Animator _animator;
         private readonly AttackSettings _settings;
+        private readonly Hitbox _hitbox;
         private readonly ActionMovement _movement = new ActionMovement();
 
         private LocomotionState _locomotion;
@@ -53,6 +56,8 @@ namespace GodOfWar.Player.States
             _motor = owner.GetRequiredComponent<CharacterMotor>();
             _animator = owner.Animator;
             _settings = owner.AttackSettings;
+            // 칼은 손 본 아래에 있어 루트가 아니라 자식에서 찾는다.
+            _hitbox = owner.GetRequiredComponentInChildren<Hitbox>();
 
             // 진입한 버튼이 콤보의 1타와 이후 연계를 정하므로, 전이 직전에 그 버튼으로 준비한다.
             owner.Router.Declare(new ActionTrigger(
@@ -125,6 +130,7 @@ namespace GodOfWar.Player.States
         public void Tick(float deltaTime)
         {
             _elapsed += deltaTime;
+            UpdateHitbox();
 
             // 선딜레이 동안은 카메라 정면을 계속 따라가 조준을 고칠 수 있고, 스윙에 들어가면 방향이 고정된다.
             // 몸은 회전 속도만큼 늦게 따라가므로, 궤적은 카메라가 아니라 몸의 현재 정면에 맞춘다.
@@ -173,6 +179,8 @@ namespace GodOfWar.Player.States
 
         public void Exit()
         {
+            // 캔슬·연계·복귀 모두 여기를 지나므로, 판정 구간 도중에 나가도 판정이 열린 채 남지 않는다.
+            _hitbox.Close();
         }
 
         public bool TryChain(PlayerActionEvent e)
@@ -194,6 +202,23 @@ namespace GodOfWar.Player.States
             _queuedAction = next;
             _queuedInput = e.Action;
             return true;
+        }
+
+        /// <summary>
+        /// 타격 구간에 맞춰 무기 판정을 열고 닫는다. 실제 검사는 애니메이션이 칼을 옮긴 뒤 히트박스가 한다.
+        /// 경과 시간은 줄지 않으므로 한 타에서 판정은 한 번만 열린다.
+        /// </summary>
+        private void UpdateHitbox()
+        {
+            bool isInWindow = _action.IsInHitWindow(_elapsed);
+            if (isInWindow && !_hitbox.IsOpen)
+            {
+                _hitbox.Open(_owner.transform, _action.HitStrength);
+            }
+            else if (!isInWindow && _hitbox.IsOpen)
+            {
+                _hitbox.Close();
+            }
         }
 
         /// <summary>공격 버튼(약·강)을 누른 순간인지 판정한다.</summary>
