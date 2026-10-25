@@ -16,7 +16,6 @@ namespace GodOfWar.Player.States
     /// </summary>
     public sealed class QuickStepState : IState, ICancellable, IChainable, IActionProgress
     {
-        private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
 
         // DodgeCardinal 순서(Forward, Backward, Left, Right)와 같아야 한다.
         private static readonly int[] StepHashes =
@@ -32,7 +31,7 @@ namespace GodOfWar.Player.States
         private readonly IStateLocator _locator;
         private readonly IPlayerInput _input;
         private readonly CharacterMotor _motor;
-        private readonly Animator _animator;
+        private readonly PlayerAnimator _animator;
         private readonly DodgeSettings _settings;
         private readonly ActionMovement _movement = new ActionMovement();
 
@@ -94,7 +93,7 @@ namespace GodOfWar.Player.States
             // 최대 회전량 180°로 어떤 방향이든 즉시 맞춘다. 회피 동안에는 회전하지 않는다.
             // 클립의 로컬 이동을 몸 Yaw로 돌리면 입력 방향이 된다 (몸 Yaw + 클립 방향 = 입력 방향).
             _motor.RotateTowards(BodyYaw, 180f);
-            _animator.CrossFadeInFixedTime(StepHashes[(int)Cardinal], _settings.CrossFadeDuration);
+            _animator.CrossFade(StepHashes[(int)Cardinal], _settings.CrossFadeDuration);
             _movement.Begin(_settings.QuickStep.GetRootMotion(Cardinal), BodyYaw);
         }
 
@@ -105,7 +104,7 @@ namespace GodOfWar.Player.States
             if (_movement.IsFinished)
             {
                 // 복귀 크로스페이드는 시간이 다 된 경로에서만 한다. 구르기로 이어질 때는 구르기가 자기 클립으로 덮는다.
-                _animator.CrossFadeInFixedTime(LocomotionHash, _settings.CrossFadeDuration);
+                _animator.ReturnToLocomotion(_settings.CrossFadeDuration);
                 _machine.ChangeState(_locomotion);
             }
         }

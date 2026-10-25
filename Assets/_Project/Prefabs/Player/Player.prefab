@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1486200451303296691}
   - component: {fileID: 4861412650051217178}
   - component: {fileID: 8849128568346903225}
+  - component: {fileID: 3751006474430071227}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -108,9 +109,6 @@ MonoBehaviour:
   _attackSettings: {fileID: 11400000, guid: 143526dc6f15f0b4da6d24c322689ee5, type: 2}
   _guardSettings: {fileID: 11400000, guid: 6051f296a3f6e1448b9c2001bf9df9e4, type: 2}
   _cameraLook: {fileID: 3435074741861571896}
-  _animator: {fileID: 7842684084486267006}
-  _guardRig: {fileID: 5516138986892443814}
-  _swordPoseBlendDuration: 0.1
   _inputBufferDuration: 0.2
   _logActionRoutes: 0
 --- !u!114 &4861412650051217178
@@ -154,6 +152,22 @@ MonoBehaviour:
     _mouseDecayRate: 10
     _mouseFlickCooldown: 0.25
   _cameraLook: {fileID: 3435074741861571896}
+--- !u!114 &3751006474430071227
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 168932584551449046}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 276948102a1c933418f4d80bc501eee1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Player.PlayerAnimator
+  _animator: {fileID: 7842684084486267006}
+  _guardRig: {fileID: 5516138986892443814}
+  _moveDampTime: 0.1
+  _swordPoseBlendDuration: 0.1
 --- !u!1 &504034824806651937
 GameObject:
   m_ObjectHideFlags: 0

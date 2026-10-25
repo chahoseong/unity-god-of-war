@@ -14,21 +14,17 @@ namespace GodOfWar.Player.States
     /// </summary>
     public sealed class GuardState : IState, ICancellable, IChainable
     {
-        private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
-        private static readonly int GuardBeginHash = Animator.StringToHash("Guard_Begin");
-        private static readonly int GuardEndHash = Animator.StringToHash("Guard_End");
 
         private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
         private readonly IStateLocator _locator;
         private readonly IPlayerInput _input;
         private readonly CharacterMotor _motor;
-        private readonly Animator _animator;
+        private readonly PlayerAnimator _animator;
         private readonly LocomotionSettings _locomotionSettings;
         private readonly GuardSettings _settings;
 
         private LocomotionState _locomotion;
-        private int _guardLayer;
 
         public GuardState(IPlayerStateContext context, GuardSettings settings, LocomotionSettings locomotionSettings)
         {
@@ -49,19 +45,9 @@ namespace GodOfWar.Player.States
 
         public void Enter()
         {
-            // 생성 시점에는 다른 상태와 애니메이터 레이어가 아직 준비되지 않았을 수 있어 첫 진입에서 찾는다.
+            // 생성 시점에는 다른 상태가 아직 등록되지 않았을 수 있어 첫 진입에서 찾는다.
             _locomotion ??= _locator.Get<LocomotionState>();
-            _guardLayer = _context.GuardLayer;
-
-            // 공격 후딜에서 캔슬되면 다리가 공격 클립에 남아 있으므로 이동 클립으로 되돌린다.
-            // 이미 이동 클립이면 블렌드 트리를 처음부터 다시 틀지 않는다.
-            if (_animator.GetCurrentAnimatorStateInfo(0).shortNameHash != LocomotionHash
-                || _animator.IsInTransition(0))
-            {
-                _animator.CrossFadeInFixedTime(LocomotionHash, _settings.CrossFadeDuration, 0);
-            }
-
-            _animator.CrossFadeInFixedTime(GuardBeginHash, _settings.CrossFadeDuration, _guardLayer);
+            _animator.RaiseGuard(_settings.CrossFadeDuration);
         }
 
         public void Tick(float deltaTime)
@@ -88,8 +74,8 @@ namespace GodOfWar.Player.States
 
         public void Exit()
         {
-            // 해제든 캔슬이든 상체가 가드 자세에 남지 않게 내린다. 전신 클립으로 캔슬되면 레이어가 꺼져 보이지 않는다.
-            _animator.CrossFadeInFixedTime(GuardEndHash, _settings.CrossFadeDuration, _guardLayer);
+            // 해제든 캔슬이든 상체가 가드 자세에 남지 않게 내린다.
+            _animator.LowerGuard(_settings.CrossFadeDuration);
         }
 
         public bool TryChain(PlayerActionEvent e)

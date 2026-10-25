@@ -15,7 +15,6 @@ namespace GodOfWar.Player.States
     /// </summary>
     public sealed class DodgeRollState : IState, ICancellable, IActionProgress
     {
-        private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
 
         // DodgeCardinal 순서(Forward, Backward, Left, Right)와 같아야 한다.
         private static readonly int[] RollHashes =
@@ -31,7 +30,7 @@ namespace GodOfWar.Player.States
         private readonly IStateLocator _locator;
         private readonly IPlayerInput _input;
         private readonly CharacterMotor _motor;
-        private readonly Animator _animator;
+        private readonly PlayerAnimator _animator;
         private readonly DodgeSettings _settings;
         private readonly ActionMovement _movement = new ActionMovement();
 
@@ -85,7 +84,7 @@ namespace GodOfWar.Player.States
 
             _cardinal = cardinal;
             _motor.RotateTowards(bodyYaw, 180f);
-            _animator.CrossFadeInFixedTime(RollHashes[(int)cardinal], _settings.CrossFadeDuration);
+            _animator.CrossFade(RollHashes[(int)cardinal], _settings.CrossFadeDuration);
             _movement.Begin(_settings.DodgeRoll.GetRootMotion(cardinal), bodyYaw);
         }
 
@@ -95,7 +94,7 @@ namespace GodOfWar.Player.States
 
             if (_movement.IsFinished)
             {
-                _animator.CrossFadeInFixedTime(LocomotionHash, _settings.CrossFadeDuration);
+                _animator.ReturnToLocomotion(_settings.CrossFadeDuration);
                 _machine.ChangeState(_locomotion);
             }
         }

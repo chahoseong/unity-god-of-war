@@ -28,9 +28,6 @@ namespace GodOfWar.Player
         [Tooltip("스프린트를 허용하는 최소 이동 입력 크기.")]
         [SerializeField, Range(0f, 1f)] private float _sprintMinInput = 0.5f;
 
-        [Header("Animator")]
-        [SerializeField] private float _animatorDampTime = 0.1f;
-
         public float RunSpeed => _runSpeed;
         public float SprintSpeed => _sprintSpeed;
         public float Acceleration => _acceleration;
@@ -39,6 +36,5 @@ namespace GodOfWar.Player
         public float SprintTurnSpeed => _sprintTurnSpeed;
         public float SprintMaxAngle => _sprintMaxAngle;
         public float SprintMinInput => _sprintMinInput;
-        public float AnimatorDampTime => _animatorDampTime;
     }
 }

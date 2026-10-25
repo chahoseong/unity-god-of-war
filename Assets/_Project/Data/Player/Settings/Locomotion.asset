@@ -20,4 +20,3 @@ MonoBehaviour:
   _sprintTurnSpeed: 540
   _sprintMaxAngle: 50
   _sprintMinInput: 0.5
-  _animatorDampTime: 0.1

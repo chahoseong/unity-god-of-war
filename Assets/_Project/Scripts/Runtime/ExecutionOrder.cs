@@ -19,6 +19,9 @@ namespace GodOfWar
         /// <summary>상태 머신과 액션 라우터를 갱신한다.</summary>
         public const int PlayerController = 0;
 
+        /// <summary>상태가 이번 프레임에 시작한 크로스페이드를 같은 프레임에 읽도록 PlayerController 뒤에 실행한다.</summary>
+        public const int PlayerAnimator = 50;
+
         /// <summary>표식이 대상보다 한 프레임 뒤처지지 않도록 CinemachineBrain이 카메라를 옮긴 뒤 계산한다.</summary>
         public const int LockOnIndicator = 200;
     }

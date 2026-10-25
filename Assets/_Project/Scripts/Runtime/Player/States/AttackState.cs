@@ -22,14 +22,13 @@ namespace GodOfWar.Player.States
     /// </summary>
     public sealed class AttackState : IState, ICancellable, IChainable, IComboWindow, IActionProgress
     {
-        private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
 
         private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
         private readonly IStateLocator _locator;
         private readonly IPlayerInput _input;
         private readonly CharacterMotor _motor;
-        private readonly Animator _animator;
+        private readonly PlayerAnimator _animator;
         private readonly AttackSettings _settings;
         private readonly Hitbox _hitbox;
         private readonly ActionMovement _movement = new ActionMovement();
@@ -125,7 +124,7 @@ namespace GodOfWar.Player.States
             _isReturning = false;
             _queuedAction = null;
 
-            _animator.CrossFadeInFixedTime(Animator.StringToHash(_action.StateName), _action.CrossFadeDuration);
+            _animator.CrossFade(Animator.StringToHash(_action.StateName), _action.CrossFadeDuration);
             // 공격 궤적은 몸 정면 기준으로 구워져 있으므로 몸이 바라보는 방향으로 내딛는다.
             _movement.Begin(_action.Movement, _motor.transform.eulerAngles.y);
         }
@@ -173,7 +172,7 @@ namespace GodOfWar.Player.States
                 }
 
                 _isReturning = true;
-                _animator.CrossFadeInFixedTime(
+                _animator.CrossFade(
                     Animator.StringToHash(_action.ReturnStateName), _action.CrossFadeDuration);
                 // 복귀 클립은 공격을 마친 순간의 캐릭터 정면을 기준으로 재생된다.
                 _movement.Begin(_action.ReturnMovement, _motor.transform.eulerAngles.y);
@@ -233,7 +232,7 @@ namespace GodOfWar.Player.States
 
         private void ReturnToLocomotion()
         {
-            _animator.CrossFadeInFixedTime(LocomotionHash, _action.CrossFadeDuration);
+            _animator.ReturnToLocomotion(_action.CrossFadeDuration);
             _machine.ChangeState(_locomotion);
         }
 

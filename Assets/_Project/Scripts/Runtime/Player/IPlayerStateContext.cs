@@ -2,7 +2,6 @@ using GodOfWar.Characters;
 using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
-using UnityEngine;
 
 namespace GodOfWar.Player
 {
@@ -18,8 +17,8 @@ namespace GodOfWar.Player
 
         IPlayerInput Input { get; }
 
-        /// <summary>상태가 자기 클립으로 크로스페이드할 때 쓰는 애니메이터.</summary>
-        Animator Animator { get; }
+        /// <summary>상태가 자기 클립을 재생하는 애니메이터 창구. 레이어 구성은 이 창구만 안다.</summary>
+        PlayerAnimator Animator { get; }
 
         /// <summary>무기 판정. 공격 계열 상태가 타격 구간에 맞춰 연다.</summary>
         Hitbox Hitbox { get; }
@@ -35,8 +34,5 @@ namespace GodOfWar.Player
 
         /// <summary>상태가 생성될 때 자신의 진입 트리거를 선언하는 액션 라우터.</summary>
         ActionRouter Router { get; }
-
-        /// <summary>상체 가드 레이어의 인덱스. 첫 상태에 진입하기 전에 정해진다.</summary>
-        int GuardLayer { get; }
     }
 }
