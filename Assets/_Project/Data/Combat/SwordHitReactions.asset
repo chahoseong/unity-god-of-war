@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf0a6290cb1c6c24f856ee802eeda6c3, type: 3}
+  m_Name: SwordHitReactions
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.HitReactionSet
+  _lightFront:
+    _stateName: LightHit_Front
+    _clip: {fileID: 5410598297907043000, guid: 646e411aff9e6a3409589c9eebc68c3a, type: 3}
+    _movement: {fileID: 0}
+    _crossFadeDuration: 0.1
+  _lightBack:
+    _stateName: LightHit_Back
+    _clip: {fileID: -5694488986427802680, guid: adc1feaf8563f6247989bffd0737b6ad, type: 3}
+    _movement: {fileID: 0}
+    _crossFadeDuration: 0.1
+  _lightLeft:
+    _stateName: LightHit_Left
+    _clip: {fileID: -8134992637236915294, guid: 881ed1a8905746f4d9b1def6f9e773dd, type: 3}
+    _movement: {fileID: 0}
+    _crossFadeDuration: 0.1
+  _lightRight:
+    _stateName: LightHit_Right
+    _clip: {fileID: 8990611995264232770, guid: 202a1ac9f04ce2a419bc2bdd6b148b2a, type: 3}
+    _movement: {fileID: 0}
+    _crossFadeDuration: 0.1
+  _heavyFront:
+    _stateName: HeavyHit_Front
+    _clip: {fileID: 8724492062134716513, guid: 2c9d421561b7c9941bd5d9942e4dcaa5, type: 3}
+    _movement: {fileID: 11400000, guid: e0fa253355af30641bdf60449e89d4a8, type: 2}
+    _crossFadeDuration: 0.1
+  _heavyBack:
+    _stateName: HeavyHit_Back
+    _clip: {fileID: 8724492062134716513, guid: 3af9f677619822043a708e52c79ba040, type: 3}
+    _movement: {fileID: 11400000, guid: 575a96e1358120f4f8c9c044022e6d46, type: 2}
+    _crossFadeDuration: 0.1
+  _heavyLeft:
+    _stateName: HeavyHit_Left
+    _clip: {fileID: -5950831409251336622, guid: bb9255eddd5619c4e9398d076eb337fd, type: 3}
+    _movement: {fileID: 11400000, guid: b7d25f5a7d11d684bb985ceaf91f172e, type: 2}
+    _crossFadeDuration: 0.1
+  _heavyRight:
+    _stateName: HeavyHit_Right
+    _clip: {fileID: -5950831409251336622, guid: ec81d250c60b03d47b70b65309c588ee, type: 3}
+    _movement: {fileID: 11400000, guid: 9302ce06d985c2f4eb5bcf113329f343, type: 2}
+    _crossFadeDuration: 0.1

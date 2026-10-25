@@ -1,11 +1,10 @@
 using System;
-using GodOfWar.Characters;
 using UnityEngine;
 
-namespace GodOfWar.Player.States
+namespace GodOfWar.Characters
 {
     /// <summary>
-    /// 회피·공격처럼 입력이 아니라 액션이 정해 둔 이동을 매 프레임 속도로 산출한다.
+    /// 회피·공격·피격 반응처럼 입력이 아니라 액션이 정해 둔 이동을 매 프레임 속도로 산출한다.
     /// 매 프레임 루트 궤적의 차분만큼 이동시키므로, 프레임레이트와 무관하게 끝 위치가 궤적의 끝과 같다.
     /// </summary>
     public sealed class ActionMovement

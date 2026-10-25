@@ -1,11 +1,10 @@
 using System.Collections.Generic;
 using GodOfWar.Characters;
-using GodOfWar.Player.States;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 
-namespace GodOfWar.Tests.Player.States
+namespace GodOfWar.Tests.Characters
 {
     public class ActionMovementTests
     {

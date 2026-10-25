@@ -1,11 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
-using GodOfWar.Characters;
 using GodOfWar.Combat;
 using NUnit.Framework;
 using UnityEditor;
-using UnityEditor.Animations;
-using UnityEngine;
+using static GodOfWar.Tests.Combat.AnimationAssetAssertions;
 
 namespace GodOfWar.Tests.Combat
 {
@@ -17,7 +15,6 @@ namespace GodOfWar.Tests.Combat
     public class AttackActionAssetTests
     {
         private const string ControllerPath = "Assets/_Project/Animations/Player/Player.controller";
-        private const string SwordSuffix = "_Sword";
 
         private static IEnumerable<TestCaseData> Actions()
         {
@@ -34,7 +31,7 @@ namespace GodOfWar.Tests.Combat
         {
             var action = AssetDatabase.LoadAssetAtPath<AttackAction>(path);
 
-            Assert.That(FindStateMotion(action.StateName), Is.SameAs(action.Clip));
+            Assert.That(FindStateMotion(ControllerPath, action.StateName), Is.SameAs(action.Clip));
         }
 
         [TestCaseSource(nameof(Actions))]
@@ -42,7 +39,7 @@ namespace GodOfWar.Tests.Combat
         {
             var action = AssetDatabase.LoadAssetAtPath<AttackAction>(path);
 
-            Assert.That(FindStateMotion(action.ReturnStateName), Is.SameAs(action.ReturnClip));
+            Assert.That(FindStateMotion(ControllerPath, action.ReturnStateName), Is.SameAs(action.ReturnClip));
         }
 
         // 다른 타의 변위를 참조하면 전진 거리가 미묘하게 틀어진다.
@@ -89,47 +86,6 @@ namespace GodOfWar.Tests.Combat
 
             Assert.That(action.HitWindowEnd,
                 Is.GreaterThan(action.HitWindowStart).And.AtMost(action.RecoveryStart));
-        }
-
-        private static Motion FindStateMotion(string stateName)
-        {
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
-            AnimatorState state = FindState(controller.layers[0].stateMachine, stateName);
-            Assert.That(state, Is.Not.Null, $"'{ControllerPath}' has no state named '{stateName}'.");
-            return state.motion;
-        }
-
-        private static AnimatorState FindState(AnimatorStateMachine machine, string stateName)
-        {
-            foreach (ChildAnimatorState child in machine.states)
-            {
-                if (child.state.name == stateName)
-                {
-                    return child.state;
-                }
-            }
-
-            foreach (ChildAnimatorStateMachine child in machine.stateMachines)
-            {
-                AnimatorState state = FindState(child.stateMachine, stateName);
-                if (state != null)
-                {
-                    return state;
-                }
-            }
-
-            return null;
-        }
-
-        // Synty는 같은 동작의 루트 모션 판을 A_…_Sword → A_…_RootMotion_Sword로 이름 짓는다.
-        private static void AssertBakedFromRootMotionVersion(BakedRootMotion rootMotion, AnimationClip clip)
-        {
-            Assert.That(rootMotion, Is.Not.Null, $"No root motion is assigned for '{clip.name}'.");
-            Assert.That(rootMotion.SourceClip, Is.Not.Null,
-                $"'{rootMotion.name}' has no source clip. The Synty assets may be missing.");
-
-            string expected = clip.name.Substring(0, clip.name.Length - SwordSuffix.Length) + "_RootMotion" + SwordSuffix;
-            Assert.That(rootMotion.SourceClip.name, Is.EqualTo(expected));
         }
     }
 }
