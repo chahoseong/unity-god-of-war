@@ -25,8 +25,9 @@ namespace GodOfWar.CameraSystem
         [SerializeField, Min(1f)] private float _maxSpeed = 540f;
 
         [Header("Close Range")]
-        [Tooltip("대상과의 수평 거리가 이보다 가까우면 목표 각도를 갱신하지 않는다. 스쳐 지나갈 때 방향이 뒤집히는 것을 막는다.")]
-        [SerializeField, Min(0f)] private float _holdDistance = 1f;
+        [Tooltip("피벗과 조준점의 수평 거리가 이보다 가까우면 목표 각도를 갱신하지 않는다. 겹친 대상에서 방향이 뒤집히는 것을 막는다. "
+                 + "캐릭터 캡슐이 맞닿는 거리(반지름 합)보다 작게 둬야 근접 공방 거리에서 몸과 공격이 대상을 따라간다.")]
+        [SerializeField, Min(0f)] private float _holdDistance = 0.5f;
 
         public LockOnCameraSettings()
         {

@@ -218,6 +218,13 @@ MonoBehaviour:
     _invertY: 0
     _minPitch: -40
     _maxPitch: 70
+  _lockOnSettings:
+    _pitchBias: 10
+    _minPitch: -20
+    _maxPitch: 35
+    _smoothTime: 0.12
+    _maxSpeed: 540
+    _holdDistance: 0.5
 --- !u!1 &8194424162691214974
 GameObject:
   m_ObjectHideFlags: 0
