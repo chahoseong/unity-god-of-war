@@ -13,7 +13,7 @@ namespace GodOfWar.CameraSystem
     /// PlayerController(Update)보다 먼저 실행되어 이동이 같은 프레임의 Yaw를 읽게 한다.
     /// LateUpdate는 CinemachineBrain(실행 순서 100)보다 먼저 실행된다.
     /// </remarks>
-    [DefaultExecutionOrder(-50)]
+    [DefaultExecutionOrder(ExecutionOrder.CameraLook)]
     [DisallowMultipleComponent]
     public sealed class CameraLook : MonoBehaviour
     {

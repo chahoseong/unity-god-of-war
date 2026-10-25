@@ -13,9 +13,9 @@ namespace GodOfWar.Player
     /// 상태 전이가 아니므로 액션 라우터를 거치지 않고 입력을 직접 구독한다.
     /// </summary>
     /// <remarks>
-    /// CameraLook(-50)보다 먼저 실행되어, 대상이 사라진 프레임에 카메라가 이미 해제된 결과를 읽게 한다.
+    /// CameraLook보다 먼저 실행되어, 대상이 사라진 프레임에 카메라가 이미 해제된 결과를 읽게 한다.
     /// </remarks>
-    [DefaultExecutionOrder(-60)]
+    [DefaultExecutionOrder(ExecutionOrder.TargetLock)]
     [DisallowMultipleComponent]
     public sealed class TargetLock : MonoBehaviour
     {

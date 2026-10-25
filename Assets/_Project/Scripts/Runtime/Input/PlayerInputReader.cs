@@ -10,7 +10,7 @@ namespace GodOfWar.Input
     /// 소비자가 같은 프레임의 입력을 보도록 다른 게임플레이 컴포넌트보다 먼저 갱신한다.
     /// </summary>
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-100)]
+    [DefaultExecutionOrder(ExecutionOrder.PlayerInputReader)]
     public sealed class PlayerInputReader : MonoBehaviour, IPlayerInput
     {
         private const string PlayerMapName = "Player";

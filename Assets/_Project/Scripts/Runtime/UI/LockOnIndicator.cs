@@ -12,7 +12,7 @@ namespace GodOfWar.UI
     /// <remarks>
     /// CinemachineBrain(실행 순서 100)이 카메라를 옮긴 뒤 계산해야 표식이 대상보다 한 프레임 뒤처지지 않는다.
     /// </remarks>
-    [DefaultExecutionOrder(200)]
+    [DefaultExecutionOrder(ExecutionOrder.LockOnIndicator)]
     [DisallowMultipleComponent]
     public sealed class LockOnIndicator : MonoBehaviour
     {

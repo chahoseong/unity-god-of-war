@@ -15,6 +15,7 @@ namespace GodOfWar.Player
     /// 상태를 생성·등록하고 매 프레임 갱신하며, 상태들이 질의하는 Owner 역할을 한다.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(ExecutionOrder.PlayerController)]
     [RequireComponent(typeof(CharacterMotor))]
     public sealed class PlayerController : MonoBehaviour, IStateLocator
     {
