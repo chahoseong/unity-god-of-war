@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.LowLevel;
+using UnityEngine.PlayerLoop;
 
 namespace GodOfWar.Combat
 {
@@ -9,6 +11,8 @@ namespace GodOfWar.Combat
     /// 새로 닿은 <see cref="IHittable"/>에게 한 번씩 타격을 전한다.
     /// 언제 열고 닫을지는 공격하는 쪽이 정하고, 이 컴포넌트는 검출만 한다.
     /// 애니메이션이 칼을 옮긴 뒤에 검사하도록 LateUpdate에서 판정한다.
+    /// 검출한 타격은 바로 전하지 않고 모아 두었다가, 모든 LateUpdate가 끝난 뒤 같은 프레임 안에 한꺼번에 전한다.
+    /// 그래서 서로 동시에 친 두 칼은, 먼저 전해진 타격에 상대 칼이 닫혀도 둘 다 맞힌다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class Hitbox : MonoBehaviour
@@ -110,7 +114,7 @@ namespace GodOfWar.Combat
             // 칼날은 손잡이를 축으로 돌기 때문에 양 끝을 선형 보간하면 호의 안쪽을 지나간다.
             // 포즈(위치·회전)를 보간해 칼날이 실제로 지나간 호를 따라 검사한다.
             int steps = GetStepCount(position, rotation);
-            for (int i = 1; i <= steps && IsOpen; i++)
+            for (int i = 1; i <= steps; i++)
             {
                 float t = (float)i / steps;
                 Sweep(Vector3.Lerp(_previousPosition, position, t), Quaternion.Slerp(_previousRotation, rotation, t));
@@ -160,12 +164,7 @@ namespace GodOfWar.Combat
                     continue;
                 }
 
-                target.ReceiveHit(new AttackInfo(_attacker, _strength));
-                // 피격 처리 중에 공격자가 비활성화되는 등으로 판정이 닫혔으면 남은 대상은 치지 않는다.
-                if (!IsOpen)
-                {
-                    return;
-                }
+                HitBatch.Record(target, new AttackInfo(_attacker, _strength));
             }
         }
 
@@ -190,5 +189,119 @@ namespace GodOfWar.Combat
             Gizmos.DrawWireSphere(_tip.position, _radius);
         }
 #endif
+
+        /// <summary>
+        /// 한 프레임 동안 모든 칼이 검출한 타격을 모아, 모든 LateUpdate가 끝난 뒤 한꺼번에 전한다.
+        /// 씬에 배치하지 않아도 동작하도록 플레이어 루프에 직접 끼워 넣는다.
+        /// </summary>
+        private static class HitBatch
+        {
+            private readonly struct PendingHit
+            {
+                public PendingHit(IHittable target, AttackInfo attack)
+                {
+                    Target = target;
+                    Attack = attack;
+                }
+
+                public IHittable Target { get; }
+                public AttackInfo Attack { get; }
+            }
+
+            // 전하는 도중에 기록이 생겨도 이번 목록을 건드리지 않도록 두 목록을 번갈아 쓴다.
+            private static List<PendingHit> s_pending = new List<PendingHit>();
+            private static List<PendingHit> s_delivering = new List<PendingHit>();
+
+            public static void Record(IHittable target, in AttackInfo attack)
+            {
+                s_pending.Add(new PendingHit(target, attack));
+            }
+
+            // 도메인 리로드를 끈 프로젝트라 정적 목록과 플레이어 루프가 플레이 세션 사이에 남으므로,
+            // 시작할 때 비우고 이전 등록을 지운 뒤 다시 끼워 넣는다.
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+            private static void Install()
+            {
+                s_pending.Clear();
+                s_delivering.Clear();
+
+                PlayerLoopSystem root = PlayerLoop.GetCurrentPlayerLoop();
+                PlayerLoopSystem[] phases = root.subSystemList;
+                for (int i = 0; i < phases.Length; i++)
+                {
+                    if (phases[i].type == typeof(PreLateUpdate))
+                    {
+                        phases[i].subSystemList = InsertAfterLateUpdate(phases[i].subSystemList);
+                        root.subSystemList = phases;
+                        PlayerLoop.SetPlayerLoop(root);
+                        return;
+                    }
+                }
+
+                throw new InvalidOperationException($"The player loop has no {nameof(PreLateUpdate)} phase.");
+            }
+
+            private static PlayerLoopSystem[] InsertAfterLateUpdate(PlayerLoopSystem[] systems)
+            {
+                var result = new List<PlayerLoopSystem>(systems.Length + 1);
+                foreach (PlayerLoopSystem system in systems)
+                {
+                    if (system.type == typeof(HitBatch))
+                    {
+                        continue;
+                    }
+
+                    result.Add(system);
+                    if (system.type == typeof(PreLateUpdate.ScriptRunBehaviourLateUpdate))
+                    {
+                        result.Add(new PlayerLoopSystem { type = typeof(HitBatch), updateDelegate = Deliver });
+                    }
+                }
+
+                if (result.Count == systems.Length)
+                {
+                    throw new InvalidOperationException(
+                        $"The player loop has no {nameof(PreLateUpdate.ScriptRunBehaviourLateUpdate)} system.");
+                }
+
+                return result.ToArray();
+            }
+
+            private static void Deliver()
+            {
+                if (s_pending.Count == 0)
+                {
+                    return;
+                }
+
+                (s_pending, s_delivering) = (s_delivering, s_pending);
+                foreach (PendingHit hit in s_delivering)
+                {
+                    DeliverOne(hit);
+                }
+
+                s_delivering.Clear();
+            }
+
+            private static void DeliverOne(in PendingHit hit)
+            {
+                // 인터페이스 참조는 파괴된 Unity 오브젝트를 == null로 거를 수 없어 Unity 오브젝트로 확인한다.
+                // 공격자가 없으면 피격자가 방향을 판정할 수 없다.
+                if ((hit.Target is UnityEngine.Object target && target == null) || hit.Attack.Attacker == null)
+                {
+                    return;
+                }
+
+                // 한 대상의 오류로 같은 프레임의 다른 타격까지 사라지지 않도록 기록하고 이어서 전한다.
+                try
+                {
+                    hit.Target.ReceiveHit(hit.Attack);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception, hit.Target as UnityEngine.Object);
+                }
+            }
+        }
     }
 }

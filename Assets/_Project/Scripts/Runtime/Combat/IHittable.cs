@@ -9,6 +9,7 @@ namespace GodOfWar.Combat
         /// <summary>
         /// 타격을 받아 판정하고 결과를 돌려준다. 피격 반응 같은 상태 전이는 이 안에서 직접 요청한다.
         /// 한 번의 스윙에서 같은 대상에게는 한 번만 호출된다.
+        /// 모든 칼의 검출이 끝난 뒤 같은 프레임의 LateUpdate 직후에 호출되며, 그 사이 칼이 닫혀도 호출된다.
         /// </summary>
         HitResult ReceiveHit(in AttackInfo attack);
     }
