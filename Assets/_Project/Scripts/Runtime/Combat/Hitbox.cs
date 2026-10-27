@@ -245,7 +245,10 @@ namespace GodOfWar.Combat
 
             private static PlayerLoopSystem[] InsertAfterLateUpdate(PlayerLoopSystem[] systems)
             {
+                // 이전 플레이 세션에서 넣은 항목이 남아 있을 수 있어, 빼고 다시 넣는다.
+                // 그러면 항목 수가 그대로일 수 있으므로 끼워 넣었는지는 따로 기록한다.
                 var result = new List<PlayerLoopSystem>(systems.Length + 1);
+                bool inserted = false;
                 foreach (PlayerLoopSystem system in systems)
                 {
                     if (system.type == typeof(HitBatch))
@@ -257,10 +260,11 @@ namespace GodOfWar.Combat
                     if (system.type == typeof(PreLateUpdate.ScriptRunBehaviourLateUpdate))
                     {
                         result.Add(new PlayerLoopSystem { type = typeof(HitBatch), updateDelegate = Deliver });
+                        inserted = true;
                     }
                 }
 
-                if (result.Count == systems.Length)
+                if (!inserted)
                 {
                     throw new InvalidOperationException(
                         $"The player loop has no {nameof(PreLateUpdate.ScriptRunBehaviourLateUpdate)} system.");
