@@ -30,6 +30,7 @@ namespace GodOfWar.Player
         private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
         private static readonly int GuardBeginHash = Animator.StringToHash("Guard_Begin");
         private static readonly int GuardEndHash = Animator.StringToHash("Guard_End");
+        private static readonly int GuardBlockHash = Animator.StringToHash("Guard_Block");
 
         // 이동 중 검을 든 팔·손 자세를 덮어쓰는 레이어. 전신 클립(FullBody 태그) 재생 중에는 끈다.
         private static readonly string[] SwordPoseLayerNames = { "SwordArm", "SwordHand" };
@@ -77,6 +78,22 @@ namespace GodOfWar.Player
             }
 
             _animator.CrossFadeInFixedTime(GuardBeginHash, duration, _guardLayer);
+        }
+
+        /// <summary>
+        /// 상체 가드 레이어에서 공격을 막는 반응을 재생한다. 반응이 끝나면 애니메이터 전이로 가드 자세로 돌아간다.
+        /// 반응 중에 다시 막으면 처음부터 다시 재생한다.
+        /// </summary>
+        public void PlayBlock(float duration)
+        {
+            // 이미 같은 상태로 크로스페이드하는 중이면 무시되므로, 반응 중에는 처음부터 다시 튼다.
+            if (GetIncomingStateInfo(_guardLayer).shortNameHash == GuardBlockHash)
+            {
+                _animator.Play(GuardBlockHash, _guardLayer, 0f);
+                return;
+            }
+
+            _animator.CrossFadeInFixedTime(GuardBlockHash, duration, _guardLayer);
         }
 
         /// <summary>상체 가드 레이어에서 가드를 내린다. 전신 클립으로 캔슬되면 레이어가 꺼져 보이지 않는다.</summary>

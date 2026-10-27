@@ -9,6 +9,12 @@ namespace GodOfWar.Combat
         Hit,
 
         /// <summary>회피 무적으로 흘렸다. 같은 스윙이 다시 맞힐 수 있도록 맞은 것으로 세지 않는다.</summary>
-        Evaded
+        Evaded,
+
+        /// <summary>가드로 막았다. 가드가 유지된다.</summary>
+        Blocked,
+
+        /// <summary>가드로 막았지만 강한 타격에 자세가 무너졌다.</summary>
+        GuardBroken
     }
 }
