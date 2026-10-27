@@ -52,6 +52,7 @@ namespace GodOfWar.Player
         private GuardState _guard;
         private HitReactState _hitReact;
         private GuardBreakState _guardBreak;
+        private ParryState _parry;
 
         /// <summary>현재 상태. 첫 상태에 진입하기 전에는 null이다.</summary>
         public IState CurrentState => _machine?.CurrentState;
@@ -107,6 +108,7 @@ namespace GodOfWar.Player
             _guard = Register(new GuardState(this, _guardSettings, _locomotionSettings));
             _hitReact = Register(new HitReactState(this, _hitReactions));
             _guardBreak = Register(new GuardBreakState(this, _guardSettings));
+            _parry = Register(new ParryState(this, _guardSettings));
         }
 
         private void Start()
@@ -149,11 +151,23 @@ namespace GodOfWar.Player
                     // 회피가 그대로 이어지므로 상태도 선입력도 건드리지 않는다.
                     break;
                 case HitOutcome.Blocked:
-                    // 가드를 유지한 채 막는 반응만 하므로 선입력은 그대로 둔다.
+                    // 가드 중이면 상태를 유지한 채 막는 반응만 하므로 선입력을 건드리지 않는다.
+                    // 패링 동작 중이면 가드 자세로 돌아가 막는다. 상태가 바뀌므로 강제 전이로 선입력을 버린다.
+                    if (current != _guard)
+                    {
+                        _guard.PrepareReturnFromParry();
+                        ForceTransition(_guard);
+                    }
+
                     _guard.Block(attack);
                     break;
                 case HitOutcome.GuardBroken:
                     ForceTransition(_guardBreak);
+                    break;
+                case HitOutcome.Parried:
+                    // 패링 상태로 나가며 윈도우를 헛친 것으로 닫지 않도록 성공을 먼저 알린다.
+                    _guard.ConfirmParry();
+                    ForceTransition(_parry);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null);

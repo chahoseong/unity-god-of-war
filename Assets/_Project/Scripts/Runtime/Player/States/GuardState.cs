@@ -14,6 +14,8 @@ namespace GodOfWar.Player.States
     /// 눌려 있는 Guard 입력(Held)으로 진입하므로, 다른 행동 중에 누르고 있으면 받을 수 있게 된 순간 가드한다.
     /// 가드 중에는 다른 액션이 끼어들 수 없고, 그동안 누른 버튼은 선입력으로 남아 가드를 풀면 실행된다.
     /// 공격을 막으면 상태를 바꾸지 않고 <see cref="Block"/>으로 반응한다.
+    /// Guard 버튼을 새로 누르고 들어오면 누른 순간부터 잠깐 저스트 패링 윈도우가 열린다(<see cref="ParryWindow"/>).
+    /// 누르고 있기만 해서 들어오거나 패링 동작에서 돌아오면 윈도우가 열리지 않는다.
     /// </summary>
     public sealed class GuardState : IState, ICancellable, IChainable, IDefensible
     {
@@ -26,11 +28,17 @@ namespace GodOfWar.Player.States
         private readonly PlayerAnimator _animator;
         private readonly LocomotionSettings _locomotionSettings;
         private readonly GuardSettings _settings;
+        private readonly ParryWindow _parryWindow;
 
         // 이보다 가까운 공격자는 방향을 정할 수 없는 것으로 본다.
         private const float MinDirectionSqr = 0.0001f;
 
         private LocomotionState _locomotion;
+
+        // 다음 Enter에 쓸 진입 방식. 새로 누른 가드면 누른 시각(게임 시간)을, 패링에서 돌아오면 그 사실을 넘긴다.
+        private bool _hasPendingPress;
+        private double _pendingPressTime;
+        private bool _isReturningFromParry;
 
         // 막는 동작이 끝날 때까지 남은 시간. 그동안은 이동 입력을 받지 않는다.
         private float _blockRemaining;
@@ -55,14 +63,33 @@ namespace GodOfWar.Player.States
                     $"'{_settings.name}' has no {nameof(GuardSettings.BlockClip)} assigned.");
             }
 
-            // Held는 눌려 있다는 사실 자체이므로 시작 조건이 없다. 누른 프레임에도 Held가 오므로 Pressed는 선언하지 않는다.
+            _parryWindow = new ParryWindow(_settings.ParryWindow, _settings.ParryCooldown);
+
+            // 새로 누른 가드는 누른 시각으로 패링 윈도우를 연다. 선입력으로 미뤄졌다가 들어와도 원래 누른 시각이 넘어온다.
+            context.Router.Declare(new ActionTrigger(
+                PlayerAction.Guard, this, () => true, prepare: e => PreparePress(e.Time)));
+            // 누르고 있기만 해도 받을 수 있게 된 순간 가드한다. 눌려 있다는 사실 자체이므로 시작 조건이 없고, 윈도우는 열지 않는다.
             context.Router.Declare(new ActionTrigger(PlayerAction.Guard, this, () => true, phase: ActionPhase.Held));
         }
 
         public bool IsCancelWindowOpen => false;
 
-        // 가드를 올린 순간부터 막는다.
-        public DefenseStance DefenseStance => DefenseStance.Guarding;
+        // 가드를 올린 순간부터 막고, 패링 윈도우 동안은 튕겨 낸다.
+        public DefenseStance DefenseStance => _parryWindow.IsOpen(Time.timeAsDouble)
+            ? DefenseStance.Parrying
+            : DefenseStance.Guarding;
+
+        /// <summary>패링 동작에서 돌아와 다음 진입에서 가드를 다시 올리지 않고 이어 간다. 전이 직전에 호출한다.</summary>
+        public void PrepareReturnFromParry()
+        {
+            _isReturningFromParry = true;
+        }
+
+        /// <summary>열려 있던 패링 윈도우로 패링에 성공했다. 패링 상태로 전이하기 직전에 호출해, 헛친 것으로 세지 않게 한다.</summary>
+        public void ConfirmParry()
+        {
+            _parryWindow.Succeed();
+        }
 
         public void Enter()
         {
@@ -70,7 +97,24 @@ namespace GodOfWar.Player.States
             _locomotion ??= _locator.Get<LocomotionState>();
             _blockRemaining = 0f;
             _pushElapsed = _settings.BlockPushDuration;
-            _animator.RaiseGuard(_settings.CrossFadeDuration);
+
+            if (_hasPendingPress)
+            {
+                // 쿨다운 중에 누른 것이면 일반 가드로만 들어온다.
+                _parryWindow.TryOpen(_pendingPressTime);
+            }
+
+            if (_isReturningFromParry)
+            {
+                _animator.ReturnToGuardAfterParry(_settings.CrossFadeDuration);
+            }
+            else
+            {
+                _animator.RaiseGuard(_settings.CrossFadeDuration);
+            }
+
+            _hasPendingPress = false;
+            _isReturningFromParry = false;
         }
 
         /// <summary>
@@ -99,6 +143,13 @@ namespace GodOfWar.Player.States
 
         public void Tick(float deltaTime)
         {
+            // 패링 없이 지나간 윈도우는 헛친 것으로 닫아 쿨다운을 건다.
+            double now = Time.timeAsDouble;
+            if (!_parryWindow.IsOpen(now))
+            {
+                _parryWindow.Close(now);
+            }
+
             if (!_input.IsHeld(PlayerAction.Guard))
             {
                 _machine.ChangeState(_locomotion);
@@ -155,8 +206,21 @@ namespace GodOfWar.Player.States
 
         public void Exit()
         {
+            // 윈도우가 끝나기 전에 가드를 풀거나 맞아서 나가도 헛친 것이다. 그러지 않으면 짧게 눌렀다 떼는 연타가 쿨다운을 피한다.
+            _parryWindow.Close(Time.timeAsDouble);
             // 해제든 캔슬이든 상체가 가드 자세에 남지 않게 내린다.
             _animator.LowerGuard(_settings.CrossFadeDuration);
+        }
+
+        /// <summary>
+        /// 새로 누른 가드의 누른 시각을 다음 진입에 넘긴다. 입력 시각은 실시간이므로, 누른 뒤 지난 시간만큼 지금 게임 시간에서 거슬러
+        /// 게임 시간으로 바꾼다. 그래야 윈도우가 이후 시간 배율(히트스톱 등)을 따른다.
+        /// </summary>
+        private void PreparePress(double pressRealtime)
+        {
+            double delay = Math.Max(0d, Time.realtimeSinceStartupAsDouble - pressRealtime);
+            _pendingPressTime = Time.timeAsDouble - delay;
+            _hasPendingPress = true;
         }
 
         public bool TryChain(PlayerActionEvent e)

@@ -13,6 +13,9 @@ namespace GodOfWar.Combat
         Evading,
 
         /// <summary>가드 중. 막을 수 있는 범위 안의 공격만 막는다.</summary>
-        Guarding
+        Guarding,
+
+        /// <summary>가드를 막 올린 순간(저스트 패링 윈도우). 막을 수 있는 범위 안의 공격을 세기와 관계없이 튕겨 낸다.</summary>
+        Parrying
     }
 }

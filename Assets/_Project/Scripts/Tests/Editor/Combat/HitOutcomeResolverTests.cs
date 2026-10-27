@@ -73,6 +73,22 @@ namespace GodOfWar.Tests.Combat
             Assert.That(outcome, Is.EqualTo(HitOutcome.Blocked));
         }
 
+        // 가드라면 무너질 강공격도 튕겨 내는지 함께 본다.
+        [TestCase(HitStrength.Light)]
+        [TestCase(HitStrength.Heavy)]
+        public void Resolve_WithParryingStanceAndAttackInFront_ReturnsParried(HitStrength strength)
+        {
+            Assert.That(Resolve(DefenseStance.Parrying, strength, AttackerAt(0f)), Is.EqualTo(HitOutcome.Parried));
+        }
+
+        // 패링도 막을 수 있는 범위는 가드와 같다. 범위 검사가 빠지면 등 뒤 공격까지 튕겨 낸다.
+        [TestCase(90f, TestName = "{m}(Side)")]
+        [TestCase(180f, TestName = "{m}(Behind)")]
+        public void Resolve_WithParryingStanceAndAttackBeyondHalfAngle_ReturnsHit(float yaw)
+        {
+            Assert.That(Resolve(DefenseStance.Parrying, HitStrength.Heavy, AttackerAt(yaw)), Is.EqualTo(HitOutcome.Hit));
+        }
+
         // 수평으로는 정면이지만 크게 높은 공격자. 3차원 각도로 재면 반각 밖이 된다.
         [Test]
         public void Resolve_WithGuardingStanceAndAttackerHighAboveInFront_ReturnsBlocked()

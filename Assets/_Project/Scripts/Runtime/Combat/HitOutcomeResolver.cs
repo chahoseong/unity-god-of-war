@@ -11,7 +11,7 @@ namespace GodOfWar.Combat
     {
         /// <param name="defenderPosition">피격자의 위치.</param>
         /// <param name="defenderForward">피격자의 몸 정면.</param>
-        /// <param name="guardHalfAngle">막을 수 있는 범위의 반각(도). 가드 중일 때만 쓴다.</param>
+        /// <param name="guardHalfAngle">막을 수 있는 범위의 반각(도). 가드·패링 중일 때만 쓴다.</param>
         public static HitOutcome Resolve(
             DefenseStance stance, in AttackInfo attack,
             Vector3 defenderPosition, Vector3 defenderForward, float guardHalfAngle)
@@ -35,6 +35,11 @@ namespace GodOfWar.Combat
                         HitStrength.Heavy => HitOutcome.GuardBroken,
                         _ => throw new ArgumentOutOfRangeException(nameof(attack), attack.Strength, null)
                     };
+                case DefenseStance.Parrying:
+                    // 막을 수 있는 범위는 가드와 같고, 범위 안이면 강공격도 튕겨 낸다.
+                    return IsWithinGuard(defenderPosition, defenderForward, attack.Attacker.position, guardHalfAngle)
+                        ? HitOutcome.Parried
+                        : HitOutcome.Hit;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(stance), stance, null);
             }

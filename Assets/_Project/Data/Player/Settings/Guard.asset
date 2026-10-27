@@ -23,3 +23,10 @@ MonoBehaviour:
   _blockClip: {fileID: -8364131450492058579, guid: 7966ebc17e0dc2a4b8faaf62594fb9b2, type: 3}
   _blockPushDistance: 0.2
   _blockPushDuration: 0.15
+  _parryWindow: 0.2
+  _parryCooldown: 0.5
+  _parry:
+    _stateName: Parry
+    _clip: {fileID: -8364131450492058579, guid: 7966ebc17e0dc2a4b8faaf62594fb9b2, type: 3}
+    _movement: {fileID: 0}
+    _crossFadeDuration: 0.1

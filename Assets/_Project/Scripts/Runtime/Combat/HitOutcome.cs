@@ -15,6 +15,9 @@ namespace GodOfWar.Combat
         Blocked,
 
         /// <summary>가드로 막았지만 강한 타격에 자세가 무너졌다.</summary>
-        GuardBroken
+        GuardBroken,
+
+        /// <summary>저스트 패링으로 튕겨 냈다.</summary>
+        Parried
     }
 }

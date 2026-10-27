@@ -31,6 +31,7 @@ namespace GodOfWar.Player
         private static readonly int GuardBeginHash = Animator.StringToHash("Guard_Begin");
         private static readonly int GuardEndHash = Animator.StringToHash("Guard_End");
         private static readonly int GuardBlockHash = Animator.StringToHash("Guard_Block");
+        private static readonly int GuardBlockReturnHash = Animator.StringToHash("Guard_BlockReturn");
 
         // 이동 중 검을 든 팔·손 자세를 덮어쓰는 레이어. 전신 클립(FullBody 태그) 재생 중에는 끈다.
         private static readonly string[] SwordPoseLayerNames = { "SwordArm", "SwordHand" };
@@ -69,15 +70,15 @@ namespace GodOfWar.Player
         /// <summary>상체 가드 레이어에서 가드를 올린다. 다리는 이동 클립으로 걷게 한다.</summary>
         public void RaiseGuard(float duration)
         {
-            // 공격 후딜에서 캔슬되면 다리가 공격 클립에 남아 있으므로 이동 클립으로 되돌린다.
-            // 이미 이동 클립이면 블렌드 트리를 처음부터 다시 틀지 않는다.
-            if (_animator.GetCurrentAnimatorStateInfo(0).shortNameHash != LocomotionHash
-                || _animator.IsInTransition(0))
-            {
-                _animator.CrossFadeInFixedTime(LocomotionHash, duration, 0);
-            }
+            EnterGuard(GuardBeginHash, duration);
+        }
 
-            _animator.CrossFadeInFixedTime(GuardBeginHash, duration, _guardLayer);
+        /// <summary>
+        /// 패링 동작에서 가드 자세로 돌아간다. 이미 막는 자세라 가드를 다시 올리지 않고, 막은 뒤 돌아가는 클립으로 이어 간다.
+        /// </summary>
+        public void ReturnToGuardAfterParry(float duration)
+        {
+            EnterGuard(GuardBlockReturnHash, duration);
         }
 
         /// <summary>
@@ -100,6 +101,20 @@ namespace GodOfWar.Player
         public void LowerGuard(float duration)
         {
             _animator.CrossFadeInFixedTime(GuardEndHash, duration, _guardLayer);
+        }
+
+        /// <summary>다리는 이동 클립으로 돌리고, 상체 가드 레이어는 <paramref name="guardStateHash"/>로 시작한다.</summary>
+        private void EnterGuard(int guardStateHash, float duration)
+        {
+            // 공격 후딜에서 캔슬되거나 전신 반응에서 돌아오면 다리가 그 클립에 남아 있으므로 이동 클립으로 되돌린다.
+            // 이미 이동 클립이면 블렌드 트리를 처음부터 다시 틀지 않는다.
+            if (_animator.GetCurrentAnimatorStateInfo(0).shortNameHash != LocomotionHash
+                || _animator.IsInTransition(0))
+            {
+                _animator.CrossFadeInFixedTime(LocomotionHash, duration, 0);
+            }
+
+            _animator.CrossFadeInFixedTime(guardStateHash, duration, _guardLayer);
         }
 
         private void Awake()
