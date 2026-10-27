@@ -56,7 +56,9 @@ namespace GodOfWar.Player.States
 
         public bool IsCancelWindowOpen => false;
 
-        public DefenseStance DefenseStance => DefenseStance.Open;
+        public DefenseStance DefenseStance => _settings.DodgeRoll.IsInvulnerable(_movement.Elapsed)
+            ? DefenseStance.Evading
+            : DefenseStance.Open;
 
         public string ActionName => $"DodgeRoll {_cardinal}";
 

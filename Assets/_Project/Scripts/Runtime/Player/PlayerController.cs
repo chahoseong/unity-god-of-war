@@ -141,6 +141,9 @@ namespace GodOfWar.Player
                     _hitReact.Prepare(attack);
                     ForceTransition(_hitReact);
                     break;
+                case HitOutcome.Evaded:
+                    // 회피가 그대로 이어지므로 상태도 선입력도 건드리지 않는다.
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null);
             }

@@ -106,6 +106,21 @@ namespace GodOfWar.Tests.Combat
             Assert.That(target.HitCount, Is.EqualTo(0));
         }
 
+        // 첫 타격은 흘리고(무적 구간) 이후로는 맞는 대상. 칼날이 계속 걸쳐 있으면 같은 스윙이 다시 맞혀야 한다.
+        [UnityTest]
+        public IEnumerator Hitbox_WithTargetEvadingFirstHit_HitsTargetAgainInSameSwing()
+        {
+            SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
+            target.Outcome = HitOutcome.Evaded;
+            target.OnHit = () => target.Outcome = HitOutcome.Hit;
+            _hitbox.Open(_attacker, HitStrength.Light);
+            yield return null;
+            yield return null;
+            yield return null;
+
+            Assert.That(target.HitCount, Is.EqualTo(2));
+        }
+
         // 검출한 프레임의 끝에서 확인해, 전달이 다음 프레임으로 밀리면 실패한다.
         [UnityTest]
         public IEnumerator Hitbox_WithTargetOnBlade_HitsTargetBeforeEndOfSameFrame()

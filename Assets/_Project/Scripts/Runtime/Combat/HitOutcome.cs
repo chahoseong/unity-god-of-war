@@ -6,6 +6,9 @@ namespace GodOfWar.Combat
     public enum HitOutcome
     {
         /// <summary>막지 못하고 맞았다.</summary>
-        Hit
+        Hit,
+
+        /// <summary>회피 무적으로 흘렸다. 같은 스윙이 다시 맞힐 수 있도록 맞은 것으로 세지 않는다.</summary>
+        Evaded
     }
 }

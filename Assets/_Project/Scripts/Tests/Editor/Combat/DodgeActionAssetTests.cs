@@ -47,5 +47,31 @@ namespace GodOfWar.Tests.Combat
                 $"'{rootMotion.name}' has no source clip. The Synty assets may be missing.");
             Assert.That(rootMotion.SourceClip.name, Does.Contain(clipTag));
         }
+
+        private static IEnumerable<TestCaseData> Actions()
+        {
+            foreach (string guid in AssetDatabase.FindAssets("t:" + nameof(DodgeAction)))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                yield return new TestCaseData(path).SetName($"{{m}}({System.IO.Path.GetFileNameWithoutExtension(path)})");
+            }
+        }
+
+        // 시작이 끝보다 늦으면 회피가 한 번도 무적이 되지 않는데, 플레이로는 타이밍을 못 맞춘 것처럼 보인다.
+        // 가장 짧은 방향의 클립이 끝나기 전에 무적도 끝나야 어느 방향이든 같은 구간이 적용된다.
+        [TestCaseSource(nameof(Actions))]
+        public void InvulnerableEnd_ForAction_IsAfterInvulnerableStartAndAtOrBeforeShortestClipEnd(string path)
+        {
+            var action = AssetDatabase.LoadAssetAtPath<DodgeAction>(path);
+            float shortest = float.MaxValue;
+            foreach (DodgeCardinal cardinal in new[]
+                         { DodgeCardinal.Forward, DodgeCardinal.Backward, DodgeCardinal.Left, DodgeCardinal.Right })
+            {
+                shortest = System.Math.Min(shortest, action.GetRootMotion(cardinal).Duration);
+            }
+
+            Assert.That(action.InvulnerableEnd,
+                Is.GreaterThan(action.InvulnerableStart).And.LessThanOrEqualTo(shortest));
+        }
     }
 }

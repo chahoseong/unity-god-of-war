@@ -16,3 +16,5 @@ MonoBehaviour:
   _backward: {fileID: 11400000, guid: 3ee620f41318fc54ebd9f955233787c1, type: 2}
   _left: {fileID: 11400000, guid: 56849a458d679c14e8ef141c5683f23a, type: 2}
   _right: {fileID: 11400000, guid: 7b5066254d4ee474f84f286ce3db1f83, type: 2}
+  _invulnerableStart: 0
+  _invulnerableEnd: 0.6

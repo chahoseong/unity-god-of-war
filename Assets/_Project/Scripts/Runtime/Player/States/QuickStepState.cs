@@ -61,7 +61,9 @@ namespace GodOfWar.Player.States
 
         public bool IsCancelWindowOpen => false;
 
-        public DefenseStance DefenseStance => DefenseStance.Open;
+        public DefenseStance DefenseStance => _settings.QuickStep.IsInvulnerable(_movement.Elapsed)
+            ? DefenseStance.Evading
+            : DefenseStance.Open;
 
         /// <summary>마지막 스텝의 클립 방향. 무입력 구르기가 이어받는다.</summary>
         public DodgeCardinal Cardinal { get; private set; }

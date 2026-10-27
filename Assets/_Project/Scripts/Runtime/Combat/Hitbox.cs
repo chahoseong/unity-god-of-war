@@ -8,7 +8,7 @@ namespace GodOfWar.Combat
 {
     /// <summary>
     /// 무기 칼날을 따라 타격 대상을 찾는 판정. 열려 있는 동안 칼날이 지나간 공간을 매 프레임 쓸어,
-    /// 새로 닿은 <see cref="IHittable"/>에게 한 번씩 타격을 전한다.
+    /// 새로 닿은 <see cref="IHittable"/>에게 한 번씩 타격을 전한다. 피격자가 흘린(<see cref="HitOutcome.Evaded"/>) 타격은 세지 않는다.
     /// 언제 열고 닫을지는 공격하는 쪽이 정하고, 이 컴포넌트는 검출만 한다.
     /// 애니메이션이 칼을 옮긴 뒤에 검사하도록 LateUpdate에서 판정한다.
     /// 검출한 타격은 바로 전하지 않고 모아 두었다가, 모든 LateUpdate가 끝난 뒤 같은 프레임 안에 한꺼번에 전한다.
@@ -164,7 +164,7 @@ namespace GodOfWar.Combat
                     continue;
                 }
 
-                HitBatch.Record(target, new AttackInfo(_attacker, _strength));
+                HitBatch.Record(this, target, new AttackInfo(_attacker, _strength));
             }
         }
 
@@ -198,12 +198,14 @@ namespace GodOfWar.Combat
         {
             private readonly struct PendingHit
             {
-                public PendingHit(IHittable target, AttackInfo attack)
+                public PendingHit(Hitbox source, IHittable target, AttackInfo attack)
                 {
+                    Source = source;
                     Target = target;
                     Attack = attack;
                 }
 
+                public Hitbox Source { get; }
                 public IHittable Target { get; }
                 public AttackInfo Attack { get; }
             }
@@ -212,9 +214,9 @@ namespace GodOfWar.Combat
             private static List<PendingHit> s_pending = new List<PendingHit>();
             private static List<PendingHit> s_delivering = new List<PendingHit>();
 
-            public static void Record(IHittable target, in AttackInfo attack)
+            public static void Record(Hitbox source, IHittable target, in AttackInfo attack)
             {
-                s_pending.Add(new PendingHit(target, attack));
+                s_pending.Add(new PendingHit(source, target, attack));
             }
 
             // 도메인 리로드를 끈 프로젝트라 정적 목록과 플레이어 루프가 플레이 세션 사이에 남으므로,
@@ -295,7 +297,13 @@ namespace GodOfWar.Combat
                 // 한 대상의 오류로 같은 프레임의 다른 타격까지 사라지지 않도록 기록하고 이어서 전한다.
                 try
                 {
-                    hit.Target.ReceiveHit(hit.Attack);
+                    HitResult result = hit.Target.ReceiveHit(hit.Attack);
+                    // 흘린 타격은 맞힌 것으로 세지 않아, 무적이 끝난 뒤에도 칼날이 걸쳐 있으면 같은 스윙이 다시 맞힌다.
+                    // 그 사이 칼이 다시 열렸어도 새 스윙의 기록이라 지워도 해가 없다.
+                    if (result.Outcome == HitOutcome.Evaded && hit.Source != null)
+                    {
+                        hit.Source._hitTargets.Remove(hit.Target);
+                    }
                 }
                 catch (Exception exception)
                 {
