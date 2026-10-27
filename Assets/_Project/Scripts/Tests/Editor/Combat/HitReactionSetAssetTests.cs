@@ -13,7 +13,13 @@ namespace GodOfWar.Tests.Combat
     public class HitReactionSetAssetTests
     {
         private const string SetPath = "Assets/_Project/Data/Combat/SwordHitReactions.asset";
-        private const string ControllerPath = "Assets/_Project/Animations/Enemies/TrainingDummy.controller";
+
+        // 이 반응 세트를 쓰는 캐릭터의 애니메이터 컨트롤러.
+        private static readonly (string label, string path)[] Controllers =
+        {
+            ("TrainingDummy", "Assets/_Project/Animations/Enemies/TrainingDummy.controller"),
+            ("Player", "Assets/_Project/Animations/Player/Player.controller")
+        };
 
         private static readonly HitDirection[] Directions =
             { HitDirection.Front, HitDirection.Back, HitDirection.Left, HitDirection.Right };
@@ -29,6 +35,21 @@ namespace GodOfWar.Tests.Combat
             }
         }
 
+        private static IEnumerable<TestCaseData> ReactionsOnControllers()
+        {
+            foreach ((string label, string path) in Controllers)
+            {
+                foreach (HitStrength strength in new[] { HitStrength.Light, HitStrength.Heavy })
+                {
+                    foreach (HitDirection direction in Directions)
+                    {
+                        yield return new TestCaseData(path, strength, direction)
+                            .SetName($"{{m}}({label}{strength}{direction})");
+                    }
+                }
+            }
+        }
+
         private static IEnumerable<TestCaseData> HeavyReactions()
         {
             foreach (HitDirection direction in Directions)
@@ -38,12 +59,13 @@ namespace GodOfWar.Tests.Combat
         }
 
         // 반응 클립 길이로 대기 복귀 시점을 정하므로, 애니메이터가 재생하는 클립과 다르면 반응이 끊기거나 멈춰 선다.
-        [TestCaseSource(nameof(Reactions))]
-        public void Clip_ForReaction_MatchesMotionOfStateWithSameName(HitStrength strength, HitDirection direction)
+        [TestCaseSource(nameof(ReactionsOnControllers))]
+        public void Clip_ForReaction_MatchesMotionOfStateWithSameName(
+            string controllerPath, HitStrength strength, HitDirection direction)
         {
             HitReaction reaction = LoadSet().Get(strength, direction);
 
-            Assert.That(FindStateMotion(ControllerPath, reaction.StateName), Is.SameAs(reaction.Clip));
+            Assert.That(FindStateMotion(controllerPath, reaction.StateName), Is.SameAs(reaction.Clip));
         }
 
         // 다른 방향의 변위를 연결하면 반응 동작과 밀려나는 방향이 어긋난다.

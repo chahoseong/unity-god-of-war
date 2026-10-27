@@ -13,11 +13,12 @@ namespace GodOfWar.Player
     /// 플레이어 상태 머신의 컴포지션 루트.
     /// 상태를 생성·등록하고 매 프레임 갱신하며, 상태들이 속한 Context다.
     /// 상태에게는 <see cref="IPlayerStateContext"/>로만 구성 요소와 전이 수단을 열고, 공개 API는 관찰용만 둔다.
+    /// 바깥에서는 상태를 모른 채 타격을 전하므로, 타격을 받아 현재 상태의 방어 자세로 판정하고 결과에 맞게 전이하는 것도 이 Context의 일이다.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(ExecutionOrder.PlayerController)]
     [RequireComponent(typeof(CharacterMotor), typeof(PlayerAnimator))]
-    public sealed class PlayerController : MonoBehaviour, IPlayerStateContext
+    public sealed class PlayerController : MonoBehaviour, IPlayerStateContext, IHittable
     {
         // 상태 전이와 무관해 라우터가 다루지 않는 버튼. LockOn은 TargetLock이 직접 구독한다.
         private static readonly PlayerAction[] NonRoutedActions = { PlayerAction.LockOn };
@@ -26,6 +27,9 @@ namespace GodOfWar.Player
         [SerializeField] private DodgeSettings _dodgeSettings;
         [SerializeField] private AttackSettings _attackSettings;
         [SerializeField] private GuardSettings _guardSettings;
+
+        [Tooltip("타격 세기·방향별로 재생할 피격 반응.")]
+        [SerializeField] private HitReactionSet _hitReactions;
 
         [Tooltip("이동 입력의 기준 방향을 제공하는 카메라 피벗. 이 피벗의 Yaw를 기준으로 이동한다.")]
         [SerializeField] private CameraLook _cameraLook;
@@ -45,6 +49,7 @@ namespace GodOfWar.Player
         private PlayerAnimator _animator;
         private IPlayerInput _input;
         private Hitbox _hitbox;
+        private HitReactState _hitReact;
 
         /// <summary>현재 상태. 첫 상태에 진입하기 전에는 null이다.</summary>
         public IState CurrentState => _machine?.CurrentState;
@@ -77,6 +82,7 @@ namespace GodOfWar.Player
             RequireAssigned(_dodgeSettings);
             RequireAssigned(_attackSettings);
             RequireAssigned(_guardSettings);
+            RequireAssigned(_hitReactions);
 
             // 상태가 생성자에서 창구의 값을 읽으므로 상태보다 먼저 준비한다.
             _motor = GetComponent<CharacterMotor>();
@@ -97,6 +103,7 @@ namespace GodOfWar.Player
             Register(new DodgeRollState(this, _dodgeSettings));
             Register(new AttackState(this, _attackSettings));
             Register(new GuardState(this, _guardSettings, _locomotionSettings));
+            _hitReact = Register(new HitReactState(this, _hitReactions));
         }
 
         private void Start()
@@ -117,6 +124,38 @@ namespace GodOfWar.Player
             _machine.Tick(Time.deltaTime);
             // 이번 프레임에 열린 캔슬 윈도우나 끝난 행동에 선입력이 같은 프레임에 나가도록 상태 갱신 뒤에 판정한다.
             _router.Tick(Time.deltaTime);
+        }
+
+        public HitResult ReceiveHit(in AttackInfo attack)
+        {
+            IState current = _machine.CurrentState;
+            DefenseStance stance = current is IDefensible defensible
+                ? defensible.DefenseStance
+                : throw new InvalidOperationException(
+                    $"'{current?.GetType().Name}' does not implement {nameof(IDefensible)}. Register it through {nameof(PlayerController)}.");
+
+            HitOutcome outcome = HitOutcomeResolver.Resolve(stance);
+            switch (outcome)
+            {
+                case HitOutcome.Hit:
+                    _hitReact.Prepare(attack);
+                    ForceTransition(_hitReact);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null);
+            }
+
+            return new HitResult(outcome);
+        }
+
+        /// <summary>
+        /// 피격처럼 입력과 무관한 원인으로 상태를 바꾸는 유일한 경로.
+        /// 강제 전이 전에 누른 버튼이 전이 뒤에 뒤늦게 나가지 않도록 선입력을 먼저 버린다 (ADR-004 5절).
+        /// </summary>
+        private void ForceTransition(IState next)
+        {
+            _router.Flush();
+            _machine.ChangeState(next);
         }
 
         private IPlayerInput FindRequiredInput()
@@ -151,10 +190,11 @@ namespace GodOfWar.Player
             }
         }
 
-        // 캔슬 윈도우 선언을 빠뜨린 상태는 여기서 컴파일 에러가 난다 (ADR-004 3절).
-        private void Register<T>(T state) where T : class, IState, ICancellable
+        // 캔슬 윈도우(ADR-004 3절)나 방어 자세 선언을 빠뜨린 상태는 여기서 컴파일 에러가 난다.
+        private T Register<T>(T state) where T : class, IState, ICancellable, IDefensible
         {
             _registry.Add(state);
+            return state;
         }
 
         private void LogActionRoutes()

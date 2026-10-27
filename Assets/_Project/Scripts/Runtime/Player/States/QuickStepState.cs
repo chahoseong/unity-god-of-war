@@ -14,7 +14,7 @@ namespace GodOfWar.Player.States
     /// <see cref="LocomotionState"/>로 돌아간다. 스텝 도중 Dodge를 다시 누르면 즉시 <see cref="DodgeRollState"/>로 이어진다.
     /// 이동 입력이 있을 때 Dodge로 진입하며, 스텝 동안 다른 액션은 끼어들 수 없다.
     /// </summary>
-    public sealed class QuickStepState : IState, ICancellable, IChainable, IActionProgress
+    public sealed class QuickStepState : IState, ICancellable, IChainable, IActionProgress, IDefensible
     {
 
         // DodgeCardinal 순서(Forward, Backward, Left, Right)와 같아야 한다.
@@ -60,6 +60,8 @@ namespace GodOfWar.Player.States
         }
 
         public bool IsCancelWindowOpen => false;
+
+        public DefenseStance DefenseStance => DefenseStance.Open;
 
         /// <summary>마지막 스텝의 클립 방향. 무입력 구르기가 이어받는다.</summary>
         public DodgeCardinal Cardinal { get; private set; }

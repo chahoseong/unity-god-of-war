@@ -13,7 +13,7 @@ namespace GodOfWar.Player.States
     /// 진입 순간의 이동 입력으로 방향을 다시 정하고, 입력이 없으면 스텝의 방향을 그대로 잇는다.
     /// 구르기 중 입력은 받지 않으며, 끝나면 <see cref="LocomotionState"/>로 돌아간다.
     /// </summary>
-    public sealed class DodgeRollState : IState, ICancellable, IActionProgress
+    public sealed class DodgeRollState : IState, ICancellable, IActionProgress, IDefensible
     {
 
         // DodgeCardinal 순서(Forward, Backward, Left, Right)와 같아야 한다.
@@ -55,6 +55,8 @@ namespace GodOfWar.Player.States
         }
 
         public bool IsCancelWindowOpen => false;
+
+        public DefenseStance DefenseStance => DefenseStance.Open;
 
         public string ActionName => $"DodgeRoll {_cardinal}";
 

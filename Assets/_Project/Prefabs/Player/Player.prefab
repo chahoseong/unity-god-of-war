@@ -108,6 +108,7 @@ MonoBehaviour:
   _dodgeSettings: {fileID: 11400000, guid: 8163bf57e1ec4e14ba77d504cb3d87e9, type: 2}
   _attackSettings: {fileID: 11400000, guid: 143526dc6f15f0b4da6d24c322689ee5, type: 2}
   _guardSettings: {fileID: 11400000, guid: 6051f296a3f6e1448b9c2001bf9df9e4, type: 2}
+  _hitReactions: {fileID: 11400000, guid: 4fe0c157c279cbc4fb160b8cd5b2693e, type: 2}
   _cameraLook: {fileID: 3435074741861571896}
   _inputBufferDuration: 0.2
   _logActionRoutes: 0

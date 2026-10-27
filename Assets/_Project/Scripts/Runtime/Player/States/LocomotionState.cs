@@ -1,4 +1,5 @@
 using GodOfWar.Characters;
+using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
 using UnityEngine;
@@ -10,7 +11,7 @@ namespace GodOfWar.Player.States
     /// 입력이 없으면 감속해 정지한다. 다른 행동이 끝나면 돌아오는 상태다.
     /// 언제든 다른 액션이 끼어들 수 있고, Sprint 입력은 같은 이동 계열인 질주로 잇는다.
     /// </summary>
-    public sealed class LocomotionState : IState, ICancellable, IChainable
+    public sealed class LocomotionState : IState, ICancellable, IChainable, IDefensible
     {
         private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
@@ -32,6 +33,8 @@ namespace GodOfWar.Player.States
         }
 
         public bool IsCancelWindowOpen => true;
+
+        public DefenseStance DefenseStance => DefenseStance.Open;
 
         public void Enter()
         {

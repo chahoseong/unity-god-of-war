@@ -20,7 +20,7 @@ namespace GodOfWar.Player.States
     /// 무기 판정은 타격 구간(<see cref="AttackAction.HitWindowStart"/>~<see cref="AttackAction.HitWindowEnd"/>) 동안만 열고,
     /// 어떤 경로로 상태를 나가든 닫는다.
     /// </summary>
-    public sealed class AttackState : IState, ICancellable, IChainable, IComboWindow, IActionProgress
+    public sealed class AttackState : IState, ICancellable, IChainable, IComboWindow, IActionProgress, IDefensible
     {
 
         private readonly IPlayerStateContext _context;
@@ -68,6 +68,8 @@ namespace GodOfWar.Player.States
 
         // 예약된 다음 타가 있어도 연다. 회피는 연계가 아니라 라우터로 넘어가, 상태를 나가면서 예약이 사라진다.
         public bool IsCancelWindowOpen => _action.IsInRecovery(_elapsed);
+
+        public DefenseStance DefenseStance => DefenseStance.Open;
 
         public bool IsComboWindowOpen => _action.IsInComboWindow(_elapsed);
 

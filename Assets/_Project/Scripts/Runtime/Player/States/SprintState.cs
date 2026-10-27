@@ -1,4 +1,5 @@
 using GodOfWar.Characters;
+using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace GodOfWar.Player.States
     /// <see cref="LocomotionState"/>의 연계로만 진입하며, 질주 중 Sprint 재입력은 받을 곳이 없어 무시된다
     /// (게임패드 L3 오입력·키 연타로 질주가 끊기지 않게). 회피·공격은 언제든 끼어들 수 있다.
     /// </summary>
-    public sealed class SprintState : IState, ICancellable
+    public sealed class SprintState : IState, ICancellable, IDefensible
     {
         private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
@@ -34,6 +35,8 @@ namespace GodOfWar.Player.States
         }
 
         public bool IsCancelWindowOpen => true;
+
+        public DefenseStance DefenseStance => DefenseStance.Open;
 
         /// <summary>
         /// 이동 입력이 전방 콘 안에 있고 충분히 큰지 판정한다.

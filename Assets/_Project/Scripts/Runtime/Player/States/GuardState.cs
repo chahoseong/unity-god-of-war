@@ -1,4 +1,5 @@
 using GodOfWar.Characters;
+using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace GodOfWar.Player.States
     /// 눌려 있는 Guard 입력(Held)으로 진입하므로, 다른 행동 중에 누르고 있으면 받을 수 있게 된 순간 가드한다.
     /// 가드 중에는 다른 액션이 끼어들 수 없고, 그동안 누른 버튼은 선입력으로 남아 가드를 풀면 실행된다.
     /// </summary>
-    public sealed class GuardState : IState, ICancellable, IChainable
+    public sealed class GuardState : IState, ICancellable, IChainable, IDefensible
     {
 
         private readonly IPlayerStateContext _context;
@@ -42,6 +43,8 @@ namespace GodOfWar.Player.States
         }
 
         public bool IsCancelWindowOpen => false;
+
+        public DefenseStance DefenseStance => DefenseStance.Open;
 
         public void Enter()
         {
