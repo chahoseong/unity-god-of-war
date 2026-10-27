@@ -1,4 +1,5 @@
 using GodOfWar.Characters;
+using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using UnityEngine;
 
@@ -15,6 +16,9 @@ namespace GodOfWar.Enemies
 
         /// <summary>상태가 자기 클립으로 크로스페이드할 때 쓰는 애니메이터.</summary>
         Animator Animator { get; }
+
+        /// <summary>무기 판정. 공격 상태가 타격 구간에 맞춰 연다.</summary>
+        Hitbox Hitbox { get; }
 
         /// <summary>상태가 전이를 요청하는 상태 머신.</summary>
         StateMachine Machine { get; }

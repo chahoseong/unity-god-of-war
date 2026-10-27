@@ -104,6 +104,74 @@ MonoBehaviour:
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Enemies.TrainingDummy
   _animator: {fileID: 1248505198676108828}
   _hitReactions: {fileID: 11400000, guid: 4fe0c157c279cbc4fb160b8cd5b2693e, type: 2}
+  _autoAttack: 1
+  _attackInterval: 1.5
+  _attackPattern:
+  - {fileID: 11400000, guid: 504e395b0bb59344ab83442242b3d408, type: 2}
+  - {fileID: 11400000, guid: 504e395b0bb59344ab83442242b3d408, type: 2}
+  - {fileID: 11400000, guid: 733231d6c5adf33418c254ecaa7446e6, type: 2}
+--- !u!1 &813722903328741532
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8248300020079606010}
+  m_Layer: 0
+  m_Name: HitboxBase
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8248300020079606010
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813722903328741532}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.14, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2852641772139153837}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7332621964357424719
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7904509850958489200}
+  m_Layer: 0
+  m_Name: HitboxTip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7904509850958489200
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7332621964357424719}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.89, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2852641772139153837}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9134059642308076092
 GameObject:
   m_ObjectHideFlags: 0
@@ -194,9 +262,42 @@ PrefabInstance:
     m_RemovedComponents:
     - {fileID: 64247553254033570, guid: ca8d427b471a77745835639d65f3c276, type: 3}
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4712643579669620, guid: ca8d427b471a77745835639d65f3c276, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8248300020079606010}
+    - targetCorrespondingSourceObject: {fileID: 4712643579669620, guid: ca8d427b471a77745835639d65f3c276, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7904509850958489200}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1530859087307534, guid: ca8d427b471a77745835639d65f3c276, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2378105371104248444}
   m_SourcePrefab: {fileID: 100100000, guid: ca8d427b471a77745835639d65f3c276, type: 3}
+--- !u!1 &2847208187161396951 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1530859087307534, guid: ca8d427b471a77745835639d65f3c276, type: 3}
+  m_PrefabInstance: {fileID: 2847999601054541273}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2378105371104248444
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2847208187161396951}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d9e5582e68a256458791dbf5ac51c3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.Hitbox
+  _base: {fileID: 8248300020079606010}
+  _tip: {fileID: 7904509850958489200}
+  _radius: 0.05
+  _targetLayers:
+    serializedVersion: 2
+    m_Bits: 256
+  _maxSubsteps: 16
 --- !u!4 &2852641772139153837 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4712643579669620, guid: ca8d427b471a77745835639d65f3c276, type: 3}
