@@ -12,6 +12,7 @@ namespace GodOfWar.Enemies
     /// 맞으면 공격자가 있는 쪽과 타격 세기에 맞는 피격 반응을 재생하고, 끝나면 대기로 돌아간다.
     /// 반응 중에 다시 맞으면 가장 최근 타격으로 반응을 새로 시작한다. 공격자를 향해 돌지 않는다.
     /// 자동 공격을 켜면 대기가 정해진 시간 동안 이어질 때마다 공격 패턴을 차례로 휘두른다.
+    /// 휘두른 공격이 저스트 패링당하면 공격을 끊고 튕겨 나가는 반응(역경직)을 재생한다. 그동안 맞으면 피격 반응으로 바뀐다.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CharacterMotor))]
@@ -21,6 +22,9 @@ namespace GodOfWar.Enemies
 
         [Tooltip("타격 세기·방향별로 재생할 피격 반응.")]
         [SerializeField] private HitReactionSet _hitReactions;
+
+        [Tooltip("휘두른 공격이 저스트 패링당했을 때 재생할 반응. 클립 길이 동안 튕겨 나간 뒤 대기로 돌아간다.")]
+        [SerializeField] private HitReaction _deflectedReaction = new HitReaction();
 
         [Header("Auto Attack")]
         [Tooltip("켜면 대기 중에 공격 패턴을 차례로 휘두른다. 끄면 맞기만 한다. 플레이 중에도 바꿀 수 있다.")]
@@ -61,6 +65,11 @@ namespace GodOfWar.Enemies
                 throw new InvalidOperationException($"'{name}' has no {nameof(HitReactionSet)} assigned.");
             }
 
+            if (_deflectedReaction == null || _deflectedReaction.Clip == null)
+            {
+                throw new InvalidOperationException($"'{name}' has no deflected reaction clip assigned.");
+            }
+
             ValidateAttackPattern();
 
             // 상태가 생성자에서 창구의 값을 읽으므로 상태보다 먼저 준비한다.
@@ -70,6 +79,17 @@ namespace GodOfWar.Enemies
             _idle = Register(new IdleState(this));
             _attack = Register(new AttackState(this));
             _hitReact = Register(new HitReactState(this));
+
+            _hitbox.HitResolved += OnHitResolved;
+        }
+
+        private void OnDestroy()
+        {
+            // Awake 검증에서 실패하면 칼을 찾기 전에 멈춘다.
+            if (_hitbox != null)
+            {
+                _hitbox.HitResolved -= OnHitResolved;
+            }
         }
 
         private void Start()
@@ -93,6 +113,21 @@ namespace GodOfWar.Enemies
             _hitReact.Prepare(_hitReactions.Get(attack.Strength, direction));
             _machine.ChangeState(_hitReact);
             return new HitResult(HitOutcome.Hit);
+        }
+
+        /// <summary>
+        /// 자기 칼이 전한 타격의 판정을 받는다. 저스트 패링당하면 지금 상태와 관계없이 역경직으로 바꾼다.
+        /// 공격 중이면 공격 상태를 나가며 칼 판정이 닫힌다. 다른 판정에는 반응하지 않는다.
+        /// </summary>
+        private void OnHitResolved(HitResult result)
+        {
+            if (result.Outcome != HitOutcome.Parried)
+            {
+                return;
+            }
+
+            _hitReact.Prepare(_deflectedReaction);
+            _machine.ChangeState(_hitReact);
         }
 
         /// <summary>대기가 공격 간격만큼 이어지면 패턴의 다음 공격을 시작한다. 대기를 벗어나면 기다린 시간을 처음부터 다시 잰다.</summary>

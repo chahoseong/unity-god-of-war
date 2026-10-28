@@ -13,6 +13,7 @@ namespace GodOfWar.Combat
     /// 애니메이션이 칼을 옮긴 뒤에 검사하도록 LateUpdate에서 판정한다.
     /// 검출한 타격은 바로 전하지 않고 모아 두었다가, 모든 LateUpdate가 끝난 뒤 같은 프레임 안에 한꺼번에 전한다.
     /// 그래서 서로 동시에 친 두 칼은, 먼저 전해진 타격에 상대 칼이 닫혀도 둘 다 맞힌다.
+    /// 피격자가 내린 판정은 전한 직후 <see cref="HitResolved"/>로 공격하는 쪽에 알린다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class Hitbox : MonoBehaviour
@@ -55,6 +56,12 @@ namespace GodOfWar.Combat
 
         public bool IsOpen { get; private set; }
 
+        /// <summary>
+        /// 이 칼이 전한 타격에 피격자가 내린 판정. 타격을 전한 같은 프레임 안(모든 LateUpdate 뒤)에 모든 판정을 알린다.
+        /// 어떤 판정에 어떻게 반응할지는 공격하는 쪽이 정한다.
+        /// </summary>
+        public event Action<HitResult> HitResolved;
+
         private void Awake()
         {
             if (_base == null || _tip == null)
@@ -96,6 +103,12 @@ namespace GodOfWar.Combat
         {
             IsOpen = false;
             _attacker = null;
+        }
+
+        // 판정을 알리는 것은 타격을 전한 HitBatch뿐이다.
+        private void NotifyResolved(HitResult result)
+        {
+            HitResolved?.Invoke(result);
         }
 
         private void LateUpdate()
@@ -302,12 +315,20 @@ namespace GodOfWar.Combat
                 try
                 {
                     HitResult result = hit.Target.ReceiveHit(hit.Attack);
+                    // 기록한 뒤 칼이 파괴됐으면 알릴 곳이 없다.
+                    if (hit.Source == null)
+                    {
+                        return;
+                    }
+
                     // 흘린 타격은 맞힌 것으로 세지 않아, 무적이 끝난 뒤에도 칼날이 걸쳐 있으면 같은 스윙이 다시 맞힌다.
                     // 그 사이 칼이 다시 열렸어도 새 스윙의 기록이라 지워도 해가 없다.
-                    if (result.Outcome == HitOutcome.Evaded && hit.Source != null)
+                    if (result.Outcome == HitOutcome.Evaded)
                     {
                         hit.Source._hitTargets.Remove(hit.Target);
                     }
+
+                    hit.Source.NotifyResolved(result);
                 }
                 catch (Exception exception)
                 {

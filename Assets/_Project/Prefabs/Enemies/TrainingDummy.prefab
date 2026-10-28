@@ -104,6 +104,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Enemies.TrainingDummy
   _animator: {fileID: 1248505198676108828}
   _hitReactions: {fileID: 11400000, guid: 4fe0c157c279cbc4fb160b8cd5b2693e, type: 2}
+  _deflectedReaction:
+    _stateName: Deflected
+    _clip: {fileID: 7996402717578182690, guid: 4fcd7aa8f0cf2c24797b5076c7f6ddbc, type: 3}
+    _movement: {fileID: 11400000, guid: bcc02f91f06535c439dc25dbc272145c, type: 2}
+    _crossFadeDuration: 0.1
   _autoAttack: 1
   _attackInterval: 1.5
   _attackPattern:
