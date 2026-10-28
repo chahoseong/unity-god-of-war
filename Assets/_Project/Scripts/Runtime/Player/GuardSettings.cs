@@ -4,7 +4,7 @@ using UnityEngine;
 namespace GodOfWar.Player
 {
     /// <summary>
-    /// 가드·가드 브레이크·저스트 패링의 튜닝 값. 가속·감속·회전은 기본 이동 설정을 그대로 쓴다.
+    /// 가드·가드 브레이크·저스트 패링·패링 카운터의 튜닝 값. 가속·감속·회전은 기본 이동 설정을 그대로 쓴다.
     /// </summary>
     [CreateAssetMenu(menuName = "GodOfWar/Player/Guard Settings", fileName = "GuardSettings")]
     public sealed class GuardSettings : ScriptableObject
@@ -43,6 +43,9 @@ namespace GodOfWar.Player
         [Tooltip("저스트 패링에 성공했을 때 재생할 전신 반응. 이 클립 길이 동안 제자리에서 움직이지 않는다.")]
         [SerializeField] private HitReaction _parry = new HitReaction();
 
+        [Tooltip("패링 동작 중 공격 버튼을 누르면 패링 동작이 끝난 뒤 나가는 카운터. 약·강 버튼 모두 같은 카운터다.")]
+        [SerializeField] private CounterAction _counter;
+
         public float WalkSpeed => _walkSpeed;
         public float CrossFadeDuration => _crossFadeDuration;
         public float GuardHalfAngle => _guardHalfAngle;
@@ -53,5 +56,6 @@ namespace GodOfWar.Player
         public float ParryWindow => _parryWindow;
         public float ParryCooldown => _parryCooldown;
         public HitReaction Parry => _parry;
+        public CounterAction Counter => _counter;
     }
 }

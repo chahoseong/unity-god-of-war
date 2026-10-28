@@ -8,7 +8,7 @@ using static GodOfWar.Tests.Combat.AnimationAssetAssertions;
 namespace GodOfWar.Tests.Player
 {
     /// <summary>
-    /// 가드 설정 에셋의 가드 브레이크·패링 반응 연결을 검사한다. 엉뚱한 클립이나 변위를 연결해도 재생은 되어 플레이로는 잘 드러나지 않는다.
+    /// 가드 설정 에셋의 가드 브레이크·패링 반응·패링 카운터 연결을 검사한다. 엉뚱한 클립이나 변위를 연결해도 재생은 되어 플레이로는 잘 드러나지 않는다.
     /// 원본 클립은 Synty 에셋이므로 Synty가 없는 환경에서는 실패한다.
     /// </summary>
     public class GuardSettingsAssetTests
@@ -40,6 +40,32 @@ namespace GodOfWar.Tests.Player
             HitReaction reaction = LoadSettings().Parry;
 
             Assert.That(FindStateMotion(ControllerPath, reaction.StateName), Is.SameAs(reaction.Clip));
+        }
+
+        // 카운터 클립 길이로 이동 복귀 시점을 정하므로, 애니메이터가 재생하는 클립과 다르면 동작이 끊기거나 멈춰 선다.
+        [Test]
+        public void CounterClip_ForPlayer_MatchesMotionOfStateWithSameName()
+        {
+            CounterAction counter = LoadSettings().Counter;
+
+            Assert.That(FindStateMotion(ControllerPath, counter.StateName), Is.SameAs(counter.Clip));
+        }
+
+        [Test]
+        public void CounterMovement_ForPlayer_IsBakedFromRootMotionVersionOfClip()
+        {
+            CounterAction counter = LoadSettings().Counter;
+
+            AssertBakedFromRootMotionVersion(counter.Movement, counter.Clip);
+        }
+
+        // 후딜레이가 타격보다 먼저 열리면 회피로 캔슬했을 때 확정타가 나가지 않는다. 플레이로는 가끔 빗나가는 것처럼만 보인다.
+        [Test]
+        public void CounterStrikeTime_ForPlayer_IsAtOrBeforeRecoveryStart()
+        {
+            CounterAction counter = LoadSettings().Counter;
+
+            Assert.That(counter.StrikeTime, Is.LessThanOrEqualTo(counter.RecoveryStart));
         }
 
         // 막는 동작 클립 길이 동안 이동을 막으므로, 상체 레이어가 재생하는 클립과 다르면 발이 묶이는 시간과 동작이 어긋난다.

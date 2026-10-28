@@ -109,6 +109,7 @@ namespace GodOfWar.Player
             _hitReact = Register(new HitReactState(this, _hitReactions));
             _guardBreak = Register(new GuardBreakState(this, _guardSettings));
             _parry = Register(new ParryState(this, _guardSettings));
+            Register(new CounterState(this, _guardSettings, _attackSettings));
         }
 
         private void Start()
@@ -167,6 +168,7 @@ namespace GodOfWar.Player
                 case HitOutcome.Parried:
                     // 패링 상태로 나가며 윈도우를 헛친 것으로 닫지 않도록 성공을 먼저 알린다.
                     _guard.ConfirmParry();
+                    _parry.Prepare(attack.Attacker);
                     ForceTransition(_parry);
                     break;
                 default:

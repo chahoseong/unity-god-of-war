@@ -97,6 +97,15 @@ namespace GodOfWar.Player.States
             return settings.GetEntry(pressed);
         }
 
+        /// <summary>
+        /// 다른 상태의 연계로 <paramref name="input"/> 버튼의 1타를 시작할 때 전이 직전에 호출한다.
+        /// 패링 카운터처럼 같은 계열이 아닌 동작에서 콤보를 처음부터 이어 갈 때 쓴다.
+        /// </summary>
+        public void PrepareEntry(PlayerAction input)
+        {
+            Prepare(input);
+        }
+
         /// <summary><paramref name="input"/> 버튼의 1타로 다음 진입을 준비한다. 진입 트리거가 전이 직전에 호출한다.</summary>
         private void Prepare(PlayerAction input)
         {

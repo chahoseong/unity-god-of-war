@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fa7522c2c5d1ba409012a26cbd90e2d, type: 3}
+  m_Name: ParryCounter
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.CounterAction
+  _stateName: ParryCounter
+  _clip: {fileID: 6046083245655090877, guid: 7697c0667cb467a4bb21c9e0b248d42b, type: 3}
+  _crossFadeDuration: 0.1
+  _movement: {fileID: 11400000, guid: 38e060ac7aaf3a44b8719ecdbb9f86eb, type: 2}
+  _strikeTime: 0.4
+  _contactDistance: 1.45
+  _maxApproach: 1.1
+  _comboWindowStart: 0.43
+  _comboWindowEnd: 0.9
+  _recoveryStart: 0.63
+  _hitStrength: 1

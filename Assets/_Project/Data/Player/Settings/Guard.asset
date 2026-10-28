@@ -30,3 +30,4 @@ MonoBehaviour:
     _clip: {fileID: -8364131450492058579, guid: 7966ebc17e0dc2a4b8faaf62594fb9b2, type: 3}
     _movement: {fileID: 0}
     _crossFadeDuration: 0.1
+  _counter: {fileID: 11400000, guid: 2ca8dc51065ae0a49a629c8b00552bd4, type: 2}

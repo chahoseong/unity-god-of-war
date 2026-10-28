@@ -14,6 +14,7 @@ namespace GodOfWar.Combat
     /// 검출한 타격은 바로 전하지 않고 모아 두었다가, 모든 LateUpdate가 끝난 뒤 같은 프레임 안에 한꺼번에 전한다.
     /// 그래서 서로 동시에 친 두 칼은, 먼저 전해진 타격에 상대 칼이 닫혀도 둘 다 맞힌다.
     /// 피격자가 내린 판정은 전한 직후 <see cref="HitResolved"/>로 공격하는 쪽에 알린다.
+    /// 패링 카운터처럼 대상이 정해진 타격은 칼날로 찾지 않고 <see cref="Strike"/>로 같은 경로에 넣는다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class Hitbox : MonoBehaviour
@@ -103,6 +104,25 @@ namespace GodOfWar.Combat
         {
             IsOpen = false;
             _attacker = null;
+        }
+
+        /// <summary>
+        /// 칼날로 찾지 않고 <paramref name="target"/>에게 타격 한 번을 전한다. 칼이 열려 있는지와 관계없다.
+        /// 칼날로 찾은 타격과 같은 시점(모든 LateUpdate 뒤)에 전하고, 판정도 <see cref="HitResolved"/>로 알린다.
+        /// </summary>
+        public void Strike(IHittable target, Transform attacker, HitStrength strength)
+        {
+            if (target == null)
+            {
+                throw new ArgumentNullException(nameof(target));
+            }
+
+            if (attacker == null)
+            {
+                throw new ArgumentNullException(nameof(attacker));
+            }
+
+            HitBatch.Record(this, target, new AttackInfo(attacker, strength));
         }
 
         // 판정을 알리는 것은 타격을 전한 HitBatch뿐이다.
