@@ -9,6 +9,7 @@ namespace GodOfWar.Player
     /// 플레이어 애니메이터의 유일한 창구. 상태는 이 컴포넌트를 통해서만 클립을 재생한다.
     /// 매 프레임 모터 속도와 애니메이터 상태 태그를 읽어 이동 파라미터, 검 자세·가드 레이어, 가드 리그 가중치를 정한다.
     /// 레이어 구성은 이 컴포넌트만 안다.
+    /// 애니메이터와 파라미터·가중치 보간은 캐릭터 시계를 따라, 역경직 동안 함께 멈춘다.
     /// </summary>
     /// <remarks>
     /// 상태가 이번 프레임에 시작한 크로스페이드를 같은 프레임에 읽도록 PlayerController 뒤에 실행된다.
@@ -16,7 +17,7 @@ namespace GodOfWar.Player
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(ExecutionOrder.PlayerAnimator)]
-    [RequireComponent(typeof(CharacterMotor))]
+    [RequireComponent(typeof(CharacterMotor), typeof(CharacterClock))]
     public sealed class PlayerAnimator : MonoBehaviour
     {
         private static readonly int MoveXHash = Animator.StringToHash("MoveX");
@@ -51,6 +52,7 @@ namespace GodOfWar.Player
         [SerializeField, Min(0.01f)] private float _swordPoseBlendDuration = 0.1f;
 
         private CharacterMotor _motor;
+        private CharacterClock _clock;
         private int[] _swordPoseLayers;
         private float[] _swordPoseWeights;
         private int _guardLayer = -1;
@@ -130,6 +132,11 @@ namespace GodOfWar.Player
             }
 
             _motor = GetComponent<CharacterMotor>();
+            // RequireComponent는 이미 만들어진 프리팹에 컴포넌트를 채워 주지 않으므로 직접 확인한다.
+            if (!TryGetComponent(out _clock))
+            {
+                throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterClock)} component.");
+            }
         }
 
         private void Start()
@@ -141,13 +148,17 @@ namespace GodOfWar.Player
 
         private void Update()
         {
+            // 이번 프레임에 평가될 애니메이터가 캐릭터 시계의 진행 비율로 재생되게 한다.
+            _animator.speed = _clock.TimeScale;
+            float deltaTime = _clock.DeltaTime;
+
             Vector3 localVelocity = transform.InverseTransformDirection(_motor.HorizontalVelocity);
-            _animator.SetFloat(MoveXHash, localVelocity.x, _moveDampTime, Time.deltaTime);
-            _animator.SetFloat(MoveZHash, localVelocity.z, _moveDampTime, Time.deltaTime);
+            _animator.SetFloat(MoveXHash, localVelocity.x, _moveDampTime, deltaTime);
+            _animator.SetFloat(MoveZHash, localVelocity.z, _moveDampTime, deltaTime);
 
             bool isFullBody = IsFullBodyPlaying();
-            UpdateSwordPoseLayers(isFullBody, Time.deltaTime);
-            UpdateGuardLayer(isFullBody, Time.deltaTime);
+            UpdateSwordPoseLayers(isFullBody, deltaTime);
+            UpdateGuardLayer(isFullBody, deltaTime);
         }
 
         /// <summary>검 든 자세 레이어를 찾고, 애니메이터에 설정된 기본 가중치를 켜졌을 때의 가중치로 기억한다.</summary>

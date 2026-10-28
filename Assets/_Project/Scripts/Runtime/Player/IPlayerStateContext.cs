@@ -15,6 +15,9 @@ namespace GodOfWar.Player
         /// <summary>상태가 이동을 맡기는 모터. 몸의 위치와 방향도 이 모터의 Transform이 대표한다.</summary>
         CharacterMotor Motor { get; }
 
+        /// <summary>이 캐릭터의 시계. 상태는 Tick으로 받는 진행 시간 외에 시각이 필요할 때 이 시계를 쓴다.</summary>
+        CharacterClock Clock { get; }
+
         IPlayerInput Input { get; }
 
         /// <summary>상태가 자기 클립을 재생하는 애니메이터 창구. 레이어 구성은 이 창구만 안다.</summary>

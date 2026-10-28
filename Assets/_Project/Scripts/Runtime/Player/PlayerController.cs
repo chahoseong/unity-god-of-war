@@ -17,7 +17,7 @@ namespace GodOfWar.Player
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(ExecutionOrder.PlayerController)]
-    [RequireComponent(typeof(CharacterMotor), typeof(PlayerAnimator))]
+    [RequireComponent(typeof(CharacterMotor), typeof(PlayerAnimator), typeof(CharacterClock))]
     public sealed class PlayerController : MonoBehaviour, IPlayerStateContext, IHittable
     {
         // 상태 전이와 무관해 라우터가 다루지 않는 버튼. LockOn은 TargetLock이 직접 구독한다.
@@ -46,6 +46,7 @@ namespace GodOfWar.Player
         private StateMachine _machine;
         private ActionRouter _router;
         private CharacterMotor _motor;
+        private CharacterClock _clock;
         private PlayerAnimator _animator;
         private IPlayerInput _input;
         private Hitbox _hitbox;
@@ -64,6 +65,7 @@ namespace GodOfWar.Player
         public PlayerAction BufferedAction => _router.BufferedAction;
 
         CharacterMotor IPlayerStateContext.Motor => _motor;
+        CharacterClock IPlayerStateContext.Clock => _clock;
         IPlayerInput IPlayerStateContext.Input => _input;
         PlayerAnimator IPlayerStateContext.Animator => _animator;
         Hitbox IPlayerStateContext.Hitbox => _hitbox;
@@ -93,6 +95,11 @@ namespace GodOfWar.Player
             if (!TryGetComponent(out _animator))
             {
                 throw new InvalidOperationException($"'{name}' requires a {nameof(PlayerAnimator)} component.");
+            }
+
+            if (!TryGetComponent(out _clock))
+            {
+                throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterClock)} component.");
             }
 
             _input = FindRequiredInput();
@@ -127,9 +134,10 @@ namespace GodOfWar.Player
 
         private void Update()
         {
-            _machine.Tick(Time.deltaTime);
+            // 역경직으로 멈춘 동안은 상태도 선입력 보관 시간도 흐르지 않는다.
+            _machine.Tick(_clock.DeltaTime);
             // 이번 프레임에 열린 캔슬 윈도우나 끝난 행동에 선입력이 같은 프레임에 나가도록 상태 갱신 뒤에 판정한다.
-            _router.Tick(Time.deltaTime);
+            _router.Tick(_clock.DeltaTime);
         }
 
         public HitResult ReceiveHit(in AttackInfo attack)

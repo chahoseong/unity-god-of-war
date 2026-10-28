@@ -15,7 +15,7 @@ namespace GodOfWar.Enemies
     /// 휘두른 공격이 저스트 패링당하면 공격을 끊고 튕겨 나가는 반응(역경직)을 재생한다. 그동안 맞으면 피격 반응으로 바뀐다.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(CharacterMotor))]
+    [RequireComponent(typeof(CharacterMotor), typeof(CharacterClock))]
     public sealed class TrainingDummy : MonoBehaviour, IHittable, ITrainingDummyStateContext
     {
         [SerializeField] private Animator _animator;
@@ -38,6 +38,7 @@ namespace GodOfWar.Enemies
 
         private readonly StateRegistry _registry = new StateRegistry();
         private CharacterMotor _motor;
+        private CharacterClock _clock;
         private Hitbox _hitbox;
         private StateMachine _machine;
         private IdleState _idle;
@@ -74,6 +75,12 @@ namespace GodOfWar.Enemies
 
             // 상태가 생성자에서 창구의 값을 읽으므로 상태보다 먼저 준비한다.
             _motor = GetComponent<CharacterMotor>();
+            // RequireComponent는 이미 만들어진 프리팹에 컴포넌트를 채워 주지 않으므로 직접 확인한다.
+            if (!TryGetComponent(out _clock))
+            {
+                throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterClock)} component.");
+            }
+
             _hitbox = FindRequiredHitbox();
             _machine = new StateMachine();
             _idle = Register(new IdleState(this));
@@ -100,8 +107,10 @@ namespace GodOfWar.Enemies
 
         private void Update()
         {
-            _machine.Tick(Time.deltaTime);
-            UpdateAutoAttack(Time.deltaTime);
+            // 역경직으로 멈춘 동안은 애니메이션도 상태도 공격 간격도 흐르지 않는다.
+            _animator.speed = _clock.TimeScale;
+            _machine.Tick(_clock.DeltaTime);
+            UpdateAutoAttack(_clock.DeltaTime);
         }
 
         public HitResult ReceiveHit(in AttackInfo attack)

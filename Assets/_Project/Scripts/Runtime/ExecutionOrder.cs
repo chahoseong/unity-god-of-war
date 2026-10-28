@@ -16,6 +16,9 @@ namespace GodOfWar
         /// <summary>이동이 같은 프레임의 Yaw를 읽도록 PlayerController보다 먼저 실행한다.</summary>
         public const int CameraLook = -50;
 
+        /// <summary>캐릭터의 컴포넌트들이 같은 프레임의 진행 시간을 읽도록 그보다 먼저 갱신한다.</summary>
+        public const int CharacterClock = -20;
+
         /// <summary>상태 머신과 액션 라우터를 갱신한다.</summary>
         public const int PlayerController = 0;
 

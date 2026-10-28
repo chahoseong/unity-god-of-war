@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8932294643247721115}
   - component: {fileID: 1740057858964720231}
   - component: {fileID: 1732823306099616629}
+  - component: {fileID: 7197608377638734546}
   m_Layer: 8
   m_Name: TrainingDummy
   m_TagString: Untagged
@@ -115,6 +116,18 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 504e395b0bb59344ab83442242b3d408, type: 2}
   - {fileID: 11400000, guid: 504e395b0bb59344ab83442242b3d408, type: 2}
   - {fileID: 11400000, guid: 733231d6c5adf33418c254ecaa7446e6, type: 2}
+--- !u!114 &7197608377638734546
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 590756983412817316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0368ac31509e5f4e85a1318dbb4c5ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Characters.CharacterClock
 --- !u!1 &813722903328741532
 GameObject:
   m_ObjectHideFlags: 0
