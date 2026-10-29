@@ -13,13 +13,13 @@ namespace GodOfWar.Player.States
     /// 항상 이동 기준(카메라) 정면을 바라본다.
     /// 눌려 있는 Guard 입력(Held)으로 진입하므로, 다른 행동 중에 누르고 있으면 받을 수 있게 된 순간 가드한다.
     /// 가드 중에는 다른 액션이 끼어들 수 없고, 그동안 누른 버튼은 선입력으로 남아 가드를 풀면 실행된다.
-    /// 공격을 막으면 상태를 바꾸지 않고 <see cref="Block"/>으로 반응한다.
+    /// 공격을 막으면 <see cref="BlockState"/>로 반응하고, 그동안 버튼을 계속 누르고 있었으면 가드를 다시 올리지 않고 돌아온다.
     /// Guard 버튼을 새로 누르고 들어오면 누른 순간부터 잠깐 저스트 패링 윈도우가 열린다(<see cref="ParryWindow"/>).
-    /// 누르고 있기만 해서 들어오거나 패링 동작에서 돌아오면 윈도우가 열리지 않는다.
+    /// 누르고 있기만 해서 들어오거나 막기에서 돌아오면 윈도우가 열리지 않는다.
+    /// 저스트 패링에 쓴 누름은 끝난 것으로 보아, 그 버튼을 떼기 전까지는 누르고 있어도(Held) 가드에 들어가지 않는다.
     /// </summary>
-    public sealed class GuardState : IState, ICancellable, IChainable, IDefensible
+    public sealed class GuardState : IState, ICancellable, IChainable, IDefensible, IDisposable
     {
-
         private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
         private readonly IStateLocator _locator;
@@ -31,22 +31,15 @@ namespace GodOfWar.Player.States
         private readonly GuardSettings _settings;
         private readonly ParryWindow _parryWindow;
 
-        // 이보다 가까운 공격자는 방향을 정할 수 없는 것으로 본다.
-        private const float MinDirectionSqr = 0.0001f;
-
         private LocomotionState _locomotion;
 
-        // 다음 Enter에 쓸 진입 방식. 새로 누른 가드면 누른 시각(캐릭터 시계)을, 패링에서 돌아오면 그 사실을 넘긴다.
+        // 다음 Enter에 쓸 진입 방식. 새로 누른 가드면 누른 시각(캐릭터 시계)을, 막기에서 돌아오면 그 사실을 넘긴다.
         private bool _hasPendingPress;
         private double _pendingPressTime;
-        private bool _isReturningFromParry;
+        private bool _isReturningFromBlock;
 
-        // 막는 동작이 끝날 때까지 남은 시간. 그동안은 이동 입력을 받지 않는다.
-        private float _blockRemaining;
-
-        // 막았을 때의 밀림. 경과 시간이 밀림 시간에 이르면 밀리지 않는다.
-        private Vector3 _pushDirection;
-        private float _pushElapsed;
+        // 저스트 패링에 쓴 누름이 아직 이어지는지. 가드 상태가 아닐 때도 버튼을 떼는 순간 풀려야 하므로 입력을 직접 듣는다.
+        private bool _isHoldSpentOnParry;
 
         public GuardState(IPlayerStateContext context, GuardSettings settings, LocomotionSettings locomotionSettings)
         {
@@ -59,19 +52,15 @@ namespace GodOfWar.Player.States
             _animator = context.Animator;
             _locomotionSettings = locomotionSettings;
             _settings = settings;
-            if (_settings.BlockClip == null)
-            {
-                throw new InvalidOperationException(
-                    $"'{_settings.name}' has no {nameof(GuardSettings.BlockClip)} assigned.");
-            }
-
             _parryWindow = new ParryWindow(_settings.ParryWindow, _settings.ParryCooldown);
 
             // 새로 누른 가드는 누른 시각으로 패링 윈도우를 연다. 선입력으로 미뤄졌다가 들어와도 원래 누른 시각이 넘어온다.
             context.Router.Declare(new ActionTrigger(
                 PlayerAction.Guard, this, () => true, prepare: e => PreparePress(e.Time)));
-            // 누르고 있기만 해도 받을 수 있게 된 순간 가드한다. 눌려 있다는 사실 자체이므로 시작 조건이 없고, 윈도우는 열지 않는다.
-            context.Router.Declare(new ActionTrigger(PlayerAction.Guard, this, () => true, phase: ActionPhase.Held));
+            // 누르고 있기만 해도 받을 수 있게 된 순간 가드한다. 윈도우는 열지 않는다. 패링에 쓴 누름이면 떼고 다시 눌러야 한다.
+            context.Router.Declare(new ActionTrigger(
+                PlayerAction.Guard, this, () => !_isHoldSpentOnParry, phase: ActionPhase.Held));
+            _input.ActionTriggered += OnActionTriggered;
         }
 
         public bool IsCancelWindowOpen => false;
@@ -81,24 +70,36 @@ namespace GodOfWar.Player.States
             ? DefenseStance.Parrying
             : DefenseStance.Guarding;
 
-        /// <summary>패링 동작에서 돌아와 다음 진입에서 가드를 다시 올리지 않고 이어 간다. 전이 직전에 호출한다.</summary>
-        public void PrepareReturnFromParry()
+        /// <summary>막기 반응에서 돌아와 다음 진입에서 가드를 다시 올리지 않고 가드 자세로 이어 간다. 전이 직전에 호출한다.</summary>
+        public void PrepareReturnFromBlock()
         {
-            _isReturningFromParry = true;
+            _isReturningFromBlock = true;
         }
 
         /// <summary>열려 있던 패링 윈도우로 패링에 성공했다. 패링 상태로 전이하기 직전에 호출해, 헛친 것으로 세지 않게 한다.</summary>
         public void ConfirmParry()
         {
             _parryWindow.Succeed();
+            _isHoldSpentOnParry = true;
+        }
+
+        public void Dispose()
+        {
+            _input.ActionTriggered -= OnActionTriggered;
+        }
+
+        private void OnActionTriggered(PlayerActionEvent e)
+        {
+            if (e.Action == PlayerAction.Guard && e.Phase == ActionPhase.Released)
+            {
+                _isHoldSpentOnParry = false;
+            }
         }
 
         public void Enter()
         {
             // 생성 시점에는 다른 상태가 아직 등록되지 않았을 수 있어 첫 진입에서 찾는다.
             _locomotion ??= _locator.Get<LocomotionState>();
-            _blockRemaining = 0f;
-            _pushElapsed = _settings.BlockPushDuration;
 
             if (_hasPendingPress)
             {
@@ -106,9 +107,9 @@ namespace GodOfWar.Player.States
                 _parryWindow.TryOpen(_pendingPressTime);
             }
 
-            if (_isReturningFromParry)
+            if (_isReturningFromBlock)
             {
-                _animator.ReturnToGuardAfterParry(_settings.CrossFadeDuration);
+                _animator.FinishBlockReturn(_settings.BlockCrossFadeOutDuration);
             }
             else
             {
@@ -116,31 +117,7 @@ namespace GodOfWar.Player.States
             }
 
             _hasPendingPress = false;
-            _isReturningFromParry = false;
-        }
-
-        /// <summary>
-        /// 공격을 막았을 때의 반응. 상체에 막는 동작을 재생하고, 공격 반대쪽으로 잠깐 밀려난 뒤
-        /// 막는 동작이 끝날 때까지 제자리에서 버틴다. 가드 자세로 돌아가는 동작 중에는 다시 걸을 수 있다.
-        /// 숄더뷰에서 몸과 카메라가 어긋나지 않도록 몸은 돌리지 않는다.
-        /// 상태는 그대로라 계속 막을 수 있고, 반응 중에 다시 막으면 처음부터 다시 반응한다.
-        /// </summary>
-        public void Block(in AttackInfo attack)
-        {
-            _animator.PlayBlock(_settings.BlockCrossFadeInDuration);
-            _blockRemaining = _settings.BlockClip.length;
-            _pushElapsed = _settings.BlockPushDuration;
-
-            Vector3 toAttacker = attack.Attacker.position - _motor.transform.position;
-            toAttacker.y = 0f;
-            // 공격자와 겹쳐 밀릴 방향을 정할 수 없으면 밀리지 않는다.
-            if (toAttacker.sqrMagnitude < MinDirectionSqr)
-            {
-                return;
-            }
-
-            _pushDirection = -toAttacker.normalized;
-            _pushElapsed = 0f;
+            _isReturningFromBlock = false;
         }
 
         public void Tick(float deltaTime)
@@ -159,51 +136,16 @@ namespace GodOfWar.Player.States
             }
 
             float referenceYaw = _context.MovementYaw;
-            _blockRemaining -= deltaTime;
+            Vector2 move = _input.Move;
+            Vector3 target = Quaternion.Euler(0f, referenceYaw, 0f)
+                * new Vector3(move.x, 0f, move.y) * _settings.WalkSpeed;
+            Vector3 current = _motor.HorizontalVelocity;
+            float rate = target.sqrMagnitude > current.sqrMagnitude
+                ? _locomotionSettings.Acceleration
+                : _locomotionSettings.Deceleration;
 
-            if (_pushElapsed < _settings.BlockPushDuration)
-            {
-                _motor.Move(TickPush(deltaTime), deltaTime);
-            }
-            else if (_blockRemaining > 0f)
-            {
-                // 밀림이 끝난 뒤에도 막는 동작이 끝날 때까지 제자리에서 버틴다.
-                _motor.Move(Vector3.zero, deltaTime);
-            }
-            else
-            {
-                Vector2 move = _input.Move;
-                Vector3 target = Quaternion.Euler(0f, referenceYaw, 0f)
-                    * new Vector3(move.x, 0f, move.y) * _settings.WalkSpeed;
-                Vector3 current = _motor.HorizontalVelocity;
-                float rate = target.sqrMagnitude > current.sqrMagnitude
-                    ? _locomotionSettings.Acceleration
-                    : _locomotionSettings.Deceleration;
-
-                _motor.Move(Vector3.MoveTowards(current, target, rate * deltaTime), deltaTime);
-            }
-
+            _motor.Move(Vector3.MoveTowards(current, target, rate * deltaTime), deltaTime);
             _motor.RotateTowards(referenceYaw, _locomotionSettings.TurnSpeed * deltaTime);
-        }
-
-        /// <summary>
-        /// 이번 프레임의 밀림 속도. 시작이 가장 빠르고 끝에서 멈추도록 이동 거리를 d·(2u − u²) (u = 경과/시간) 곡선으로 나눈다.
-        /// </summary>
-        private Vector3 TickPush(float deltaTime)
-        {
-            float duration = _settings.BlockPushDuration;
-            float from = PushProgress(_pushElapsed / duration);
-            _pushElapsed = Mathf.Min(_pushElapsed + deltaTime, duration);
-            float to = PushProgress(_pushElapsed / duration);
-
-            return deltaTime > 0f
-                ? _pushDirection * ((to - from) * _settings.BlockPushDistance / deltaTime)
-                : Vector3.zero;
-        }
-
-        private static float PushProgress(float u)
-        {
-            return u * (2f - u);
         }
 
         public void Exit()

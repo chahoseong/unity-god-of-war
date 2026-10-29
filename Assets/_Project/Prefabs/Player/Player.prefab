@@ -171,6 +171,7 @@ MonoBehaviour:
   _guardRig: {fileID: 5516138986892443814}
   _moveDampTime: 0.1
   _swordPoseBlendDuration: 0.1
+  _guardRigBlendDuration: 0.15
 --- !u!114 &2125757744054541679
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -2,7 +2,6 @@ using GodOfWar.Combat;
 using GodOfWar.Player;
 using NUnit.Framework;
 using UnityEditor;
-using UnityEditor.Animations;
 using static GodOfWar.Tests.Combat.AnimationAssetAssertions;
 
 namespace GodOfWar.Tests.Player
@@ -68,18 +67,18 @@ namespace GodOfWar.Tests.Player
             Assert.That(counter.StrikeTime, Is.LessThanOrEqualTo(counter.RecoveryStart));
         }
 
-        // 막는 동작 클립 길이 동안 이동을 막으므로, 상체 레이어가 재생하는 클립과 다르면 발이 묶이는 시간과 동작이 어긋난다.
+        // 막는 동작 클립 길이 동안 가드를 유지하고 이동을 막으므로, 애니메이터가 재생하는 클립과 다르면 발이 묶이는 시간과 동작이 어긋난다.
         [Test]
-        public void BlockClip_ForPlayer_MatchesMotionOfGuardBlockStateOnGuardLayer()
+        public void BlockClip_ForPlayer_MatchesMotionOfBlockState()
         {
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
-            AnimatorControllerLayer guardLayer = System.Array.Find(controller.layers, layer => layer.name == "Guard");
-            Assert.That(guardLayer, Is.Not.Null, $"'{ControllerPath}' has no Guard layer.");
-            ChildAnimatorState block = System.Array.Find(
-                guardLayer.stateMachine.states, child => child.state.name == "Guard_Block");
-            Assert.That(block.state, Is.Not.Null, "The Guard layer has no Guard_Block state.");
+            Assert.That(FindStateMotion(ControllerPath, "Block"), Is.SameAs(LoadSettings().BlockClip));
+        }
 
-            Assert.That(block.state.motion, Is.SameAs(LoadSettings().BlockClip));
+        // 돌아가는 클립 길이 동안 전신으로 제자리에 서 있으므로, 애니메이터가 재생하는 클립과 다르면 발이 묶이는 시간과 동작이 어긋난다.
+        [Test]
+        public void BlockReturnClip_ForPlayer_MatchesMotionOfBlockReturnState()
+        {
+            Assert.That(FindStateMotion(ControllerPath, "BlockReturn"), Is.SameAs(LoadSettings().BlockReturnClip));
         }
 
         private static GuardSettings LoadSettings()

@@ -22,7 +22,9 @@ MonoBehaviour:
     _crossFadeInDuration: 0
     _crossFadeOutDuration: 0.1
   _blockClip: {fileID: -8364131450492058579, guid: 7966ebc17e0dc2a4b8faaf62594fb9b2, type: 3}
+  _blockReturnClip: {fileID: 8856239983432694316, guid: 9763e5345af7e854d90aedaecb71f9e4, type: 3}
   _blockCrossFadeInDuration: 0
+  _blockCrossFadeOutDuration: 0.25
   _blockPushDistance: 0.2
   _blockPushDuration: 0.15
   _parryWindow: 0.2

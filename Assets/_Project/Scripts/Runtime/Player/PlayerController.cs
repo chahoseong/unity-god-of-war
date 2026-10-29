@@ -52,6 +52,7 @@ namespace GodOfWar.Player
         private Hitbox _hitbox;
         private GuardState _guard;
         private HitReactState _hitReact;
+        private BlockState _block;
         private GuardBreakState _guardBreak;
         private ParryState _parry;
 
@@ -120,6 +121,7 @@ namespace GodOfWar.Player
             Register(new AttackState(this, _attackSettings));
             _guard = Register(new GuardState(this, _guardSettings, _locomotionSettings));
             _hitReact = Register(new HitReactState(this, _hitReactions));
+            _block = Register(new BlockState(this, _guardSettings));
             _guardBreak = Register(new GuardBreakState(this, _guardSettings));
             _parry = Register(new ParryState(this, _guardSettings));
             Register(new CounterState(this, _guardSettings, _attackSettings));
@@ -136,6 +138,7 @@ namespace GodOfWar.Player
         {
             // Awake 검증에서 실패하면 라우터가 만들어지지 않는다.
             _router?.Dispose();
+            _guard?.Dispose();
         }
 
         private void Update()
@@ -166,15 +169,9 @@ namespace GodOfWar.Player
                     // 회피가 그대로 이어지므로 상태도 선입력도 건드리지 않는다.
                     break;
                 case HitOutcome.Blocked:
-                    // 가드 중이면 상태를 유지한 채 막는 반응만 하므로 선입력을 건드리지 않는다.
-                    // 패링 동작 중이면 가드 자세로 돌아가 막는다. 상태가 바뀌므로 강제 전이로 선입력을 버린다.
-                    if (current != _guard)
-                    {
-                        _guard.PrepareReturnFromParry();
-                        ForceTransition(_guard);
-                    }
-
-                    _guard.Block(attack);
+                    // 가드·패링 동작·막기 반응 중 어디서 막았든 막기 반응을 처음부터 한다.
+                    _block.Prepare(attack);
+                    ForceTransition(_block);
                     break;
                 case HitOutcome.GuardBroken:
                     ForceTransition(_guardBreak);

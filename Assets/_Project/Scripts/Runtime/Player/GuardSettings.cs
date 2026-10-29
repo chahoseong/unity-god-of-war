@@ -23,12 +23,20 @@ namespace GodOfWar.Player
         [SerializeField] private HitReaction _guardBreak = new HitReaction();
 
         [Header("Block Reaction")]
-        [Tooltip("공격을 막았을 때 상체에 재생하는 클립. Guard 레이어 Guard_Block 상태의 클립과 같아야 한다. "
+        [Tooltip("공격을 막았을 때 전신으로 재생하는 클립. 기본 레이어 Block 상태의 클립과 같아야 한다. "
                  + "이 클립 길이 동안은 이동 입력을 받지 않고 버틴다.")]
         [SerializeField] private AnimationClip _blockClip;
 
+        [Tooltip("막는 동작을 마치고 가드 자세로 돌아가는 클립. 기본 레이어 BlockReturn 상태의 클립과 같아야 한다. "
+                 + "이 클립 길이 동안 전신으로 제자리에서 돌아간다.")]
+        [SerializeField] private AnimationClip _blockReturnClip;
+
         [Tooltip("막는 동작으로 들어가는 크로스페이드 시간(초). 막기는 역경직과 함께 시작해, 0이 아니면 느려진 동안 이전 자세가 오래 섞인다.")]
         [SerializeField, Min(0f)] private float _blockCrossFadeInDuration;
+
+        [Tooltip("막기를 마치고 가드나 이동으로 돌아갈 때 다리를 이동 클립으로 넘기는 크로스페이드 시간(초). "
+                 + "막은 자세에서 서 있는 자세로 골반이 옮겨 가는 전환이라 가드 올리기·내리기보다 길게 둔다.")]
+        [SerializeField, Min(0f)] private float _blockCrossFadeOutDuration = 0.25f;
 
         [Tooltip("막았을 때 공격 반대쪽으로 밀려나는 거리(m).")]
         [SerializeField, Min(0f)] private float _blockPushDistance = 0.2f;
@@ -54,7 +62,9 @@ namespace GodOfWar.Player
         public float GuardHalfAngle => _guardHalfAngle;
         public HitReaction GuardBreak => _guardBreak;
         public AnimationClip BlockClip => _blockClip;
+        public AnimationClip BlockReturnClip => _blockReturnClip;
         public float BlockCrossFadeInDuration => _blockCrossFadeInDuration;
+        public float BlockCrossFadeOutDuration => _blockCrossFadeOutDuration;
         public float BlockPushDistance => _blockPushDistance;
         public float BlockPushDuration => _blockPushDuration;
         public float ParryWindow => _parryWindow;

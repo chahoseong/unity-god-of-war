@@ -31,8 +31,9 @@ namespace GodOfWar.Player
         private static readonly int LocomotionHash = Animator.StringToHash("Locomotion");
         private static readonly int GuardBeginHash = Animator.StringToHash("Guard_Begin");
         private static readonly int GuardEndHash = Animator.StringToHash("Guard_End");
-        private static readonly int GuardBlockHash = Animator.StringToHash("Guard_Block");
-        private static readonly int GuardBlockReturnHash = Animator.StringToHash("Guard_BlockReturn");
+        private static readonly int BlockHash = Animator.StringToHash("Block");
+        private static readonly int BlockReturnHash = Animator.StringToHash("BlockReturn");
+        private static readonly int GuardLoopHash = Animator.StringToHash("Guard_Loop");
 
         // 이동 중 검을 든 팔·손 자세를 덮어쓰는 레이어. 전신 클립(FullBody 태그) 재생 중에는 끈다.
         private static readonly string[] SwordPoseLayerNames = { "SwordArm", "SwordHand" };
@@ -50,6 +51,9 @@ namespace GodOfWar.Player
 
         [Tooltip("검 든 자세 레이어가 꺼지고 켜지는 데 걸리는 시간(초).")]
         [SerializeField, Min(0.01f)] private float _swordPoseBlendDuration = 0.1f;
+
+        [Tooltip("척추 고정 리그 가중치가 0에서 1까지 바뀌는 데 걸리는 최소 시간(초). 전신 동작에서 가드로 들어올 때 척추가 한 프레임에 튀지 않게 한다.")]
+        [SerializeField, Min(0.01f)] private float _guardRigBlendDuration = 0.15f;
 
         private CharacterMotor _motor;
         private CharacterClock _clock;
@@ -76,27 +80,37 @@ namespace GodOfWar.Player
         }
 
         /// <summary>
-        /// 패링 동작에서 가드 자세로 돌아간다. 이미 막는 자세라 가드를 다시 올리지 않고, 막은 뒤 돌아가는 클립으로 이어 간다.
-        /// </summary>
-        public void ReturnToGuardAfterParry(float duration)
-        {
-            EnterGuard(GuardBlockReturnHash, duration);
-        }
-
-        /// <summary>
-        /// 상체 가드 레이어에서 공격을 막는 반응을 재생한다. 반응이 끝나면 애니메이터 전이로 가드 자세로 돌아간다.
-        /// 반응 중에 다시 막으면 처음부터 다시 재생한다.
+        /// 공격을 막는 반응을 전신으로 재생한다. 충격을 몸 전체로 받도록 다리까지 덮고, 그동안 상체 가드 레이어는 꺼진다.
+        /// 반응 중에 다시 막으면 처음부터 다시 재생한다. 반응이 끝나면 <see cref="PlayBlockReturn"/>으로 이어 간다.
         /// </summary>
         public void PlayBlock(float duration)
         {
             // 이미 같은 상태로 크로스페이드하는 중이면 무시되므로, 반응 중에는 처음부터 다시 튼다.
-            if (GetIncomingStateInfo(_guardLayer).shortNameHash == GuardBlockHash)
+            if (GetIncomingStateInfo(0).shortNameHash == BlockHash)
             {
-                _animator.Play(GuardBlockHash, _guardLayer, 0f);
+                _animator.Play(BlockHash, 0, 0f);
                 return;
             }
 
-            _animator.CrossFadeInFixedTime(GuardBlockHash, duration, _guardLayer);
+            _animator.CrossFadeInFixedTime(BlockHash, duration, 0);
+        }
+
+        /// <summary>
+        /// 막는 반응을 마치고, 막은 자세에서 가드 자세로 돌아가는 동작을 전신으로 이어 간다.
+        /// 몸을 틀며 골반까지 돌아가는 동작이라 상체 레이어로는 토대가 어긋난다. 첫 자세가 막는 반응의 끝 자세와 같아 바로 넘긴다.
+        /// </summary>
+        public void PlayBlockReturn()
+        {
+            _animator.Play(BlockReturnHash, 0, 0f);
+        }
+
+        /// <summary>전신으로 돌아가는 동작을 마치고, 다리는 이동 클립으로, 상체는 가드 대기 자세로 넘긴다. 끝 자세가 대기 자세와 같아 상체는 바로 넘긴다.</summary>
+        public void FinishBlockReturn(float duration)
+        {
+            _animator.Play(GuardLoopHash, _guardLayer, 0f);
+            // 가중치를 서서히 올리면 그사이 아래 레이어의 상체 자세가 섞인다.
+            _animator.SetLayerWeight(_guardLayer, 1f);
+            _animator.CrossFadeInFixedTime(LocomotionHash, duration, 0);
         }
 
         /// <summary>상체 가드 레이어에서 가드를 내린다. 전신 클립으로 캔슬되면 레이어가 꺼져 보이지 않는다.</summary>
@@ -229,7 +243,9 @@ namespace GodOfWar.Player
                 : state.tagHash == GuardTagHash ? 1f
                 : state.tagHash == GuardEndTagHash ? 1f - progress
                 : 0f;
-            _guardRig.weight = stabilize * layerWeight;
+            // 상태가 바뀌는 순간 목표가 크게 달라지면 척추가 한 프레임에 튀므로, 정해진 속도 이상으로는 따라가지 않는다.
+            _guardRig.weight = Mathf.MoveTowards(
+                _guardRig.weight, stabilize * layerWeight, deltaTime / _guardRigBlendDuration);
         }
     }
 }
