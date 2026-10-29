@@ -13,26 +13,50 @@ MonoBehaviour:
   m_Name: HitFeedback
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Player.HitFeedbackSettings
   _dealtHitLight:
-    _duration: 0.08
-    _timeScale: 0.2
+    _hitstopDuration: 0.08
+    _hitstopTimeScale: 0.2
+    _shakeShape: 0
+    _shakeDuration: 0.12
+    _shakeForce: 0.02
   _dealtHitHeavy:
-    _duration: 0.14
-    _timeScale: 0.1
+    _hitstopDuration: 0.14
+    _hitstopTimeScale: 0.1
+    _shakeShape: 0
+    _shakeDuration: 0.18
+    _shakeForce: 0.04
   _takenHitLight:
-    _duration: 0.08
-    _timeScale: 0.2
+    _hitstopDuration: 0.08
+    _hitstopTimeScale: 0.2
+    _shakeShape: 0
+    _shakeDuration: 0.15
+    _shakeForce: 0.03
   _takenHitHeavy:
-    _duration: 0.14
-    _timeScale: 0.1
+    _hitstopDuration: 0.14
+    _hitstopTimeScale: 0.1
+    _shakeShape: 2
+    _shakeDuration: 0.25
+    _shakeForce: 0.05
   _blocked:
-    _duration: 0.06
-    _timeScale: 0.3
+    _hitstopDuration: 0.06
+    _hitstopTimeScale: 0.3
+    _shakeShape: 1
+    _shakeDuration: 0.1
+    _shakeForce: 0.015
   _guardBroken:
-    _duration: 0.16
-    _timeScale: 0.1
+    _hitstopDuration: 0.16
+    _hitstopTimeScale: 0.1
+    _shakeShape: 2
+    _shakeDuration: 0.3
+    _shakeForce: 0.06
   _parriedLight:
-    _duration: 0.14
-    _timeScale: 0.1
+    _hitstopDuration: 0.14
+    _hitstopTimeScale: 0.1
+    _shakeShape: 0
+    _shakeDuration: 0.15
+    _shakeForce: 0.035
   _parriedHeavy:
-    _duration: 0.18
-    _timeScale: 0.05
+    _hitstopDuration: 0.18
+    _hitstopTimeScale: 0.05
+    _shakeShape: 0
+    _shakeDuration: 0.2
+    _shakeForce: 0.05

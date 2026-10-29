@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1176589058459426268}
   - component: {fileID: 636610121478136952}
   - component: {fileID: 7482619820485005582}
+  - component: {fileID: 5011174366787300943}
   m_Layer: 0
   m_Name: ShoulderCamera
   m_TagString: Untagged
@@ -116,6 +117,30 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotateWithFollowTarget
   Damping: 0
+--- !u!114 &5011174366787300943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2316509231234242450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00b2d199b96b516448144ab30fb26aed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineImpulseListener
+  ApplyAfter: 2
+  ChannelMask: 1
+  Gain: 1
+  Use2DDistance: 0
+  UseCameraSpace: 1
+  SignalCombinationMode: 1
+  ReactionSettings:
+    m_SecondaryNoise: {fileID: 11400000, guid: 44dcd64efd2acf347b413b26f1cd5664, type: 2}
+    AmplitudeGain: 150
+    FrequencyGain: 1
+    Duration: 0.2
+    m_NoiseOffsets: {x: 0, y: 0, z: 0}
 --- !u!1 &5887855516871180023
 GameObject:
   m_ObjectHideFlags: 0

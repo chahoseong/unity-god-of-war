@@ -17,16 +17,16 @@ namespace GodOfWar.Tests.Player
         public void SetUp()
         {
             _settings = ScriptableObject.CreateInstance<HitFeedbackSettings>();
-            // 런타임 타입에 쓰기 경로를 두지 않으려고 직렬화 필드에 쓴다. 칸마다 느려지는 시간을 다르게 둔다.
+            // 런타임 타입에 쓰기 경로를 두지 않으려고 직렬화 필드에 쓴다. 칸마다 역경직 시간을 다르게 둔다.
             var serialized = new SerializedObject(_settings);
-            SetDuration(serialized, "_dealtHitLight", 0.01f);
-            SetDuration(serialized, "_dealtHitHeavy", 0.02f);
-            SetDuration(serialized, "_takenHitLight", 0.03f);
-            SetDuration(serialized, "_takenHitHeavy", 0.04f);
-            SetDuration(serialized, "_blocked", 0.05f);
-            SetDuration(serialized, "_guardBroken", 0.06f);
-            SetDuration(serialized, "_parriedLight", 0.07f);
-            SetDuration(serialized, "_parriedHeavy", 0.08f);
+            SetHitstopDuration(serialized, "_dealtHitLight", 0.01f);
+            SetHitstopDuration(serialized, "_dealtHitHeavy", 0.02f);
+            SetHitstopDuration(serialized, "_takenHitLight", 0.03f);
+            SetHitstopDuration(serialized, "_takenHitHeavy", 0.04f);
+            SetHitstopDuration(serialized, "_blocked", 0.05f);
+            SetHitstopDuration(serialized, "_guardBroken", 0.06f);
+            SetHitstopDuration(serialized, "_parriedLight", 0.07f);
+            SetHitstopDuration(serialized, "_parriedHeavy", 0.08f);
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -38,11 +38,11 @@ namespace GodOfWar.Tests.Player
 
         [TestCase(HitStrength.Light, 0.01f)]
         [TestCase(HitStrength.Heavy, 0.02f)]
-        public void TryGetDealt_ForHit_ReturnsSlotOfStrength(HitStrength strength, float expectedDuration)
+        public void TryGetDealt_ForHit_ReturnsSlotOfStrength(HitStrength strength, float expectedHitstopDuration)
         {
             _settings.TryGetDealt(HitOutcome.Hit, strength, out HitFeedback feedback);
 
-            Assert.That(feedback.Duration, Is.EqualTo(expectedDuration));
+            Assert.That(feedback.HitstopDuration, Is.EqualTo(expectedHitstopDuration));
         }
 
         [TestCase(HitOutcome.Hit, HitStrength.Light, 0.03f)]
@@ -52,11 +52,11 @@ namespace GodOfWar.Tests.Player
         [TestCase(HitOutcome.Parried, HitStrength.Light, 0.07f)]
         [TestCase(HitOutcome.Parried, HitStrength.Heavy, 0.08f)]
         public void TryGetTaken_ForReachableOutcome_ReturnsSlotOfOutcomeAndStrength(
-            HitOutcome outcome, HitStrength strength, float expectedDuration)
+            HitOutcome outcome, HitStrength strength, float expectedHitstopDuration)
         {
             _settings.TryGetTaken(outcome, strength, out HitFeedback feedback);
 
-            Assert.That(feedback.Duration, Is.EqualTo(expectedDuration));
+            Assert.That(feedback.HitstopDuration, Is.EqualTo(expectedHitstopDuration));
         }
 
         [Test]
@@ -89,9 +89,9 @@ namespace GodOfWar.Tests.Player
             Assert.Throws<ArgumentOutOfRangeException>(() => _settings.TryGetTaken(outcome, strength, out _));
         }
 
-        private static void SetDuration(SerializedObject serialized, string slot, float value)
+        private static void SetHitstopDuration(SerializedObject serialized, string slot, float value)
         {
-            serialized.FindProperty(slot).FindPropertyRelative("_duration").floatValue = value;
+            serialized.FindProperty(slot).FindPropertyRelative("_hitstopDuration").floatValue = value;
         }
     }
 }
