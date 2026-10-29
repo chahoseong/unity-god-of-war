@@ -107,7 +107,7 @@ namespace GodOfWar.Enemies
 
         private void Update()
         {
-            // 역경직으로 멈춘 동안은 애니메이션도 상태도 공격 간격도 흐르지 않는다.
+            // 역경직으로 느려진 동안은 애니메이션도 상태도 공격 간격도 그만큼 느리게 흐른다.
             _animator.speed = _clock.TimeScale;
             _machine.Tick(_clock.DeltaTime);
             UpdateAutoAttack(_clock.DeltaTime);
@@ -128,9 +128,9 @@ namespace GodOfWar.Enemies
         /// 자기 칼이 전한 타격의 판정을 받는다. 저스트 패링당하면 지금 상태와 관계없이 역경직으로 바꾼다.
         /// 공격 중이면 공격 상태를 나가며 칼 판정이 닫힌다. 다른 판정에는 반응하지 않는다.
         /// </summary>
-        private void OnHitResolved(HitResult result)
+        private void OnHitResolved(HitReport report)
         {
-            if (result.Outcome != HitOutcome.Parried)
+            if (report.Result.Outcome != HitOutcome.Parried)
             {
                 return;
             }

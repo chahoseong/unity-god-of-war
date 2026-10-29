@@ -127,7 +127,7 @@ namespace GodOfWar.Player.States
         /// </summary>
         public void Block(in AttackInfo attack)
         {
-            _animator.PlayBlock(_settings.CrossFadeDuration);
+            _animator.PlayBlock(_settings.BlockCrossFadeInDuration);
             _blockRemaining = _settings.BlockClip.length;
             _pushElapsed = _settings.BlockPushDuration;
 
@@ -217,7 +217,7 @@ namespace GodOfWar.Player.States
         /// <summary>
         /// 새로 누른 가드의 누른 시각을 다음 진입에 넘긴다. 입력 시각은 실시간이므로, 누른 뒤 지난 실시간을 이번 프레임의 진행 비율
         /// (전역 배속 × 역경직)로 캐릭터 시계의 시간으로 바꿔 지금 시각에서 거스른다. 그래야 윈도우가 이후 시간 배율을 따르고,
-        /// 역경직으로 멈춘 동안 누른 가드는 멈춘 순간에 누른 것이 된다.
+        /// 역경직으로 느려진 동안 누른 가드는 그만큼 짧게 거슬러, 캐릭터 시계로 누른 순간에 맞춰진다.
         /// 선입력으로 여러 프레임 미뤄진 누름은 이번 프레임의 비율로 어림한다.
         /// </summary>
         private void PreparePress(double pressRealtime)

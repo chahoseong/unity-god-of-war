@@ -53,7 +53,7 @@ namespace GodOfWar.Enemies.States
             _pendingReaction = null;
             _elapsed = 0f;
 
-            _animator.CrossFadeInFixedTime(Animator.StringToHash(_reaction.StateName), _reaction.CrossFadeDuration);
+            _animator.CrossFadeInFixedTime(Animator.StringToHash(_reaction.StateName), _reaction.CrossFadeInDuration);
 
             // 변위는 반응을 시작한 순간의 몸 정면 기준으로 구워져 있다.
             _hasMovement = _reaction.Movement != null;
@@ -70,7 +70,7 @@ namespace GodOfWar.Enemies.States
 
             if (_elapsed >= _reaction.Duration)
             {
-                _animator.CrossFadeInFixedTime(IdleHash, _reaction.CrossFadeDuration);
+                _animator.CrossFadeInFixedTime(IdleHash, _reaction.CrossFadeOutDuration);
                 _machine.ChangeState(_idle);
             }
         }

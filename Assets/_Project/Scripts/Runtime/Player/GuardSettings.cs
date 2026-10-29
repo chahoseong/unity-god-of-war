@@ -27,6 +27,9 @@ namespace GodOfWar.Player
                  + "이 클립 길이 동안은 이동 입력을 받지 않고 버틴다.")]
         [SerializeField] private AnimationClip _blockClip;
 
+        [Tooltip("막는 동작으로 들어가는 크로스페이드 시간(초). 막기는 역경직과 함께 시작해, 0이 아니면 느려진 동안 이전 자세가 오래 섞인다.")]
+        [SerializeField, Min(0f)] private float _blockCrossFadeInDuration;
+
         [Tooltip("막았을 때 공격 반대쪽으로 밀려나는 거리(m).")]
         [SerializeField, Min(0f)] private float _blockPushDistance = 0.2f;
 
@@ -51,6 +54,7 @@ namespace GodOfWar.Player
         public float GuardHalfAngle => _guardHalfAngle;
         public HitReaction GuardBreak => _guardBreak;
         public AnimationClip BlockClip => _blockClip;
+        public float BlockCrossFadeInDuration => _blockCrossFadeInDuration;
         public float BlockPushDistance => _blockPushDistance;
         public float BlockPushDuration => _blockPushDuration;
         public float ParryWindow => _parryWindow;

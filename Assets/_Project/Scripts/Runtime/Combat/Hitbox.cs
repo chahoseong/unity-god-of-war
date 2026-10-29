@@ -58,10 +58,10 @@ namespace GodOfWar.Combat
         public bool IsOpen { get; private set; }
 
         /// <summary>
-        /// 이 칼이 전한 타격에 피격자가 내린 판정. 타격을 전한 같은 프레임 안(모든 LateUpdate 뒤)에 모든 판정을 알린다.
-        /// 어떤 판정에 어떻게 반응할지는 공격하는 쪽이 정한다.
+        /// 이 칼이 전한 타격에 피격자가 내린 판정을, 대상·타격 정보와 함께 알린다.
+        /// 타격을 전한 같은 프레임 안(모든 LateUpdate 뒤)에 모든 판정을 알린다. 어떤 판정에 어떻게 반응할지는 받는 쪽이 정한다.
         /// </summary>
-        public event Action<HitResult> HitResolved;
+        public event Action<HitReport> HitResolved;
 
         private void Awake()
         {
@@ -126,9 +126,9 @@ namespace GodOfWar.Combat
         }
 
         // 판정을 알리는 것은 타격을 전한 HitBatch뿐이다.
-        private void NotifyResolved(HitResult result)
+        private void NotifyResolved(in HitReport report)
         {
-            HitResolved?.Invoke(result);
+            HitResolved?.Invoke(report);
         }
 
         private void LateUpdate()
@@ -348,7 +348,7 @@ namespace GodOfWar.Combat
                         hit.Source._hitTargets.Remove(hit.Target);
                     }
 
-                    hit.Source.NotifyResolved(result);
+                    hit.Source.NotifyResolved(new HitReport(hit.Target, hit.Attack, result));
                 }
                 catch (Exception exception)
                 {

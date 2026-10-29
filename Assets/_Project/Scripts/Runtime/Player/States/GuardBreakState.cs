@@ -48,7 +48,7 @@ namespace GodOfWar.Player.States
             _locomotion ??= _locator.Get<LocomotionState>();
             _elapsed = 0f;
 
-            _animator.CrossFade(Animator.StringToHash(_reaction.StateName), _reaction.CrossFadeDuration);
+            _animator.CrossFade(Animator.StringToHash(_reaction.StateName), _reaction.CrossFadeInDuration);
 
             // 변위는 무너지기 시작한 순간의 몸 정면 기준으로 구워져 있다.
             _hasMovement = _reaction.Movement != null;
@@ -65,7 +65,7 @@ namespace GodOfWar.Player.States
 
             if (_elapsed >= _reaction.Duration)
             {
-                _animator.ReturnToLocomotion(_reaction.CrossFadeDuration);
+                _animator.ReturnToLocomotion(_reaction.CrossFadeOutDuration);
                 _machine.ChangeState(_locomotion);
             }
         }

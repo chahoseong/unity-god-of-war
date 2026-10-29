@@ -73,7 +73,7 @@ namespace GodOfWar.Player.States
             _elapsed = 0f;
             _hasCounterReserved = false;
 
-            _animator.CrossFade(Animator.StringToHash(_reaction.StateName), _reaction.CrossFadeDuration);
+            _animator.CrossFade(Animator.StringToHash(_reaction.StateName), _reaction.CrossFadeInDuration);
         }
 
         public void Tick(float deltaTime)
@@ -102,7 +102,7 @@ namespace GodOfWar.Player.States
                 return;
             }
 
-            _animator.ReturnToLocomotion(_reaction.CrossFadeDuration);
+            _animator.ReturnToLocomotion(_reaction.CrossFadeOutDuration);
             _machine.ChangeState(_locomotion);
         }
 

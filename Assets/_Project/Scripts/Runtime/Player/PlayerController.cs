@@ -64,6 +64,12 @@ namespace GodOfWar.Player
         /// <summary>보관 중인 선입력의 버튼. <see cref="HasBufferedInput"/>이 거짓이면 의미가 없다.</summary>
         public PlayerAction BufferedAction => _router.BufferedAction;
 
+        /// <summary>
+        /// 받은 타격을 판정해 상태 전이까지 마친 뒤 그 판정을 알린다. 피격 연출처럼 판정을 관찰만 하는 쪽이 쓴다.
+        /// 타격을 전하는 흐름 안에서 동기로 호출되므로, 구독자는 예외를 던지지 않아야 한다.
+        /// </summary>
+        public event Action<HitReport> HitReceived;
+
         CharacterMotor IPlayerStateContext.Motor => _motor;
         CharacterClock IPlayerStateContext.Clock => _clock;
         IPlayerInput IPlayerStateContext.Input => _input;
@@ -134,7 +140,7 @@ namespace GodOfWar.Player
 
         private void Update()
         {
-            // 역경직으로 멈춘 동안은 상태도 선입력 보관 시간도 흐르지 않는다.
+            // 역경직으로 느려진 동안은 상태도 선입력 보관 시간도 그만큼 느리게 흐른다.
             _machine.Tick(_clock.DeltaTime);
             // 이번 프레임에 열린 캔슬 윈도우나 끝난 행동에 선입력이 같은 프레임에 나가도록 상태 갱신 뒤에 판정한다.
             _router.Tick(_clock.DeltaTime);
@@ -183,7 +189,10 @@ namespace GodOfWar.Player
                     throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null);
             }
 
-            return new HitResult(outcome);
+            // 상태가 확정된 뒤에 알려, 구독자가 실패해도 판정과 전이는 이미 끝나 있게 한다.
+            var result = new HitResult(outcome);
+            HitReceived?.Invoke(new HitReport(this, attack, result));
+            return result;
         }
 
         /// <summary>
