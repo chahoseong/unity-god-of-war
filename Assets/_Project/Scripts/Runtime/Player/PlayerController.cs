@@ -56,6 +56,9 @@ namespace GodOfWar.Player
         private GuardBreakState _guardBreak;
         private ParryState _parry;
 
+        // Awake가 상태 등록까지 마쳤는지. 검증에서 실패하면 켜짐·꺼짐을 상태에 알리지 않는다.
+        private bool _isAssembled;
+
         /// <summary>현재 상태. 첫 상태에 진입하기 전에는 null이다.</summary>
         public IState CurrentState => _machine?.CurrentState;
 
@@ -125,6 +128,24 @@ namespace GodOfWar.Player
             _guardBreak = Register(new GuardBreakState(this, _guardSettings));
             _parry = Register(new ParryState(this, _guardSettings));
             Register(new CounterState(this, _guardSettings, _attackSettings));
+            _isAssembled = true;
+        }
+
+        private void OnEnable()
+        {
+            // Awake에서 상태를 모두 등록한 뒤라 등록된 모든 상태가 켜짐을 받는다.
+            if (_isAssembled)
+            {
+                _registry.OnEnable();
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_isAssembled)
+            {
+                _registry.OnDisable();
+            }
         }
 
         private void Start()
@@ -138,7 +159,6 @@ namespace GodOfWar.Player
         {
             // Awake 검증에서 실패하면 라우터가 만들어지지 않는다.
             _router?.Dispose();
-            _guard?.Dispose();
         }
 
         private void Update()

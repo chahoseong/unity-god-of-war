@@ -46,6 +46,16 @@ namespace GodOfWar.Tests.Core.StateMachines
             OnExit?.Invoke();
         }
 
+        public void OnEnable()
+        {
+            _log.Add($"{Name}.OnEnable");
+        }
+
+        public void OnDisable()
+        {
+            _log.Add($"{Name}.OnDisable");
+        }
+
         public override string ToString() => Name;
     }
 }

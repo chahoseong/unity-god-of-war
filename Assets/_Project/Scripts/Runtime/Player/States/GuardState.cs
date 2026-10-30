@@ -18,7 +18,7 @@ namespace GodOfWar.Player.States
     /// 누르고 있기만 해서 들어오거나 막기에서 돌아오면 윈도우가 열리지 않는다.
     /// 저스트 패링에 쓴 누름은 끝난 것으로 보아, 그 버튼을 떼기 전까지는 누르고 있어도(Held) 가드에 들어가지 않는다.
     /// </summary>
-    public sealed class GuardState : IState, ICancellable, IChainable, IDefensible, IDisposable
+    public sealed class GuardState : IState, ICancellable, IChainable, IDefensible
     {
         private readonly IPlayerStateContext _context;
         private readonly StateMachine _machine;
@@ -60,7 +60,6 @@ namespace GodOfWar.Player.States
             // 누르고 있기만 해도 받을 수 있게 된 순간 가드한다. 윈도우는 열지 않는다. 패링에 쓴 누름이면 떼고 다시 눌러야 한다.
             context.Router.Declare(new ActionTrigger(
                 PlayerAction.Guard, this, () => !_isHoldSpentOnParry, phase: ActionPhase.Held));
-            _input.ActionTriggered += OnActionTriggered;
         }
 
         public bool IsCancelWindowOpen => false;
@@ -83,9 +82,16 @@ namespace GodOfWar.Player.States
             _isHoldSpentOnParry = true;
         }
 
-        public void Dispose()
+        public void OnEnable()
+        {
+            _input.ActionTriggered += OnActionTriggered;
+        }
+
+        public void OnDisable()
         {
             _input.ActionTriggered -= OnActionTriggered;
+            // 꺼진 동안의 뗌은 들을 수 없으므로 누름의 연속은 여기서 끊긴 것으로 본다.
+            _isHoldSpentOnParry = false;
         }
 
         private void OnActionTriggered(PlayerActionEvent e)

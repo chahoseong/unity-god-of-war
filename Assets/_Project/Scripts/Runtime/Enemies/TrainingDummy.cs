@@ -48,6 +48,9 @@ namespace GodOfWar.Enemies
         private float _idleTime;
         private int _nextAttackIndex;
 
+        // Awake가 상태 등록까지 마쳤는지. 검증에서 실패하면 켜짐·꺼짐을 상태에 알리지 않는다.
+        private bool _isAssembled;
+
         CharacterMotor ITrainingDummyStateContext.Motor => _motor;
         Animator ITrainingDummyStateContext.Animator => _animator;
         Hitbox ITrainingDummyStateContext.Hitbox => _hitbox;
@@ -88,6 +91,24 @@ namespace GodOfWar.Enemies
             _hitReact = Register(new HitReactState(this));
 
             _hitbox.HitResolved += OnHitResolved;
+            _isAssembled = true;
+        }
+
+        private void OnEnable()
+        {
+            // Awake에서 상태를 모두 등록한 뒤라 등록된 모든 상태가 켜짐을 받는다.
+            if (_isAssembled)
+            {
+                _registry.OnEnable();
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_isAssembled)
+            {
+                _registry.OnDisable();
+            }
         }
 
         private void OnDestroy()
