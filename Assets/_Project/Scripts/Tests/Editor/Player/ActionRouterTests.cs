@@ -26,18 +26,13 @@ namespace GodOfWar.Tests.Player
             _machine = new StateMachine();
             _input = new FakePlayerInput();
             _router = new ActionRouter(_machine, _input, BufferDuration, new[] { PlayerAction.LockOn });
+            _router.OnEnable();
             _current = new FakeActionState("Current", _log);
             _low = new FakeActionState("Low", _log);
             _high = new FakeActionState("High", _log);
 
             _machine.ChangeState(_current);
             _log.Clear();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            _router.Dispose();
         }
 
         // 연계 구간의 공격이 라우팅 테이블로 넘어가면 콤보가 1타부터 다시 시작된다 (ADR-004 대안 E).
@@ -151,6 +146,65 @@ namespace GodOfWar.Tests.Player
             _router.Tick(0f);
 
             Assert.That(_machine.CurrentState, Is.SameAs(_current));
+        }
+
+        [Test]
+        public void ActionTriggered_AfterOnDisable_KeepsCurrentState()
+        {
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+            _router.OnDisable();
+
+            _input.Raise(PlayerAction.Dodge);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_current));
+        }
+
+        [Test]
+        public void ActionTriggered_AfterOnDisableAndOnEnable_EntersTarget()
+        {
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+            _router.OnDisable();
+            _router.OnEnable();
+
+            _input.Raise(PlayerAction.Dodge);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_low));
+        }
+
+        // 꺼지기 전에 보관한 누름이 다시 켜진 뒤 뒤늦게 나가면 안 된다.
+        [Test]
+        public void Tick_WithPressBufferedBeforeOnDisableAndOnEnable_KeepsCurrentState()
+        {
+            _current.IsCancelWindowOpen = false;
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+            _input.Raise(PlayerAction.Dodge);
+            _router.OnDisable();
+            _router.OnEnable();
+
+            _current.IsCancelWindowOpen = true;
+            _router.Tick(0f);
+
+            Assert.That(_machine.CurrentState, Is.SameAs(_current));
+        }
+
+        // 두 번 구독하면 누름 한 번이 두 번 판정되어 같은 전이가 두 번 일어난다.
+        [Test]
+        public void OnEnable_WhenAlreadyEnabled_ThrowsWithoutSubscribingTwice()
+        {
+            _router.Declare(new ActionTrigger(PlayerAction.Dodge, _low, () => true));
+
+            Assert.Throws<InvalidOperationException>(() => _router.OnEnable());
+            _input.Raise(PlayerAction.Dodge);
+
+            Assert.That(_log, Is.EqualTo(new[] { "Current.Exit", "Low.Enter" }));
+        }
+
+        [Test]
+        public void OnDisable_WhenNotEnabled_ThrowsInvalidOperationException()
+        {
+            _router.OnDisable();
+
+            Assert.Throws<InvalidOperationException>(() => _router.OnDisable());
         }
 
         [Test]

@@ -13,8 +13,9 @@ namespace GodOfWar.Player
     /// 캔슬 윈도우가 닫혀 있어 거절된 누름은 선입력으로 잠시 보관했다가, <see cref="Tick"/>에서 다시 판정한다.
     /// 이동 스틱 같은 축 입력과 피격 등 강제 전이는 다루지 않는다.
     /// 락온처럼 상태 전이와 무관한 버튼은 제외 목록으로 받아 판정·보관하지 않는다.
+    /// 소유자가 켜져 있는 동안(<see cref="OnEnable"/>~<see cref="OnDisable"/>)에만 입력을 듣는다.
     /// </summary>
-    public sealed class ActionRouter : IDisposable
+    public sealed class ActionRouter
     {
         private readonly StateMachine _machine;
         private readonly IPlayerInput _input;
@@ -30,6 +31,8 @@ namespace GodOfWar.Player
         private bool _hasBuffered;
         private float _bufferRemaining;
 
+        private bool _isEnabled;
+
         /// <param name="bufferDuration">선입력을 보관하는 시간(초). 0이면 보관하지 않는다.</param>
         /// <param name="ignoredActions">
         /// 상태 전이와 무관해 라우팅하지 않는 버튼. 이 버튼의 누름은 보관 중인 선입력을 지우지도, 보관되지도 않는다.
@@ -42,7 +45,6 @@ namespace GodOfWar.Player
             _bufferDuration = bufferDuration;
             _ignoredActions = new HashSet<PlayerAction>(
                 ignoredActions ?? throw new ArgumentNullException(nameof(ignoredActions)));
-            _input.ActionTriggered += OnActionTriggered;
         }
 
         /// <summary>보관 중인 선입력이 있는지.</summary>
@@ -130,9 +132,34 @@ namespace GodOfWar.Player
             _hasBuffered = false;
         }
 
-        public void Dispose()
+        /// <summary>입력을 듣기 시작한다. 소유자의 OnEnable에서 호출한다.</summary>
+        /// <exception cref="InvalidOperationException">이미 켜져 있다.</exception>
+        public void OnEnable()
         {
+            if (_isEnabled)
+            {
+                throw new InvalidOperationException($"{nameof(ActionRouter)} is already enabled.");
+            }
+
+            _isEnabled = true;
+            _input.ActionTriggered += OnActionTriggered;
+        }
+
+        /// <summary>
+        /// 입력 듣기를 멈추고 보관한 선입력을 버린다. 소유자의 OnDisable에서 호출한다.
+        /// 꺼진 동안의 단절 뒤에 앞서 누른 버튼이 뒤늦게 나가지 않게 한다 (강제 전이와 같은 이유, ADR-004 5절).
+        /// </summary>
+        /// <exception cref="InvalidOperationException">켜져 있지 않다.</exception>
+        public void OnDisable()
+        {
+            if (!_isEnabled)
+            {
+                throw new InvalidOperationException($"{nameof(ActionRouter)} is not enabled.");
+            }
+
+            _isEnabled = false;
             _input.ActionTriggered -= OnActionTriggered;
+            Flush();
         }
 
         private void OnActionTriggered(PlayerActionEvent e)

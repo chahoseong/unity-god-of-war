@@ -134,17 +134,21 @@ namespace GodOfWar.Player
         private void OnEnable()
         {
             // Awake에서 상태를 모두 등록한 뒤라 등록된 모든 상태가 켜짐을 받는다.
+            // 같은 입력을 듣는 라우터가 상태보다 먼저 받도록 라우터를 먼저 켠다.
             if (_isAssembled)
             {
+                _router.OnEnable();
                 _registry.OnEnable();
             }
         }
 
         private void OnDisable()
         {
+            // 켤 때의 역순으로 끈다. 파괴될 때도 먼저 호출되므로 해제는 여기서 끝난다.
             if (_isAssembled)
             {
                 _registry.OnDisable();
+                _router.OnDisable();
             }
         }
 
@@ -153,12 +157,6 @@ namespace GodOfWar.Player
             // 다른 컴포넌트의 Awake가 모두 끝난 뒤 첫 상태에 진입한다.
             _machine.ChangeState(_registry.Get<LocomotionState>());
             LogActionRoutes();
-        }
-
-        private void OnDestroy()
-        {
-            // Awake 검증에서 실패하면 라우터가 만들어지지 않는다.
-            _router?.Dispose();
         }
 
         private void Update()
