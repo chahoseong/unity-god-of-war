@@ -1,7 +1,7 @@
 using GodOfWar.Combat;
 using UnityEngine;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Settings
 {
     /// <summary>
     /// 스텝 회피와 구르기 회피가 공유하는 튜닝 값과 회피 액션 데이터 참조.

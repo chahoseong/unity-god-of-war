@@ -1,7 +1,7 @@
 using GodOfWar.Combat;
 using UnityEngine;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Settings
 {
     /// <summary>
     /// 가드·가드 브레이크·저스트 패링·패링 카운터의 튜닝 값. 가속·감속·회전은 기본 이동 설정을 그대로 쓴다.

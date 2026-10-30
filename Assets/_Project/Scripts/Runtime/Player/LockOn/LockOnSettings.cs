@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.LockOn
 {
     /// <summary>
     /// 락온 대상을 고르고 유지하는 기준.

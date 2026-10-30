@@ -1,8 +1,8 @@
-using GodOfWar.Player;
+using GodOfWar.Player.LockOn;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace GodOfWar.Tests.Player
+namespace GodOfWar.Tests.Player.LockOn
 {
     public class TargetLockTests
     {

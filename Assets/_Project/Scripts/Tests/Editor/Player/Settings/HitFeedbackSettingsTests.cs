@@ -1,12 +1,13 @@
 using System;
 using GodOfWar.Combat;
-using GodOfWar.Player;
+using GodOfWar.Player.Feedback;
+using GodOfWar.Player.Settings;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace GodOfWar.Tests.Player
+namespace GodOfWar.Tests.Player.Settings
 {
     // 칸을 잘못 연결해도 피드백 세기만 조금 달라 플레이로는 잘 드러나지 않아, 칸마다 다른 값을 넣고 어느 칸이 나오는지 확인한다.
     public class HitFeedbackSettingsTests

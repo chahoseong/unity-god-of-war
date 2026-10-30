@@ -3,6 +3,8 @@ using GodOfWar.Characters;
 using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
+using GodOfWar.Player.Routing;
+using GodOfWar.Player.Settings;
 using UnityEngine;
 
 namespace GodOfWar.Player.States

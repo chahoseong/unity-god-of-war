@@ -1,10 +1,10 @@
 using GodOfWar.Combat;
-using GodOfWar.Player;
+using GodOfWar.Player.Settings;
 using NUnit.Framework;
 using UnityEditor;
 using static GodOfWar.Tests.Combat.AnimationAssetAssertions;
 
-namespace GodOfWar.Tests.Player
+namespace GodOfWar.Tests.Player.Settings
 {
     /// <summary>
     /// 가드 설정 에셋의 가드 브레이크·패링 반응·패링 카운터 연결을 검사한다. 엉뚱한 클립이나 변위를 연결해도 재생은 되어 플레이로는 잘 드러나지 않는다.

@@ -1,6 +1,6 @@
 using System;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.States
 {
     /// <summary>
     /// 저스트 패링 윈도우와 헛친 뒤의 쿨다운 규칙. 가드 버튼을 누른 시각부터 정해진 시간 동안 윈도우가 열리고,

@@ -5,7 +5,7 @@ using GodOfWar.Combat;
 using GodOfWar.Input;
 using UnityEngine;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.LockOn
 {
     /// <summary>
     /// LockOn 입력으로 락온 대상을 고르고, 대상이 무효해지거나 멀어지면 다음 대상으로 넘기거나 해제한다.

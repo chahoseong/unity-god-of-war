@@ -3,7 +3,7 @@ using GodOfWar.Combat;
 using GodOfWar.Input;
 using UnityEngine;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Settings
 {
     /// <summary>
     /// 약공격·강공격 콤보가 공유하는 튜닝 값과 버튼별 1타 참조.

@@ -4,6 +4,8 @@ using GodOfWar.Characters;
 using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
+using GodOfWar.Player.Routing;
+using GodOfWar.Player.Settings;
 using GodOfWar.Player.States;
 using UnityEngine;
 

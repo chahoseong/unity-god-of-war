@@ -1,10 +1,11 @@
 using System;
 using GodOfWar.Characters;
 using GodOfWar.Combat;
+using GodOfWar.Player.Settings;
 using Unity.Cinemachine;
 using UnityEngine;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Feedback
 {
     /// <summary>
     /// 플레이어가 치거나 맞은 타격에 피드백(역경직, 카메라 쉐이크)을 낸다. 피드백은 플레이어의 체감을 위한 연출이라 플레이어에만 둔다.

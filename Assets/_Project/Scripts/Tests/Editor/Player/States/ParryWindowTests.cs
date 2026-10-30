@@ -1,7 +1,7 @@
-using GodOfWar.Player;
+using GodOfWar.Player.States;
 using NUnit.Framework;
 
-namespace GodOfWar.Tests.Player
+namespace GodOfWar.Tests.Player.States
 {
     public class ParryWindowTests
     {

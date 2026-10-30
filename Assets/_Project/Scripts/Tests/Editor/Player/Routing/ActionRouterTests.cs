@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
-using GodOfWar.Player;
+using GodOfWar.Player.Routing;
 using NUnit.Framework;
 
-namespace GodOfWar.Tests.Player
+namespace GodOfWar.Tests.Player.Routing
 {
     public class ActionRouterTests
     {

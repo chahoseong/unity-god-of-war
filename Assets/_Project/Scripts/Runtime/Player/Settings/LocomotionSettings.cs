@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Settings
 {
     /// <summary>
     /// 플레이어 이동 상태들이 공유하는 튜닝 값.

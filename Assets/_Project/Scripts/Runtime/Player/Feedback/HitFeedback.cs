@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Feedback
 {
     /// <summary>
     /// 타격 한 번에 내는 피드백. 플레이어와 상대를 얼마나 오래, 얼마나 느리게 할지(역경직)와 카메라를 어떻게 흔들지 담는다.

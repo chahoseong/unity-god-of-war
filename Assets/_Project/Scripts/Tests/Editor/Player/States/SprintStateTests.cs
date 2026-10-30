@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using GodOfWar.Player;
+using GodOfWar.Player.Settings;
 using GodOfWar.Player.States;
 using NUnit.Framework;
 using UnityEditor;

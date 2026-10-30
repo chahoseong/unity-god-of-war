@@ -4,7 +4,7 @@ using System.Text;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Routing
 {
     /// <summary>
     /// 플레이어의 버튼 입력으로 일어나는 상태 전이를 중재한다 (ADR-004).

@@ -1,6 +1,6 @@
 using GodOfWar.Combat;
 using GodOfWar.Input;
-using GodOfWar.Player;
+using GodOfWar.Player.Settings;
 using GodOfWar.Player.States;
 using NUnit.Framework;
 using UnityEditor;

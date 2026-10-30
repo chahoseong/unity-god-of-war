@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
-using GodOfWar.Player;
+using GodOfWar.Player.Routing;
 
-namespace GodOfWar.Tests.Player
+namespace GodOfWar.Tests.Player.Routing
 {
     /// <summary>
     /// 캔슬 윈도우와 내부 연계 응답을 테스트가 정하는 상태 테스트 더블.

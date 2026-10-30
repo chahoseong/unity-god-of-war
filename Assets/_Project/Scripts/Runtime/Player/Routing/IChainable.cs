@@ -1,6 +1,6 @@
 using GodOfWar.Input;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Routing
 {
     /// <summary>
     /// 같은 계열의 후속 행동(콤보 다음 타, 스텝 → 구르기 등)을 가진 상태의 내부 연계 계약 (ADR-004 4절).

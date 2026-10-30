@@ -2,7 +2,7 @@ using System;
 using GodOfWar.Input;
 using UnityEngine;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.LockOn
 {
     /// <summary>
     /// 시점 입력의 좌우 성분에서 "한 번 튕김"을 골라낸다. 락온 대상 전환에 쓴다.

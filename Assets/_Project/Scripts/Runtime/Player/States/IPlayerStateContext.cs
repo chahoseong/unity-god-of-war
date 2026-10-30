@@ -2,8 +2,9 @@ using GodOfWar.Characters;
 using GodOfWar.Combat;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
+using GodOfWar.Player.Routing;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.States
 {
     /// <summary>
     /// 플레이어가 자기 상태들에게 열어 주는 창구(상태 패턴의 Context).

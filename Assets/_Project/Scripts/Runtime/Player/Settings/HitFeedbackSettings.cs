@@ -1,8 +1,9 @@
 using System;
 using GodOfWar.Combat;
+using GodOfWar.Player.Feedback;
 using UnityEngine;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Settings
 {
     /// <summary>
     /// 플레이어가 치거나 맞은 타격의 판정·세기마다 낼 피드백. 칸은 지금 나올 수 있는 판정만 둔다.

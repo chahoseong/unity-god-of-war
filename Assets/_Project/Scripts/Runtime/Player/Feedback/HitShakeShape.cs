@@ -1,4 +1,4 @@
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Feedback
 {
     /// <summary>
     /// 타격 흔들림의 모양. Cinemachine Impulse의 기본 모양 중 곡선 없이 쓸 수 있는 것만 둔다.

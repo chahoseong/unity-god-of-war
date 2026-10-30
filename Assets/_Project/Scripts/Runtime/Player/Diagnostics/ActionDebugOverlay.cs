@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
+using GodOfWar.Player.Routing;
 using UnityEngine;
 using UnityEngine.InputSystem;
 

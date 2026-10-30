@@ -2,7 +2,7 @@ using System;
 using GodOfWar.Input;
 using UnityEngine;
 
-namespace GodOfWar.Tests.Player
+namespace GodOfWar.Tests.Player.Routing
 {
     /// <summary>버튼 이벤트를 테스트에서 직접 발생시키는 입력 테스트 더블.</summary>
     internal sealed class FakePlayerInput : IPlayerInput

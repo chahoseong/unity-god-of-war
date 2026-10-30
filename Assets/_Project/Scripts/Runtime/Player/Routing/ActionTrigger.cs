@@ -2,7 +2,7 @@ using System;
 using GodOfWar.Core.StateMachines;
 using GodOfWar.Input;
 
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Routing
 {
     /// <summary>
     /// 상태가 스스로 선언하는 진입 계약 (ADR-004 1절).

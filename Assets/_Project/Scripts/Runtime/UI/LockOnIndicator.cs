@@ -1,6 +1,6 @@
 using System;
 using GodOfWar.Combat;
-using GodOfWar.Player;
+using GodOfWar.Player.LockOn;
 using UnityEngine;
 
 namespace GodOfWar.UI

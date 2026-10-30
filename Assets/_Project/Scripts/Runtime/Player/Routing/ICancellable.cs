@@ -1,4 +1,4 @@
-namespace GodOfWar.Player
+namespace GodOfWar.Player.Routing
 {
     /// <summary>
     /// 상태가 액션 라우터에 응답하는 캔슬 허용 계약 (ADR-004 3절).
