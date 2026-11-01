@@ -19,6 +19,9 @@ namespace GodOfWar
         /// <summary>캐릭터의 컴포넌트들이 같은 프레임의 진행 시간을 읽도록 그보다 먼저 갱신한다.</summary>
         public const int CharacterClock = -20;
 
+        /// <summary>반짝임 진행도를 같은 프레임의 시계 값으로 계산하도록 CharacterClock 뒤에 갱신한다.</summary>
+        public const int HitFlash = -10;
+
         /// <summary>상태 머신과 액션 라우터를 갱신한다.</summary>
         public const int PlayerController = 0;
 

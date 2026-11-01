@@ -35,6 +35,7 @@ Assets/_Project/
 ├── Prefabs/                # 게임 오브젝트 프리팹
 ├── Animations/             # 애니메이션 컨트롤러 및 클립
 ├── Materials/              # 프로젝트 전용 머티리얼
+├── Shaders/                # 프로젝트 전용 셰이더
 ├── Input/                  # Input Actions 에셋
 ├── Scenes/                 # 게임 씬
 └── Settings/               # 렌더 파이프라인 및 프로젝트 전역 설정 에셋
