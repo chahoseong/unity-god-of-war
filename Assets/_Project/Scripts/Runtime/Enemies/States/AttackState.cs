@@ -20,7 +20,7 @@ namespace GodOfWar.Enemies.States
         private readonly IStateLocator _locator;
         private readonly CharacterMotor _motor;
         private readonly Animator _animator;
-        private readonly Hitbox _hitbox;
+        private readonly Weapon _weapon;
 
         private IdleState _idle;
 
@@ -37,7 +37,7 @@ namespace GodOfWar.Enemies.States
             _locator = context.States;
             _motor = context.Motor;
             _animator = context.Animator;
-            _hitbox = context.Hitbox;
+            _weapon = context.Weapon;
         }
 
         /// <summary>다음 진입에서 할 공격을 정한다. 전이 직전에 호출한다.</summary>
@@ -63,7 +63,7 @@ namespace GodOfWar.Enemies.States
         public void Tick(float deltaTime)
         {
             _elapsed += deltaTime;
-            UpdateHitbox();
+            UpdateHitWindow();
             _motor.Move(Vector3.zero, deltaTime);
 
             if (!_isReturning)
@@ -88,20 +88,20 @@ namespace GodOfWar.Enemies.States
         public void Exit()
         {
             // 피격으로 끊겨도 판정이 열린 채 남지 않는다.
-            _hitbox.Close();
+            _weapon.Close();
         }
 
         /// <summary>타격 구간에 맞춰 무기 판정을 열고 닫는다. 경과 시간은 줄지 않으므로 한 타에서 판정은 한 번만 열린다.</summary>
-        private void UpdateHitbox()
+        private void UpdateHitWindow()
         {
             bool isInWindow = _action.IsInHitWindow(_elapsed);
-            if (isInWindow && !_hitbox.IsOpen)
+            if (isInWindow && !_weapon.IsOpen)
             {
-                _hitbox.Open(_action.HitStrength);
+                _weapon.Open(_action.HitStrength);
             }
-            else if (!isInWindow && _hitbox.IsOpen)
+            else if (!isInWindow && _weapon.IsOpen)
             {
-                _hitbox.Close();
+                _weapon.Close();
             }
         }
     }

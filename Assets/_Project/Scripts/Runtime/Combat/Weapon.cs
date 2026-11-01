@@ -14,7 +14,7 @@ namespace GodOfWar.Combat
     /// 피격자가 내린 판정은 <see cref="Bind"/>로 소유자가 맡긴 콜백으로만 넘긴다.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class Hitbox : MonoBehaviour
+    public sealed class Weapon : MonoBehaviour
     {
         private const int MaxOverlaps = 16;
 

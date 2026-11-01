@@ -40,7 +40,7 @@ namespace GodOfWar.Player.Feedback
             }
 
             _controller.HitDealt += OnHitDealt;
-            _controller.HitReceived += OnHitTaken;
+            _controller.HitTaken += OnHitTaken;
         }
 
         private void OnDestroy()
@@ -49,7 +49,7 @@ namespace GodOfWar.Player.Feedback
             if (_controller != null)
             {
                 _controller.HitDealt -= OnHitDealt;
-                _controller.HitReceived -= OnHitTaken;
+                _controller.HitTaken -= OnHitTaken;
             }
         }
 

@@ -32,7 +32,7 @@ namespace GodOfWar.Player.States
         private readonly CharacterMotor _motor;
         private readonly PlayerAnimator _animator;
         private readonly AttackSettings _settings;
-        private readonly Hitbox _hitbox;
+        private readonly Weapon _weapon;
         private readonly ActionMovement _movement = new ActionMovement();
 
         private LocomotionState _locomotion;
@@ -59,7 +59,7 @@ namespace GodOfWar.Player.States
             _settings = settings;
             RequireEntry(PlayerAction.LightAttack);
             RequireEntry(PlayerAction.HeavyAttack);
-            _hitbox = context.Hitbox;
+            _weapon = context.Weapon;
 
             // 진입한 버튼이 콤보의 1타와 이후 연계를 정하므로, 전이 직전에 그 버튼으로 준비한다.
             context.Router.Declare(new ActionTrigger(
@@ -145,7 +145,7 @@ namespace GodOfWar.Player.States
         public void Tick(float deltaTime)
         {
             _elapsed += deltaTime;
-            UpdateHitbox();
+            UpdateHitWindow();
 
             // 선딜레이 동안은 카메라 정면을 계속 따라가 조준을 고칠 수 있고, 스윙에 들어가면 방향이 고정된다.
             // 몸은 회전 속도만큼 늦게 따라가므로, 궤적은 카메라가 아니라 몸의 현재 정면에 맞춘다.
@@ -195,7 +195,7 @@ namespace GodOfWar.Player.States
         public void Exit()
         {
             // 캔슬·연계·복귀 모두 여기를 지나므로, 판정 구간 도중에 나가도 판정이 열린 채 남지 않는다.
-            _hitbox.Close();
+            _weapon.Close();
         }
 
         public bool TryChain(PlayerActionEvent e)
@@ -223,16 +223,16 @@ namespace GodOfWar.Player.States
         /// 타격 구간에 맞춰 무기 판정을 열고 닫는다. 실제 검사는 애니메이션이 칼을 옮긴 뒤 히트박스가 한다.
         /// 경과 시간은 줄지 않으므로 한 타에서 판정은 한 번만 열린다.
         /// </summary>
-        private void UpdateHitbox()
+        private void UpdateHitWindow()
         {
             bool isInWindow = _action.IsInHitWindow(_elapsed);
-            if (isInWindow && !_hitbox.IsOpen)
+            if (isInWindow && !_weapon.IsOpen)
             {
-                _hitbox.Open(_action.HitStrength);
+                _weapon.Open(_action.HitStrength);
             }
-            else if (!isInWindow && _hitbox.IsOpen)
+            else if (!isInWindow && _weapon.IsOpen)
             {
-                _hitbox.Close();
+                _weapon.Close();
             }
         }
 

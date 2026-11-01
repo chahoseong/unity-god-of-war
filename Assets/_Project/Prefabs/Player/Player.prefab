@@ -207,7 +207,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8642510763629947956}
   m_Layer: 0
-  m_Name: HitboxBase
+  m_Name: BladeBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -238,7 +238,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9120998096829550107}
   m_Layer: 0
-  m_Name: HitboxTip
+  m_Name: BladeTip
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

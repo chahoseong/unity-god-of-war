@@ -39,7 +39,7 @@ namespace GodOfWar.Enemies
         private readonly StateRegistry _registry = new StateRegistry();
         private CharacterMotor _motor;
         private CharacterClock _clock;
-        private Hitbox _hitbox;
+        private Weapon _weapon;
         private StateMachine _machine;
         private IdleState _idle;
         private AttackState _attack;
@@ -53,7 +53,7 @@ namespace GodOfWar.Enemies
 
         CharacterMotor ITrainingDummyStateContext.Motor => _motor;
         Animator ITrainingDummyStateContext.Animator => _animator;
-        Hitbox ITrainingDummyStateContext.Hitbox => _hitbox;
+        Weapon ITrainingDummyStateContext.Weapon => _weapon;
         StateMachine ITrainingDummyStateContext.Machine => _machine;
         IStateLocator ITrainingDummyStateContext.States => _registry;
 
@@ -84,8 +84,8 @@ namespace GodOfWar.Enemies
                 throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterClock)} component.");
             }
 
-            _hitbox = FindRequiredHitbox();
-            _hitbox.Bind(transform, OnHitDealt);
+            _weapon = FindRequiredWeapon();
+            _weapon.Bind(transform, OnHitDealt);
             _machine = new StateMachine();
             _idle = Register(new IdleState(this));
             _attack = Register(new AttackState(this));
@@ -213,16 +213,16 @@ namespace GodOfWar.Enemies
         }
 
         // 칼은 손 본 아래에 있어 루트가 아니라 자식에서 찾는다.
-        private Hitbox FindRequiredHitbox()
+        private Weapon FindRequiredWeapon()
         {
-            Hitbox[] hitboxes = GetComponentsInChildren<Hitbox>(true);
-            if (hitboxes.Length != 1)
+            Weapon[] weapons = GetComponentsInChildren<Weapon>(true);
+            if (weapons.Length != 1)
             {
                 throw new InvalidOperationException(
-                    $"'{name}' requires exactly one {nameof(Hitbox)} in its children, but found {hitboxes.Length}.");
+                    $"'{name}' requires exactly one {nameof(Weapon)} in its children, but found {weapons.Length}.");
             }
 
-            return hitboxes[0];
+            return weapons[0];
         }
 
         private T Register<T>(T state) where T : class, IState

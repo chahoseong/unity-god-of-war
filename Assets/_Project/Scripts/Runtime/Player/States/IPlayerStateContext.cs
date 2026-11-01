@@ -25,7 +25,7 @@ namespace GodOfWar.Player.States
         PlayerAnimator Animator { get; }
 
         /// <summary>무기 판정. 공격 계열 상태가 타격 구간에 맞춰 연다.</summary>
-        Hitbox Hitbox { get; }
+        Weapon Weapon { get; }
 
         /// <summary>이동 입력의 기준 Yaw(도). 락온 중에는 카메라 보간과 무관하게 대상을 향한다.</summary>
         float MovementYaw { get; }

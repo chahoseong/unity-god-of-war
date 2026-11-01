@@ -51,7 +51,7 @@ namespace GodOfWar.Player
         private CharacterClock _clock;
         private PlayerAnimator _animator;
         private IPlayerInput _input;
-        private Hitbox _hitbox;
+        private Weapon _weapon;
         private GuardState _guard;
         private HitReactState _hitReact;
         private BlockState _block;
@@ -74,7 +74,7 @@ namespace GodOfWar.Player
         /// 받은 타격을 판정해 상태 전이까지 마친 뒤 그 판정을 알린다. 피격 연출처럼 판정을 관찰만 하는 쪽이 쓴다.
         /// 타격을 전하는 흐름 안에서 동기로 호출되므로, 구독자는 예외를 던지지 않아야 한다.
         /// </summary>
-        public event Action<HitReport> HitReceived;
+        public event Action<HitReport> HitTaken;
 
         /// <summary>
         /// 무기로 친 타격(칼날 타격과 지정 타격 모두)에 피격자가 내린 판정을 알린다. 피격 연출처럼 판정을 관찰만 하는 쪽이 쓴다.
@@ -86,7 +86,7 @@ namespace GodOfWar.Player
         CharacterClock IPlayerStateContext.Clock => _clock;
         IPlayerInput IPlayerStateContext.Input => _input;
         PlayerAnimator IPlayerStateContext.Animator => _animator;
-        Hitbox IPlayerStateContext.Hitbox => _hitbox;
+        Weapon IPlayerStateContext.Weapon => _weapon;
         float IPlayerStateContext.MovementYaw => _cameraLook.ReferenceYaw;
         StateMachine IPlayerStateContext.Machine => _machine;
         IStateLocator IPlayerStateContext.States => _registry;
@@ -121,8 +121,8 @@ namespace GodOfWar.Player
             }
 
             _input = FindRequiredInput();
-            _hitbox = FindRequiredHitbox();
-            _hitbox.Bind(transform, OnHitDealt);
+            _weapon = FindRequiredWeapon();
+            _weapon.Bind(transform, OnHitDealt);
             _machine = new StateMachine();
             // 상태가 생성자에서 진입 트리거를 선언하므로 상태보다 먼저 만든다.
             _router = new ActionRouter(_machine, _input, _inputBufferDuration, NonRoutedActions);
@@ -215,7 +215,7 @@ namespace GodOfWar.Player
 
             // 상태가 확정된 뒤에 알려, 구독자가 실패해도 판정과 전이는 이미 끝나 있게 한다.
             var result = new HitResult(outcome);
-            HitReceived?.Invoke(new HitReport(this, attack, result));
+            HitTaken?.Invoke(new HitReport(this, attack, result));
             return result;
         }
 
@@ -247,16 +247,16 @@ namespace GodOfWar.Player
         }
 
         // 칼은 손 본 아래에 있어 루트가 아니라 자식에서 찾는다.
-        private Hitbox FindRequiredHitbox()
+        private Weapon FindRequiredWeapon()
         {
-            Hitbox[] hitboxes = GetComponentsInChildren<Hitbox>(true);
-            if (hitboxes.Length != 1)
+            Weapon[] weapons = GetComponentsInChildren<Weapon>(true);
+            if (weapons.Length != 1)
             {
                 throw new InvalidOperationException(
-                    $"'{name}' requires exactly one {nameof(Hitbox)} in its children, but found {hitboxes.Length}.");
+                    $"'{name}' requires exactly one {nameof(Weapon)} in its children, but found {weapons.Length}.");
             }
 
-            return hitboxes[0];
+            return weapons[0];
         }
 
         private void RequireAssigned<T>(T settings) where T : ScriptableObject

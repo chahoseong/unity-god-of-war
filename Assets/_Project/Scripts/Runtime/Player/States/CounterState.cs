@@ -29,7 +29,7 @@ namespace GodOfWar.Player.States
         private readonly IPlayerInput _input;
         private readonly CharacterMotor _motor;
         private readonly PlayerAnimator _animator;
-        private readonly Hitbox _hitbox;
+        private readonly Weapon _weapon;
         private readonly CounterAction _action;
         private readonly float _minInput;
         private readonly ActionMovement _movement = new ActionMovement();
@@ -55,7 +55,7 @@ namespace GodOfWar.Player.States
             _input = context.Input;
             _motor = context.Motor;
             _animator = context.Animator;
-            _hitbox = context.Hitbox;
+            _weapon = context.Weapon;
             _action = settings.Counter;
             _minInput = attackSettings.MinInput;
             if (_action == null || _action.Clip == null || _action.Movement == null)
@@ -199,7 +199,7 @@ namespace GodOfWar.Player.States
                 return;
             }
 
-            _hitbox.Strike(_hittable, _action.HitStrength);
+            _weapon.Strike(_hittable, _action.HitStrength);
         }
 
         private Vector3 HorizontalOffsetToTarget()

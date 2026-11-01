@@ -18,7 +18,7 @@ namespace GodOfWar.Enemies
         Animator Animator { get; }
 
         /// <summary>무기 판정. 공격 상태가 타격 구간에 맞춰 연다.</summary>
-        Hitbox Hitbox { get; }
+        Weapon Weapon { get; }
 
         /// <summary>상태가 전이를 요청하는 상태 머신.</summary>
         StateMachine Machine { get; }
