@@ -15,8 +15,8 @@ namespace GodOfWar.Enemies
     /// 휘두른 공격이 저스트 패링당하면 공격을 끊고 튕겨 나가는 반응(역경직)을 재생한다. 그동안 맞으면 피격 반응으로 바뀐다.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(CharacterMotor), typeof(CharacterClock))]
-    public sealed class TrainingDummy : MonoBehaviour, IHittable, ITrainingDummyStateContext
+    [RequireComponent(typeof(CharacterMotor), typeof(CharacterClock), typeof(HitTarget))]
+    public sealed class TrainingDummy : MonoBehaviour, ITrainingDummyStateContext
     {
         [SerializeField] private Animator _animator;
 
@@ -84,12 +84,19 @@ namespace GodOfWar.Enemies
                 throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterClock)} component.");
             }
 
+            if (!TryGetComponent(out HitTarget hitTarget))
+            {
+                throw new InvalidOperationException($"'{name}' requires a {nameof(HitTarget)} component.");
+            }
+
             _weapon = FindRequiredWeapon();
             _weapon.Bind(transform, OnHitDealt);
             _machine = new StateMachine();
             _idle = Register(new IdleState(this));
             _attack = Register(new AttackState(this));
             _hitReact = Register(new HitReactState(this));
+            // 판정이 상태를 쓰므로, 검증에 실패해 조립이 덜 된 채로 타격을 받지 않도록 상태를 모두 등록한 뒤에 맡긴다.
+            hitTarget.Bind(HandleHit);
 
             _isAssembled = true;
         }
@@ -125,7 +132,8 @@ namespace GodOfWar.Enemies
             UpdateAutoAttack(_clock.DeltaTime);
         }
 
-        public HitResult ReceiveHit(in AttackInfo attack)
+        // HitTarget에 맡긴 판정. 더미는 막지 않으므로 늘 맞는다.
+        private HitResult HandleHit(in AttackInfo attack)
         {
             HitDirection direction = HitDirectionResolver.Resolve(
                 transform.position, transform.forward, attack.Attacker.position);
@@ -140,9 +148,9 @@ namespace GodOfWar.Enemies
         /// 자기 칼로 친 타격의 판정을 받는다. 저스트 패링당하면 지금 상태와 관계없이 역경직으로 바꾼다.
         /// 공격 중이면 공격 상태를 나가며 칼 판정이 닫힌다. 다른 판정에는 반응하지 않는다.
         /// </summary>
-        private void OnHitDealt(HitReport report)
+        private void OnHitDealt(HitEvent hitEvent)
         {
-            if (report.Result.Outcome != HitOutcome.Parried)
+            if (hitEvent.Result.Outcome != HitOutcome.Parried)
             {
                 return;
             }

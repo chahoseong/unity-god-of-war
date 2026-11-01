@@ -9,16 +9,17 @@ namespace GodOfWar.Player.Feedback
 {
     /// <summary>
     /// 플레이어가 치거나 맞은 타격에 피드백(역경직, 카메라 쉐이크)을 낸다. 피드백은 플레이어의 체감을 위한 연출이라 플레이어에만 둔다.
-    /// 컨트롤러가 알리는 친 타격과 받은 타격의 판정을 받아, 판정·세기에 맞는 칸으로 플레이어와 상대를 느리게 한다.
+    /// 컨트롤러가 알리는 친 타격과 <see cref="HitTarget"/>이 알리는 받은 타격의 판정을 받아, 판정·세기에 맞는 칸으로 플레이어와 상대를 느리게 한다.
     /// 판정과 상태 전이는 모르고 결과만 관찰한다. 그래서 적끼리 친 타격에는 피드백이 없다.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(PlayerController), typeof(CharacterClock))]
+    [RequireComponent(typeof(PlayerController), typeof(CharacterClock), typeof(HitTarget))]
     public sealed class PlayerHitFeedback : MonoBehaviour
     {
         [SerializeField] private HitFeedbackSettings _settings;
 
         private PlayerController _controller;
+        private HitTarget _hitTarget;
         private CharacterClock _clock;
 
         private void Awake()
@@ -34,38 +35,43 @@ namespace GodOfWar.Player.Feedback
                 throw new InvalidOperationException($"'{name}' requires a {nameof(PlayerController)} component.");
             }
 
+            if (!TryGetComponent(out _hitTarget))
+            {
+                throw new InvalidOperationException($"'{name}' requires a {nameof(HitTarget)} component.");
+            }
+
             if (!TryGetComponent(out _clock))
             {
                 throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterClock)} component.");
             }
 
             _controller.HitDealt += OnHitDealt;
-            _controller.HitTaken += OnHitTaken;
+            _hitTarget.HitTaken += OnHitTaken;
         }
 
         private void OnDestroy()
         {
-            // Awake 검증에서 실패하면 구독하기 전에 멈춘다.
-            if (_controller != null)
+            // Awake 검증에서 실패하면 구독하기 전에 멈춘다. 둘 다 찾은 뒤에야 구독하므로 시계까지 찾았는지로 가린다.
+            if (_clock != null)
             {
                 _controller.HitDealt -= OnHitDealt;
-                _controller.HitTaken -= OnHitTaken;
+                _hitTarget.HitTaken -= OnHitTaken;
             }
         }
 
-        private void OnHitDealt(HitReport report)
+        private void OnHitDealt(HitEvent hitEvent)
         {
-            if (_settings.TryGetDealt(report.Result.Outcome, report.Attack.Strength, out HitFeedback feedback))
+            if (_settings.TryGetDealt(hitEvent.Result.Outcome, hitEvent.Attack.Strength, out HitFeedback feedback))
             {
-                Apply(feedback, report.Target as Component);
+                Apply(feedback, hitEvent.Target as Component);
             }
         }
 
-        private void OnHitTaken(HitReport report)
+        private void OnHitTaken(HitEvent hitEvent)
         {
-            if (_settings.TryGetTaken(report.Result.Outcome, report.Attack.Strength, out HitFeedback feedback))
+            if (_settings.TryGetTaken(hitEvent.Result.Outcome, hitEvent.Attack.Strength, out HitFeedback feedback))
             {
-                Apply(feedback, report.Attack.Attacker);
+                Apply(feedback, hitEvent.Attack.Attacker);
             }
         }
 

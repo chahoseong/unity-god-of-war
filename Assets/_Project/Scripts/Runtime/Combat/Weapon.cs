@@ -38,9 +38,9 @@ namespace GodOfWar.Combat
 
         // 소유자가 Bind로 맡긴 공격자와 판정을 넘길 곳. 무기의 주인은 바뀌지 않는다.
         private Transform _owner;
-        private Action<HitReport> _onDealt;
+        private Action<HitEvent> _onDealt;
         // 칼날 타격의 판정을 받는 콜백. 타격마다 할당하지 않도록 한 번만 만든다.
-        private Action<HitReport> _onSwingResolved;
+        private Action<HitEvent> _onSwingResolved;
 
         private HitStrength _strength;
 
@@ -73,7 +73,7 @@ namespace GodOfWar.Combat
         /// 타격을 전한 같은 프레임 안(모든 LateUpdate 뒤)에 <paramref name="onDealt"/>로 넘긴다.
         /// </summary>
         /// <exception cref="InvalidOperationException">이미 주인이 정해져 있다.</exception>
-        public void Bind(Transform owner, Action<HitReport> onDealt)
+        public void Bind(Transform owner, Action<HitEvent> onDealt)
         {
             if (_owner != null)
             {
@@ -132,22 +132,22 @@ namespace GodOfWar.Combat
             Submit(target ?? throw new ArgumentNullException(nameof(target)), strength, _onDealt);
         }
 
-        private void Submit(IHittable target, HitStrength strength, Action<HitReport> onResolved)
+        private void Submit(IHittable target, HitStrength strength, Action<HitEvent> onResolved)
         {
             HitSystem.Record(target, new AttackInfo(_owner, strength), onResolved);
         }
 
         // 칼날 타격의 판정을 받아 스윙 기록을 고친 뒤 소유자에게 넘긴다. 판정을 알리는 것은 HitSystem뿐이다.
-        private void OnSwingResolved(HitReport report)
+        private void OnSwingResolved(HitEvent hitEvent)
         {
             // 흘린 타격은 맞힌 것으로 세지 않아, 무적이 끝난 뒤에도 칼날이 걸쳐 있으면 같은 스윙이 다시 맞힌다.
             // 그 사이 칼이 다시 열렸어도 새 스윙의 기록이라 지워도 해가 없다.
-            if (report.Result.Outcome == HitOutcome.Evaded)
+            if (hitEvent.Result.Outcome == HitOutcome.Evaded)
             {
-                _hitTargets.Remove(report.Target);
+                _hitTargets.Remove(hitEvent.Target);
             }
 
-            _onDealt(report);
+            _onDealt(hitEvent);
         }
 
         private void RequireBound()

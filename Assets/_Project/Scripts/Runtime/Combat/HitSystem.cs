@@ -16,7 +16,7 @@ namespace GodOfWar.Combat
     {
         private readonly struct PendingHit
         {
-            public PendingHit(IHittable target, AttackInfo attack, Action<HitReport> onResolved)
+            public PendingHit(IHittable target, AttackInfo attack, Action<HitEvent> onResolved)
             {
                 Target = target;
                 Attack = attack;
@@ -25,7 +25,7 @@ namespace GodOfWar.Combat
 
             public IHittable Target { get; }
             public AttackInfo Attack { get; }
-            public Action<HitReport> OnResolved { get; }
+            public Action<HitEvent> OnResolved { get; }
         }
 
         // 전하는 도중에 기록이 생겨도 이번 목록을 건드리지 않도록 두 목록을 번갈아 쓴다.
@@ -36,7 +36,7 @@ namespace GodOfWar.Combat
         /// <paramref name="target"/>에게 전할 타격을 기록한다. 이번 프레임의 모든 LateUpdate가 끝난 뒤에 전하고,
         /// 피격자가 내린 판정을 <paramref name="onResolved"/>로 돌려준다.
         /// </summary>
-        public static void Record(IHittable target, in AttackInfo attack, Action<HitReport> onResolved)
+        public static void Record(IHittable target, in AttackInfo attack, Action<HitEvent> onResolved)
         {
             if (target == null)
             {
@@ -145,7 +145,7 @@ namespace GodOfWar.Combat
                     return;
                 }
 
-                hit.OnResolved(new HitReport(hit.Target, hit.Attack, result));
+                hit.OnResolved(new HitEvent(hit.Target, hit.Attack, result));
             }
             catch (Exception exception)
             {

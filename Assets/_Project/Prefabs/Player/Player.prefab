@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 3751006474430071227}
   - component: {fileID: 2125757744054541679}
   - component: {fileID: 6929729124445471486}
+  - component: {fileID: 169158004819119297}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -197,6 +198,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Player.PlayerHitFeedback
   _settings: {fileID: 11400000, guid: 1a644166a98ed8946ac582c8123942e9, type: 2}
+--- !u!114 &169158004819119297
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 168932584551449046}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e27ce7070f0ba94c893ced5881c1676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.HitTarget
 --- !u!1 &504034824806651937
 GameObject:
   m_ObjectHideFlags: 0

@@ -15,12 +15,13 @@ namespace GodOfWar.Player
     /// 플레이어 상태 머신의 컴포지션 루트.
     /// 상태를 생성·등록하고 매 프레임 갱신하며, 상태들이 속한 Context다.
     /// 상태에게는 <see cref="IPlayerStateContext"/>로만 구성 요소와 전이 수단을 열고, 공개 API는 관찰용만 둔다.
-    /// 바깥에서는 상태를 모른 채 타격을 전하므로, 타격을 받아 현재 상태의 방어 자세로 판정하고 결과에 맞게 전이하는 것도 이 Context의 일이다.
+    /// 바깥에서는 상태를 모른 채 <see cref="HitTarget"/>으로 타격을 전하므로, 그 타격을 현재 상태의 방어 자세로 판정하고 결과에 맞게 전이하는 것도 이 Context의 일이다.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(ExecutionOrder.PlayerController)]
     [RequireComponent(typeof(CharacterMotor), typeof(PlayerAnimator), typeof(CharacterClock))]
-    public sealed class PlayerController : MonoBehaviour, IPlayerStateContext, IHittable
+    [RequireComponent(typeof(HitTarget))]
+    public sealed class PlayerController : MonoBehaviour, IPlayerStateContext
     {
         // 상태 전이와 무관해 라우터가 다루지 않는 버튼. LockOn은 TargetLock이 직접 구독한다.
         private static readonly PlayerAction[] NonRoutedActions = { PlayerAction.LockOn };
@@ -71,16 +72,10 @@ namespace GodOfWar.Player
         public PlayerAction BufferedAction => _router.BufferedAction;
 
         /// <summary>
-        /// 받은 타격을 판정해 상태 전이까지 마친 뒤 그 판정을 알린다. 피격 연출처럼 판정을 관찰만 하는 쪽이 쓴다.
-        /// 타격을 전하는 흐름 안에서 동기로 호출되므로, 구독자는 예외를 던지지 않아야 한다.
-        /// </summary>
-        public event Action<HitReport> HitTaken;
-
-        /// <summary>
         /// 무기로 친 타격(칼날 타격과 지정 타격 모두)에 피격자가 내린 판정을 알린다. 피격 연출처럼 판정을 관찰만 하는 쪽이 쓴다.
         /// 타격을 전하는 흐름 안에서 동기로 호출되므로, 구독자는 예외를 던지지 않아야 한다.
         /// </summary>
-        public event Action<HitReport> HitDealt;
+        public event Action<HitEvent> HitDealt;
 
         CharacterMotor IPlayerStateContext.Motor => _motor;
         CharacterClock IPlayerStateContext.Clock => _clock;
@@ -120,6 +115,11 @@ namespace GodOfWar.Player
                 throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterClock)} component.");
             }
 
+            if (!TryGetComponent(out HitTarget hitTarget))
+            {
+                throw new InvalidOperationException($"'{name}' requires a {nameof(HitTarget)} component.");
+            }
+
             _input = FindRequiredInput();
             _weapon = FindRequiredWeapon();
             _weapon.Bind(transform, OnHitDealt);
@@ -137,6 +137,8 @@ namespace GodOfWar.Player
             _guardBreak = Register(new GuardBreakState(this, _guardSettings));
             _parry = Register(new ParryState(this, _guardSettings));
             Register(new CounterState(this, _guardSettings, _attackSettings));
+            // 판정이 상태를 쓰므로, 검증에 실패해 조립이 덜 된 채로 타격을 받지 않도록 상태를 모두 등록한 뒤에 맡긴다.
+            hitTarget.Bind(HandleHit);
             _isAssembled = true;
         }
 
@@ -176,7 +178,8 @@ namespace GodOfWar.Player
             _router.Tick(_clock.DeltaTime);
         }
 
-        public HitResult ReceiveHit(in AttackInfo attack)
+        // HitTarget에 맡긴 판정. 전달 시스템을 거친 타격만 들어온다.
+        private HitResult HandleHit(in AttackInfo attack)
         {
             IState current = _machine.CurrentState;
             DefenseStance stance = current is IDefensible defensible
@@ -213,16 +216,14 @@ namespace GodOfWar.Player
                     throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null);
             }
 
-            // 상태가 확정된 뒤에 알려, 구독자가 실패해도 판정과 전이는 이미 끝나 있게 한다.
-            var result = new HitResult(outcome);
-            HitTaken?.Invoke(new HitReport(this, attack, result));
-            return result;
+            // 알림은 HitTarget이 이 판정을 받은 뒤에 하므로, 구독자는 상태 전이까지 끝난 결과를 본다.
+            return new HitResult(outcome);
         }
 
         // 무기가 넘겨 준 판정을 바깥에 알린다. 무기에 맡긴 콜백이라 무기를 거친 판정만 들어온다.
-        private void OnHitDealt(HitReport report)
+        private void OnHitDealt(HitEvent hitEvent)
         {
-            HitDealt?.Invoke(report);
+            HitDealt?.Invoke(hitEvent);
         }
 
         /// <summary>

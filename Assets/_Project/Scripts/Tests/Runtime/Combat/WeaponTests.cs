@@ -19,7 +19,7 @@ namespace GodOfWar.Tests.Combat
 
         private readonly List<GameObject> _objects = new List<GameObject>();
         // 공격자가 무기에 맡긴 콜백으로 받은 판정.
-        private readonly List<HitReport> _dealt = new List<HitReport>();
+        private readonly List<HitEvent> _dealt = new List<HitEvent>();
         private Transform _attacker;
         private Transform _blade;
         private Weapon _weapon;
