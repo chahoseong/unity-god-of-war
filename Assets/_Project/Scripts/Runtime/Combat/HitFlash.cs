@@ -6,14 +6,15 @@ using UnityEngine;
 namespace GodOfWar.Combat
 {
     /// <summary>
-    /// 맞은 캐릭터의 몸과 들고 있는 무기를 잠깐 번쩍이게 한다. 언제 반짝일지는 판정을 내린 캐릭터가 정하고, 여기서는 반짝이기만 한다.
+    /// 맞은 캐릭터의 몸과 들고 있는 무기를 잠깐 번쩍이게 한다. 같은 캐릭터의 <see cref="HitTarget"/>이 알리는 판정 중
+    /// 막지 못하고 맞은(<see cref="HitOutcome.Hit"/>) 타격에만 반짝인다. 판정은 모르고 결과만 관찰하는 연출이라, 켜져 있는 동안만 듣는다.
     /// 반짝이는 동안만 메쉬 렌더러마다 오버레이 머티리얼 슬롯을 덧붙여 같은 메쉬를 한 번 더 그리므로, 원래 머티리얼은 건드리지 않는다.
     /// 진행은 캐릭터 시계를 따라, 역경직으로 느려진 동안은 반짝임도 그만큼 천천히 사라진다.
     /// 반짝이는 중에 다시 맞으면 피격 반응처럼 가장 최근 타격으로 처음부터 다시 반짝인다.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(ExecutionOrder.HitFlash)]
-    [RequireComponent(typeof(CharacterClock))]
+    [RequireComponent(typeof(CharacterClock), typeof(HitTarget))]
     public sealed class HitFlash : MonoBehaviour
     {
         private static readonly int FlashColorId = Shader.PropertyToID("_FlashColor");
@@ -21,6 +22,7 @@ namespace GodOfWar.Combat
         [SerializeField] private HitFlashSettings _settings;
 
         private CharacterClock _clock;
+        private HitTarget _hitTarget;
         private Material _overlay;
         private Renderer[] _renderers;
 
@@ -58,6 +60,11 @@ namespace GodOfWar.Combat
                 throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterClock)} component.");
             }
 
+            if (!TryGetComponent(out _hitTarget))
+            {
+                throw new InvalidOperationException($"'{name}' requires a {nameof(HitTarget)} component.");
+            }
+
             _renderers = FindMeshRenderers();
             _overlay = new Material(_settings.OverlayMaterial) { name = $"{_settings.OverlayMaterial.name} ({name})" };
             _plainMaterials = new Material[_renderers.Length][];
@@ -74,8 +81,22 @@ namespace GodOfWar.Combat
             }
         }
 
+        private void OnEnable()
+        {
+            // Awake 검증에서 실패하면 Unity가 컴포넌트를 꺼 여기까지 오지 않지만, 찾지 못한 채 구독하지 않도록 확인한다.
+            if (_hitTarget != null)
+            {
+                _hitTarget.HitTaken += OnHitTaken;
+            }
+        }
+
         private void OnDisable()
         {
+            if (_hitTarget != null)
+            {
+                _hitTarget.HitTaken -= OnHitTaken;
+            }
+
             // 꺼진 동안은 진행할 수 없으므로, 슬롯이 붙은 채 남지 않게 바로 끝낸다.
             Stop();
         }
@@ -136,6 +157,15 @@ namespace GodOfWar.Combat
             _startTime = _clock.Now;
             Attach();
             ApplyColor(0f);
+        }
+
+        // 막거나 흘리거나 튕겨 낸 타격은 몸에 들어가지 않았으므로 반짝이지 않는다. 그런 결과는 다른 연출이 전한다.
+        private void OnHitTaken(HitEvent hitEvent)
+        {
+            if (hitEvent.Result.Outcome == HitOutcome.Hit)
+            {
+                Flash(hitEvent.Attack.Strength);
+            }
         }
 
         private void Attach()

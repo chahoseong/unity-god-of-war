@@ -23,6 +23,8 @@ namespace GodOfWar.Tests.Combat
         private GameObject _character;
         private CharacterClock _clock;
         private HitFlash _flash;
+        private HitTarget _hitTarget;
+        private GameObject _attacker;
         private HitFlashSettings _settings;
         private Material _original;
         private SkinnedMeshRenderer _body;
@@ -56,7 +58,10 @@ namespace GodOfWar.Tests.Combat
             _trail = trail.AddComponent<TrailRenderer>();
             _trail.sharedMaterial = _original;
 
+            // RequireComponent가 피격 입구를 함께 붙인다.
             _flash = _character.AddComponent<HitFlash>();
+            _hitTarget = _character.GetComponent<HitTarget>();
+            _attacker = new GameObject("Attacker");
             var serialized = new SerializedObject(_flash);
             serialized.FindProperty("_settings").objectReferenceValue = _settings;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -72,6 +77,7 @@ namespace GodOfWar.Tests.Combat
                 Object.DestroyImmediate(_character);
             }
 
+            Object.DestroyImmediate(_attacker);
             Object.DestroyImmediate(_settings);
             Object.DestroyImmediate(_original);
         }
@@ -196,6 +202,43 @@ namespace GodOfWar.Tests.Combat
             yield return null;
 
             Assert.That(overlay == null, Is.True);
+        }
+
+        // 판정은 피격 입구에 맡긴 처리자가 정한 대로 나오고, 반짝임은 그 알림만 본다.
+        [Test]
+        public void HitTaken_WithHitOutcome_FlashesWithAttackStrength()
+        {
+            _hitTarget.Bind((in AttackInfo _) => new HitResult(HitOutcome.Hit));
+
+            _hitTarget.ReceiveHit(new AttackInfo(_attacker.transform, HitStrength.Heavy));
+
+            Assert.That(Brightness(), Is.EqualTo(HeavyIntensity).Within(Tolerance));
+        }
+
+        // 몸에 들어가지 않은 타격은 반짝이지 않는다.
+        [TestCase(HitOutcome.Evaded)]
+        [TestCase(HitOutcome.Blocked)]
+        [TestCase(HitOutcome.GuardBroken)]
+        [TestCase(HitOutcome.Parried)]
+        public void HitTaken_WithOutcomeOtherThanHit_DoesNotFlash(HitOutcome outcome)
+        {
+            _hitTarget.Bind((in AttackInfo _) => new HitResult(outcome));
+
+            _hitTarget.ReceiveHit(new AttackInfo(_attacker.transform, HitStrength.Heavy));
+
+            Assert.That(_flash.IsFlashing, Is.False);
+        }
+
+        // 꺼진 연출은 듣지 않으므로, 꺼진 채로 슬롯이 붙지 않는다.
+        [Test]
+        public void HitTaken_WhileDisabled_DoesNotFlash()
+        {
+            _hitTarget.Bind((in AttackInfo _) => new HitResult(HitOutcome.Hit));
+            _flash.enabled = false;
+
+            _hitTarget.ReceiveHit(new AttackInfo(_attacker.transform, HitStrength.Heavy));
+
+            Assert.That(_body.sharedMaterials, Is.EqualTo(new[] { _original }));
         }
 
         private Material Overlay(Renderer renderer)
