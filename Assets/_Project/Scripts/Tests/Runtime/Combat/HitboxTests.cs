@@ -18,6 +18,8 @@ namespace GodOfWar.Tests.Combat
         private const float TargetRadius = 0.15f;
 
         private readonly List<GameObject> _objects = new List<GameObject>();
+        // 공격자가 무기에 맡긴 콜백으로 받은 판정.
+        private readonly List<HitReport> _dealt = new List<HitReport>();
         private Transform _attacker;
         private Transform _blade;
         private Hitbox _hitbox;
@@ -30,6 +32,7 @@ namespace GodOfWar.Tests.Combat
             _attacker.position = new Vector3(10f, 0f, 5f);
             _hitbox = CreateHitbox(_attacker);
             _blade = _hitbox.transform;
+            _dealt.Clear();
         }
 
         [TearDown]
@@ -49,7 +52,7 @@ namespace GodOfWar.Tests.Combat
         public IEnumerator Hitbox_WithBladeSweepingPastTargetInOneFrame_HitsTarget()
         {
             SpyHittable target = CreateTarget(AlongBlade(60f, 0.85f));
-            _hitbox.Open(_attacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
             yield return null;
 
             _blade.localRotation = Quaternion.Euler(0f, 120f, 0f);
@@ -62,7 +65,7 @@ namespace GodOfWar.Tests.Combat
         public IEnumerator Hitbox_WithTargetOverlappingAcrossFrames_HitsTargetOnce()
         {
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            _hitbox.Open(_attacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
             yield return null;
             yield return null;
             yield return null;
@@ -74,11 +77,11 @@ namespace GodOfWar.Tests.Combat
         public IEnumerator Hitbox_AfterReopen_HitsSameTargetAgain()
         {
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            _hitbox.Open(_attacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
             yield return null;
 
             _hitbox.Close();
-            _hitbox.Open(_attacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
             yield return null;
 
             Assert.That(target.HitCount, Is.EqualTo(2));
@@ -89,7 +92,7 @@ namespace GodOfWar.Tests.Combat
         {
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
             target.transform.SetParent(_attacker, true);
-            _hitbox.Open(_attacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
             yield return null;
 
             Assert.That(target.HitCount, Is.EqualTo(0));
@@ -99,7 +102,7 @@ namespace GodOfWar.Tests.Combat
         public IEnumerator Hitbox_AfterClose_DoesNotHitTarget()
         {
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            _hitbox.Open(_attacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
             _hitbox.Close();
             yield return null;
 
@@ -113,7 +116,7 @@ namespace GodOfWar.Tests.Combat
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
             target.Outcome = HitOutcome.Evaded;
             target.OnHit = () => target.Outcome = HitOutcome.Hit;
-            _hitbox.Open(_attacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
             yield return null;
             yield return null;
             yield return null;
@@ -129,7 +132,7 @@ namespace GodOfWar.Tests.Combat
             // Update가 끝난 뒤에 열어, 이번 프레임의 LateUpdate가 반드시 검사하게 한다.
             yield return null;
 
-            _hitbox.Open(_attacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
             yield return new WaitForEndOfFrame();
 
             Assert.That(target.HitCount, Is.EqualTo(1));
@@ -149,8 +152,8 @@ namespace GodOfWar.Tests.Combat
             attackerBody.OnHit = _hitbox.Close;
             opponentBody.OnHit = opponentHitbox.Close;
 
-            _hitbox.Open(_attacker, HitStrength.Light);
-            opponentHitbox.Open(opponent, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
+            opponentHitbox.Open(HitStrength.Light);
             yield return null;
 
             Assert.That(new[] { attackerBody.HitCount, opponentBody.HitCount }, Is.EqualTo(new[] { 1, 1 }));
@@ -165,7 +168,7 @@ namespace GodOfWar.Tests.Combat
             first.OnHit = () => Object.DestroyImmediate(second.gameObject);
             second.OnHit = () => Object.DestroyImmediate(first.gameObject);
 
-            _hitbox.Open(_attacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
             yield return null;
 
             Assert.That(first.HitCount + second.HitCount, Is.EqualTo(1));
@@ -186,8 +189,8 @@ namespace GodOfWar.Tests.Combat
             target.OnHit = () => Object.DestroyImmediate(otherAttacker.gameObject);
             otherTarget.OnHit = () => Object.DestroyImmediate(attacker.gameObject);
 
-            _hitbox.Open(_attacker, HitStrength.Light);
-            otherHitbox.Open(otherAttacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
+            otherHitbox.Open(HitStrength.Light);
             yield return null;
 
             Assert.That(target.HitCount + otherTarget.HitCount, Is.EqualTo(1));
@@ -205,11 +208,41 @@ namespace GodOfWar.Tests.Combat
             LogAssert.Expect(LogType.Exception, new Regex("first target failed"));
             LogAssert.Expect(LogType.Exception, new Regex("second target failed"));
 
-            _hitbox.Open(_attacker, HitStrength.Light);
+            _hitbox.Open(HitStrength.Light);
             yield return null;
             yield return null;
 
             Assert.That(new[] { first.HitCount, second.HitCount }, Is.EqualTo(new[] { 1, 1 }));
+        }
+
+        // 기본값(Hit)이 아닌 판정을 돌려줘, 무기가 판정을 바꾸거나 지어내지 않고 그대로 넘기는지 본다.
+        [UnityTest]
+        public IEnumerator Hitbox_WithTargetOnBlade_PassesOutcomeToOwner()
+        {
+            SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
+            target.Outcome = HitOutcome.Blocked;
+            _hitbox.Open(HitStrength.Light);
+            yield return null;
+
+            Assert.That(_dealt.Count, Is.EqualTo(1));
+            Assert.That(_dealt[0].Target, Is.SameAs(target));
+            Assert.That(_dealt[0].Result.Outcome, Is.EqualTo(HitOutcome.Blocked));
+        }
+
+        // 지정 타격은 칼날 검출을 거치지 않으므로, 판정이 소유자에게 돌아오는 경로를 따로 확인한다.
+        [UnityTest]
+        public IEnumerator Strike_WithClosedHitbox_PassesOutcomeToOwner()
+        {
+            // 칼날에서 떨어진 곳에 두어, 칼날 검출로는 맞을 수 없게 한다.
+            SpyHittable target = CreateTarget(_attacker.position + Vector3.back * 3f);
+            target.Outcome = HitOutcome.Parried;
+            _hitbox.Strike(target, HitStrength.Heavy);
+            yield return null;
+
+            Assert.That(_dealt.Count, Is.EqualTo(1));
+            Assert.That(_dealt[0].Target, Is.SameAs(target));
+            Assert.That(_dealt[0].Attack.Attacker, Is.SameAs(_attacker));
+            Assert.That(_dealt[0].Result.Outcome, Is.EqualTo(HitOutcome.Parried));
         }
 
         private GameObject Create(string name)
@@ -219,7 +252,10 @@ namespace GodOfWar.Tests.Combat
             return gameObject;
         }
 
-        /// <summary><paramref name="attacker"/>의 정면으로 뻗은 칼날 판정을 만든다. 칼날 축은 공격자 위치다.</summary>
+        /// <summary>
+        /// <paramref name="attacker"/>의 정면으로 뻗은 칼날 판정을 만들어 그 공격자에게 맡긴다. 칼날 축은 공격자 위치다.
+        /// 받은 판정은 <see cref="_dealt"/>에 모은다.
+        /// </summary>
         private Hitbox CreateHitbox(Transform attacker)
         {
             // Awake의 참조 검사보다 먼저 연결하도록 비활성 상태로 만든다.
@@ -238,6 +274,7 @@ namespace GodOfWar.Tests.Combat
             serialized.FindProperty("_radius").floatValue = BladeRadius;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             blade.SetActive(true);
+            hitbox.Bind(attacker, _dealt.Add);
             return hitbox;
         }
 

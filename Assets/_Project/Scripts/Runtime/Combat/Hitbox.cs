@@ -1,20 +1,17 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.LowLevel;
-using UnityEngine.PlayerLoop;
 
 namespace GodOfWar.Combat
 {
     /// <summary>
-    /// 무기 칼날을 따라 타격 대상을 찾는 판정. 열려 있는 동안 칼날이 지나간 공간을 매 프레임 쓸어,
+    /// 캐릭터 한 명의 무기. 열려 있는 동안 칼날이 지나간 공간을 매 프레임 쓸어,
     /// 새로 닿은 <see cref="IHittable"/>에게 한 번씩 타격을 전한다. 피격자가 흘린(<see cref="HitOutcome.Evaded"/>) 타격은 세지 않는다.
     /// 언제 열고 닫을지는 공격하는 쪽이 정하고, 이 컴포넌트는 검출만 한다.
     /// 애니메이션이 칼을 옮긴 뒤에 검사하도록 LateUpdate에서 판정한다.
-    /// 검출한 타격은 바로 전하지 않고 모아 두었다가, 모든 LateUpdate가 끝난 뒤 같은 프레임 안에 한꺼번에 전한다.
-    /// 그래서 서로 동시에 친 두 칼은, 먼저 전해진 타격에 상대 칼이 닫혀도 둘 다 맞힌다.
-    /// 피격자가 내린 판정은 전한 직후 <see cref="HitResolved"/>로 공격하는 쪽에 알린다.
+    /// 검출한 타격은 <see cref="HitSystem"/>에 기록해, 모든 LateUpdate가 끝난 뒤 같은 프레임 안에 전한다.
     /// 패링 카운터처럼 대상이 정해진 타격은 칼날로 찾지 않고 <see cref="Strike"/>로 같은 경로에 넣는다.
+    /// 피격자가 내린 판정은 <see cref="Bind"/>로 소유자가 맡긴 콜백으로만 넘긴다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class Hitbox : MonoBehaviour
@@ -39,7 +36,12 @@ namespace GodOfWar.Combat
         private readonly Collider[] _overlaps = new Collider[MaxOverlaps];
         private readonly HashSet<IHittable> _hitTargets = new HashSet<IHittable>();
 
-        private Transform _attacker;
+        // 소유자가 Bind로 맡긴 공격자와 판정을 넘길 곳. 무기의 주인은 바뀌지 않는다.
+        private Transform _owner;
+        private Action<HitReport> _onDealt;
+        // 칼날 타격의 판정을 받는 콜백. 타격마다 할당하지 않도록 한 번만 만든다.
+        private Action<HitReport> _onSwingResolved;
+
         private HitStrength _strength;
 
         // 칼날 양 끝의 이 오브젝트 기준 오프셋(회전만 적용, 배율 미적용). 포즈를 보간해 양 끝을 다시 계산한다.
@@ -57,18 +59,31 @@ namespace GodOfWar.Combat
 
         public bool IsOpen { get; private set; }
 
-        /// <summary>
-        /// 이 칼이 전한 타격에 피격자가 내린 판정을, 대상·타격 정보와 함께 알린다.
-        /// 타격을 전한 같은 프레임 안(모든 LateUpdate 뒤)에 모든 판정을 알린다. 어떤 판정에 어떻게 반응할지는 받는 쪽이 정한다.
-        /// </summary>
-        public event Action<HitReport> HitResolved;
-
         private void Awake()
         {
             if (_base == null || _tip == null)
             {
                 throw new InvalidOperationException($"'{name}' has no blade base or tip assigned.");
             }
+        }
+
+        /// <summary>
+        /// 이 무기의 주인을 정한다. 소유자가 한 번만 호출한다.
+        /// <paramref name="owner"/>는 이 무기로 친 타격의 공격자가 되고, 그 타격에 피격자가 내린 판정은
+        /// 타격을 전한 같은 프레임 안(모든 LateUpdate 뒤)에 <paramref name="onDealt"/>로 넘긴다.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">이미 주인이 정해져 있다.</exception>
+        public void Bind(Transform owner, Action<HitReport> onDealt)
+        {
+            if (_owner != null)
+            {
+                throw new InvalidOperationException($"'{name}' is already bound to '{_owner.name}'.");
+            }
+
+            _owner = owner != null ? owner : throw new ArgumentNullException(nameof(owner));
+            _onDealt = onDealt ?? throw new ArgumentNullException(nameof(onDealt));
+            // 소유자의 Awake가 비활성 자식인 이 무기의 Awake보다 먼저 올 수 있어, 쓰기 전에 반드시 거치는 여기서 만든다.
+            _onSwingResolved = OnSwingResolved;
         }
 
         private void OnDisable()
@@ -78,11 +93,12 @@ namespace GodOfWar.Combat
 
         /// <summary>
         /// 새 스윙의 판정을 연다. 맞은 대상 기록을 비우고, 지금 칼 포즈부터 쓸기 시작한다.
-        /// <paramref name="attacker"/>와 그 자식 콜라이더는 대상에서 제외한다.
+        /// 주인과 그 자식 콜라이더는 대상에서 제외한다.
         /// </summary>
-        public void Open(Transform attacker, HitStrength strength)
+        /// <exception cref="InvalidOperationException">주인이 정해지지 않았다.</exception>
+        public void Open(HitStrength strength)
         {
-            _attacker = attacker != null ? attacker : throw new ArgumentNullException(nameof(attacker));
+            RequireBound();
             _strength = strength;
             _hitTargets.Clear();
 
@@ -103,32 +119,43 @@ namespace GodOfWar.Combat
         public void Close()
         {
             IsOpen = false;
-            _attacker = null;
         }
 
         /// <summary>
-        /// 칼날로 찾지 않고 <paramref name="target"/>에게 타격 한 번을 전한다. 칼이 열려 있는지와 관계없다.
-        /// 칼날로 찾은 타격과 같은 시점(모든 LateUpdate 뒤)에 전하고, 판정도 <see cref="HitResolved"/>로 알린다.
+        /// 칼날로 찾지 않고 <paramref name="target"/>에게 타격 한 번을 전한다. 칼이 열려 있는지와 관계없고, 스윙 기록도 건드리지 않는다.
+        /// 칼날로 찾은 타격과 같은 시점(모든 LateUpdate 뒤)에 전하고, 판정도 같은 콜백으로 넘긴다.
         /// </summary>
-        public void Strike(IHittable target, Transform attacker, HitStrength strength)
+        /// <exception cref="InvalidOperationException">주인이 정해지지 않았다.</exception>
+        public void Strike(IHittable target, HitStrength strength)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            if (attacker == null)
-            {
-                throw new ArgumentNullException(nameof(attacker));
-            }
-
-            HitBatch.Record(this, target, new AttackInfo(attacker, strength));
+            RequireBound();
+            Submit(target ?? throw new ArgumentNullException(nameof(target)), strength, _onDealt);
         }
 
-        // 판정을 알리는 것은 타격을 전한 HitBatch뿐이다.
-        private void NotifyResolved(in HitReport report)
+        private void Submit(IHittable target, HitStrength strength, Action<HitReport> onResolved)
         {
-            HitResolved?.Invoke(report);
+            HitSystem.Record(target, new AttackInfo(_owner, strength), onResolved);
+        }
+
+        // 칼날 타격의 판정을 받아 스윙 기록을 고친 뒤 소유자에게 넘긴다. 판정을 알리는 것은 HitSystem뿐이다.
+        private void OnSwingResolved(HitReport report)
+        {
+            // 흘린 타격은 맞힌 것으로 세지 않아, 무적이 끝난 뒤에도 칼날이 걸쳐 있으면 같은 스윙이 다시 맞힌다.
+            // 그 사이 칼이 다시 열렸어도 새 스윙의 기록이라 지워도 해가 없다.
+            if (report.Result.Outcome == HitOutcome.Evaded)
+            {
+                _hitTargets.Remove(report.Target);
+            }
+
+            _onDealt(report);
+        }
+
+        private void RequireBound()
+        {
+            if (_owner == null)
+            {
+                throw new InvalidOperationException($"'{name}' has no owner. Call {nameof(Bind)} first.");
+            }
         }
 
         private void LateUpdate()
@@ -185,7 +212,7 @@ namespace GodOfWar.Combat
             for (int i = 0; i < count; i++)
             {
                 Collider other = _overlaps[i];
-                if (other.transform.IsChildOf(_attacker))
+                if (other.transform.IsChildOf(_owner))
                 {
                     continue;
                 }
@@ -197,7 +224,7 @@ namespace GodOfWar.Combat
                     continue;
                 }
 
-                HitBatch.Record(this, target, new AttackInfo(_attacker, _strength));
+                Submit(target, _strength, _onSwingResolved);
             }
         }
 
@@ -222,139 +249,5 @@ namespace GodOfWar.Combat
             Gizmos.DrawWireSphere(_tip.position, _radius);
         }
 #endif
-
-        /// <summary>
-        /// 한 프레임 동안 모든 칼이 검출한 타격을 모아, 모든 LateUpdate가 끝난 뒤 한꺼번에 전한다.
-        /// 씬에 배치하지 않아도 동작하도록 플레이어 루프에 직접 끼워 넣는다.
-        /// </summary>
-        private static class HitBatch
-        {
-            private readonly struct PendingHit
-            {
-                public PendingHit(Hitbox source, IHittable target, AttackInfo attack)
-                {
-                    Source = source;
-                    Target = target;
-                    Attack = attack;
-                }
-
-                public Hitbox Source { get; }
-                public IHittable Target { get; }
-                public AttackInfo Attack { get; }
-            }
-
-            // 전하는 도중에 기록이 생겨도 이번 목록을 건드리지 않도록 두 목록을 번갈아 쓴다.
-            private static List<PendingHit> s_pending = new List<PendingHit>();
-            private static List<PendingHit> s_delivering = new List<PendingHit>();
-
-            public static void Record(Hitbox source, IHittable target, in AttackInfo attack)
-            {
-                s_pending.Add(new PendingHit(source, target, attack));
-            }
-
-            // 도메인 리로드를 끈 프로젝트라 정적 목록과 플레이어 루프가 플레이 세션 사이에 남으므로,
-            // 시작할 때 비우고 이전 등록을 지운 뒤 다시 끼워 넣는다.
-            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-            private static void Install()
-            {
-                s_pending.Clear();
-                s_delivering.Clear();
-
-                PlayerLoopSystem root = PlayerLoop.GetCurrentPlayerLoop();
-                PlayerLoopSystem[] phases = root.subSystemList;
-                for (int i = 0; i < phases.Length; i++)
-                {
-                    if (phases[i].type == typeof(PreLateUpdate))
-                    {
-                        phases[i].subSystemList = InsertAfterLateUpdate(phases[i].subSystemList);
-                        root.subSystemList = phases;
-                        PlayerLoop.SetPlayerLoop(root);
-                        return;
-                    }
-                }
-
-                throw new InvalidOperationException($"The player loop has no {nameof(PreLateUpdate)} phase.");
-            }
-
-            private static PlayerLoopSystem[] InsertAfterLateUpdate(PlayerLoopSystem[] systems)
-            {
-                // 이전 플레이 세션에서 넣은 항목이 남아 있을 수 있어, 빼고 다시 넣는다.
-                // 그러면 항목 수가 그대로일 수 있으므로 끼워 넣었는지는 따로 기록한다.
-                var result = new List<PlayerLoopSystem>(systems.Length + 1);
-                bool inserted = false;
-                foreach (PlayerLoopSystem system in systems)
-                {
-                    if (system.type == typeof(HitBatch))
-                    {
-                        continue;
-                    }
-
-                    result.Add(system);
-                    if (system.type == typeof(PreLateUpdate.ScriptRunBehaviourLateUpdate))
-                    {
-                        result.Add(new PlayerLoopSystem { type = typeof(HitBatch), updateDelegate = Deliver });
-                        inserted = true;
-                    }
-                }
-
-                if (!inserted)
-                {
-                    throw new InvalidOperationException(
-                        $"The player loop has no {nameof(PreLateUpdate.ScriptRunBehaviourLateUpdate)} system.");
-                }
-
-                return result.ToArray();
-            }
-
-            private static void Deliver()
-            {
-                if (s_pending.Count == 0)
-                {
-                    return;
-                }
-
-                (s_pending, s_delivering) = (s_delivering, s_pending);
-                foreach (PendingHit hit in s_delivering)
-                {
-                    DeliverOne(hit);
-                }
-
-                s_delivering.Clear();
-            }
-
-            private static void DeliverOne(in PendingHit hit)
-            {
-                // 인터페이스 참조는 파괴된 Unity 오브젝트를 == null로 거를 수 없어 Unity 오브젝트로 확인한다.
-                // 공격자가 없으면 피격자가 방향을 판정할 수 없다.
-                if ((hit.Target is UnityEngine.Object target && target == null) || hit.Attack.Attacker == null)
-                {
-                    return;
-                }
-
-                // 한 대상의 오류로 같은 프레임의 다른 타격까지 사라지지 않도록 기록하고 이어서 전한다.
-                try
-                {
-                    HitResult result = hit.Target.ReceiveHit(hit.Attack);
-                    // 기록한 뒤 칼이 파괴됐으면 알릴 곳이 없다.
-                    if (hit.Source == null)
-                    {
-                        return;
-                    }
-
-                    // 흘린 타격은 맞힌 것으로 세지 않아, 무적이 끝난 뒤에도 칼날이 걸쳐 있으면 같은 스윙이 다시 맞힌다.
-                    // 그 사이 칼이 다시 열렸어도 새 스윙의 기록이라 지워도 해가 없다.
-                    if (result.Outcome == HitOutcome.Evaded)
-                    {
-                        hit.Source._hitTargets.Remove(hit.Target);
-                    }
-
-                    hit.Source.NotifyResolved(new HitReport(hit.Target, hit.Attack, result));
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogException(exception, hit.Target as UnityEngine.Object);
-                }
-            }
-        }
     }
 }

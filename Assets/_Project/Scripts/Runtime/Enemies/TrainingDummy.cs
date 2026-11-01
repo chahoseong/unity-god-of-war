@@ -85,12 +85,12 @@ namespace GodOfWar.Enemies
             }
 
             _hitbox = FindRequiredHitbox();
+            _hitbox.Bind(transform, OnHitDealt);
             _machine = new StateMachine();
             _idle = Register(new IdleState(this));
             _attack = Register(new AttackState(this));
             _hitReact = Register(new HitReactState(this));
 
-            _hitbox.HitResolved += OnHitResolved;
             _isAssembled = true;
         }
 
@@ -108,15 +108,6 @@ namespace GodOfWar.Enemies
             if (_isAssembled)
             {
                 _registry.OnDisable();
-            }
-        }
-
-        private void OnDestroy()
-        {
-            // Awake 검증에서 실패하면 칼을 찾기 전에 멈춘다.
-            if (_hitbox != null)
-            {
-                _hitbox.HitResolved -= OnHitResolved;
             }
         }
 
@@ -146,10 +137,10 @@ namespace GodOfWar.Enemies
         }
 
         /// <summary>
-        /// 자기 칼이 전한 타격의 판정을 받는다. 저스트 패링당하면 지금 상태와 관계없이 역경직으로 바꾼다.
+        /// 자기 칼로 친 타격의 판정을 받는다. 저스트 패링당하면 지금 상태와 관계없이 역경직으로 바꾼다.
         /// 공격 중이면 공격 상태를 나가며 칼 판정이 닫힌다. 다른 판정에는 반응하지 않는다.
         /// </summary>
-        private void OnHitResolved(HitReport report)
+        private void OnHitDealt(HitReport report)
         {
             if (report.Result.Outcome != HitOutcome.Parried)
             {

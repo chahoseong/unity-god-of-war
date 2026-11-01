@@ -228,7 +228,7 @@ namespace GodOfWar.Player.States
             bool isInWindow = _action.IsInHitWindow(_elapsed);
             if (isInWindow && !_hitbox.IsOpen)
             {
-                _hitbox.Open(_motor.transform, _action.HitStrength);
+                _hitbox.Open(_action.HitStrength);
             }
             else if (!isInWindow && _hitbox.IsOpen)
             {

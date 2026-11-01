@@ -199,7 +199,7 @@ namespace GodOfWar.Player.States
                 return;
             }
 
-            _hitbox.Strike(_hittable, _motor.transform, _action.HitStrength);
+            _hitbox.Strike(_hittable, _action.HitStrength);
         }
 
         private Vector3 HorizontalOffsetToTarget()

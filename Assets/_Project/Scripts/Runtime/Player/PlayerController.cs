@@ -76,6 +76,12 @@ namespace GodOfWar.Player
         /// </summary>
         public event Action<HitReport> HitReceived;
 
+        /// <summary>
+        /// 무기로 친 타격(칼날 타격과 지정 타격 모두)에 피격자가 내린 판정을 알린다. 피격 연출처럼 판정을 관찰만 하는 쪽이 쓴다.
+        /// 타격을 전하는 흐름 안에서 동기로 호출되므로, 구독자는 예외를 던지지 않아야 한다.
+        /// </summary>
+        public event Action<HitReport> HitDealt;
+
         CharacterMotor IPlayerStateContext.Motor => _motor;
         CharacterClock IPlayerStateContext.Clock => _clock;
         IPlayerInput IPlayerStateContext.Input => _input;
@@ -116,6 +122,7 @@ namespace GodOfWar.Player
 
             _input = FindRequiredInput();
             _hitbox = FindRequiredHitbox();
+            _hitbox.Bind(transform, OnHitDealt);
             _machine = new StateMachine();
             // 상태가 생성자에서 진입 트리거를 선언하므로 상태보다 먼저 만든다.
             _router = new ActionRouter(_machine, _input, _inputBufferDuration, NonRoutedActions);
@@ -210,6 +217,12 @@ namespace GodOfWar.Player
             var result = new HitResult(outcome);
             HitReceived?.Invoke(new HitReport(this, attack, result));
             return result;
+        }
+
+        // 무기가 넘겨 준 판정을 바깥에 알린다. 무기에 맡긴 콜백이라 무기를 거친 판정만 들어온다.
+        private void OnHitDealt(HitReport report)
+        {
+            HitDealt?.Invoke(report);
         }
 
         /// <summary>
