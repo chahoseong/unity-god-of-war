@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Guard
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Player.GuardSettings
   _walkSpeed: 1.4
-  _crossFadeDuration: 0.1
+  _crossFadeDuration: 0.25
   _guardHalfAngle: 45
   _guardBreak:
     _stateName: GuardBreak
@@ -23,8 +23,8 @@ MonoBehaviour:
     _crossFadeOutDuration: 0.1
   _blockClip: {fileID: -8364131450492058579, guid: 7966ebc17e0dc2a4b8faaf62594fb9b2, type: 3}
   _blockReturnClip: {fileID: 8856239983432694316, guid: 9763e5345af7e854d90aedaecb71f9e4, type: 3}
-  _blockCrossFadeInDuration: 0
-  _blockCrossFadeOutDuration: 0.25
+  _blockCrossFadeInDuration: 0.1
+  _blockCrossFadeOutDuration: 0.5
   _blockPushDistance: 0.2
   _blockPushDuration: 0.15
   _parryWindow: 0.2
