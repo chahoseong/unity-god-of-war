@@ -50,10 +50,14 @@ namespace GodOfWar.Tests.Combat
             Transform bladeBase = CreatePoint("BladeBase", BaseHeight);
             _tip = CreatePoint("BladeTip", TipHeight);
 
+            // 칼날 양 끝은 같은 오브젝트의 무기에서 받는다.
+            var weapon = new SerializedObject(_blade.gameObject.AddComponent<Weapon>());
+            weapon.FindProperty("_base").objectReferenceValue = bladeBase;
+            weapon.FindProperty("_tip").objectReferenceValue = _tip;
+            weapon.ApplyModifiedPropertiesWithoutUndo();
+
             _trail = _blade.gameObject.AddComponent<WeaponTrail>();
             var trail = new SerializedObject(_trail);
-            trail.FindProperty("_base").objectReferenceValue = bladeBase;
-            trail.FindProperty("_tip").objectReferenceValue = _tip;
             trail.FindProperty("_material").objectReferenceValue = _material;
             trail.ApplyModifiedPropertiesWithoutUndo();
             _character.SetActive(true);

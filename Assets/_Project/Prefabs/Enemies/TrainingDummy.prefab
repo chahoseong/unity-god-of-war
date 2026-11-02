@@ -360,8 +360,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 32d04f7104d73c5449daf8279959792d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.WeaponTrail
-  _base: {fileID: 8248300020079606010}
-  _tip: {fileID: 7904509850958489200}
   _material: {fileID: 2100000, guid: 73db6bc63466c1e4aa056e64d15d194f, type: 2}
   _sectionSpacing: 0.05
   _maxSubsteps: 16
