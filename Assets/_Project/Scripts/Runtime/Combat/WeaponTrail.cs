@@ -33,6 +33,7 @@ namespace GodOfWar.Combat
         // 메쉬를 다시 만들 때마다 할당하지 않도록 버퍼를 재사용한다.
         private readonly List<Vector3> _vertices = new List<Vector3>();
         private readonly List<Color> _colors = new List<Color>();
+        private readonly List<Vector3> _uvs = new List<Vector3>();
         private readonly List<int> _indices = new List<int>();
 
         private CharacterClock _clock;
@@ -189,10 +190,12 @@ namespace GodOfWar.Combat
 
         // 띠마다 이웃한 단면 사이를 사각형(삼각형 두 개)으로 잇는다. 띠끼리는 잇지 않는다.
         // 색은 외형 색에 나이에 따른 밝기 비율을 곱해 정점 색으로 넘긴다.
+        // 폭 방향 감쇠는 픽셀마다 곡선으로 계산해야 하므로, 폭 위치(손잡이 0, 칼끝 1)와 외형의 감쇠 지수를 UV(y, z)로 넘긴다.
         private void RebuildMesh()
         {
             _vertices.Clear();
             _colors.Clear();
+            _uvs.Clear();
             _indices.Clear();
 
             double now = _clock != null ? _clock.Now : 0d;
@@ -213,6 +216,8 @@ namespace GodOfWar.Combat
                     _vertices.Add(section.Tip);
                     _colors.Add(color);
                     _colors.Add(color);
+                    _uvs.Add(new Vector3(0f, 0f, profile.WidthFalloff));
+                    _uvs.Add(new Vector3(0f, 1f, profile.WidthFalloff));
                 }
 
                 for (int i = 0; i < strip.Sections.Count - 1; i++)
@@ -240,6 +245,7 @@ namespace GodOfWar.Combat
             {
                 _mesh.SetVertices(_vertices);
                 _mesh.SetColors(_colors);
+                _mesh.SetUVs(0, _uvs);
                 _mesh.SetTriangles(_indices, 0, calculateBounds: true);
             }
 

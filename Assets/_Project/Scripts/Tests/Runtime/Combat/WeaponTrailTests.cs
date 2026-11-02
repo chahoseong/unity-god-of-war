@@ -16,6 +16,8 @@ namespace GodOfWar.Tests.Combat
     {
         // 테스트 프레임이 길어져도 띠 두 개를 그리는 동안 앞 띠가 사라지지 않을 만큼 길게 둔다.
         private const float Lifetime = 1f;
+        // 기본값과 다른 값으로 두어, 외형의 값이 그대로 넘어가는지 구분한다.
+        private const float WidthFalloff = 3f;
         private const float BaseHeight = 0.1f;
         private const float TipHeight = 1f;
         private const float Tolerance = 1e-3f;
@@ -35,6 +37,7 @@ namespace GodOfWar.Tests.Combat
             _profile = ScriptableObject.CreateInstance<WeaponTrailProfile>();
             var profile = new SerializedObject(_profile);
             profile.FindProperty("_lifetime").floatValue = Lifetime;
+            profile.FindProperty("_widthFalloff").floatValue = WidthFalloff;
             profile.ApplyModifiedPropertiesWithoutUndo();
 
             // Awake의 설정 검사보다 먼저 연결하도록 비활성 상태로 만든다.
@@ -99,6 +102,23 @@ namespace GodOfWar.Tests.Combat
 
             // 마지막 단면은 지금 칼끝에 있다.
             Assert.That(Vector3.Distance(vertices[vertices.Length - 1], _tip.position), Is.LessThan(Tolerance));
+        }
+
+        // 셰이더가 폭 위치를 감쇠 지수만큼 거듭제곱해 칼끝 쪽을 진하게 하므로, 단면마다 손잡이 쪽 0·칼끝 1과 외형의 지수가 넘어가야 한다.
+        [UnityTest]
+        public IEnumerator Begin_WithProfile_WritesWidthPositionAndFalloffToUv()
+        {
+            _trail.Begin(_profile);
+            yield return Swing(3, 40f);
+
+            var uvs = new System.Collections.Generic.List<Vector3>();
+            RibbonMesh().GetUVs(0, uvs);
+            Assume.That(uvs.Count, Is.GreaterThan(0));
+            for (int i = 0; i < uvs.Count; i += 2)
+            {
+                Assert.That(uvs[i], Is.EqualTo(new Vector3(0f, 0f, WidthFalloff)));
+                Assert.That(uvs[i + 1], Is.EqualTo(new Vector3(0f, 1f, WidthFalloff)));
+            }
         }
 
         [UnityTest]
