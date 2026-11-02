@@ -191,6 +191,7 @@ namespace GodOfWar.Combat
         // 띠마다 이웃한 단면 사이를 사각형(삼각형 두 개)으로 잇는다. 띠끼리는 잇지 않는다.
         // 색은 외형 색에 나이에 따른 밝기 비율을 곱해 정점 색으로 넘긴다.
         // 폭 방향 감쇠는 픽셀마다 곡선으로 계산해야 하므로, 폭 위치(손잡이 0, 칼끝 1)와 외형의 감쇠 지수를 UV(y, z)로 넘긴다.
+        // UV x는 나이 진행도라, 셰이더의 결 텍스처가 띠의 머리(방금)에서 꼬리(사라지기 직전)까지 한 장으로 늘어나 붙는다.
         private void RebuildMesh()
         {
             _vertices.Clear();
@@ -210,14 +211,14 @@ namespace GodOfWar.Combat
                 int first = _vertices.Count;
                 foreach (Section section in strip.Sections)
                 {
-                    float progress = profile.Lifetime > 0f ? (float)((now - section.Time) / profile.Lifetime) : 1f;
+                    float progress = profile.Lifetime > 0f ? Mathf.Clamp01((float)((now - section.Time) / profile.Lifetime)) : 1f;
                     Color color = profile.Color * profile.EvaluateFade(progress);
                     _vertices.Add(section.Base);
                     _vertices.Add(section.Tip);
                     _colors.Add(color);
                     _colors.Add(color);
-                    _uvs.Add(new Vector3(0f, 0f, profile.WidthFalloff));
-                    _uvs.Add(new Vector3(0f, 1f, profile.WidthFalloff));
+                    _uvs.Add(new Vector3(progress, 0f, profile.WidthFalloff));
+                    _uvs.Add(new Vector3(progress, 1f, profile.WidthFalloff));
                 }
 
                 for (int i = 0; i < strip.Sections.Count - 1; i++)

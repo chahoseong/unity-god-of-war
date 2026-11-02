@@ -116,8 +116,33 @@ namespace GodOfWar.Tests.Combat
             Assume.That(uvs.Count, Is.GreaterThan(0));
             for (int i = 0; i < uvs.Count; i += 2)
             {
-                Assert.That(uvs[i], Is.EqualTo(new Vector3(0f, 0f, WidthFalloff)));
-                Assert.That(uvs[i + 1], Is.EqualTo(new Vector3(0f, 1f, WidthFalloff)));
+                Assert.That(new Vector2(uvs[i].y, uvs[i].z), Is.EqualTo(new Vector2(0f, WidthFalloff)));
+                Assert.That(new Vector2(uvs[i + 1].y, uvs[i + 1].z), Is.EqualTo(new Vector2(1f, WidthFalloff)));
+            }
+        }
+
+        // 결 텍스처가 띠의 머리(방금)에서 꼬리(오래된 쪽)로 한 장 늘어나 붙도록, UV x에 단면의 나이 진행도가 들어가야 한다.
+        // 단면은 오래된 것부터 쌓이므로 x는 앞에서 뒤로 줄어들고, 이번 프레임에 붙은 마지막 단면은 0이다.
+        [UnityTest]
+        public IEnumerator Begin_WhileBladeRotates_WritesAgeProgressToUvX()
+        {
+            _trail.Begin(_profile);
+            yield return Swing(3, 40f);
+
+            var uvs = new System.Collections.Generic.List<Vector3>();
+            RibbonMesh().GetUVs(0, uvs);
+            Assume.That(uvs.Count, Is.GreaterThan(2));
+            for (int i = 0; i < uvs.Count; i += 2)
+            {
+                Assert.That(uvs[i].x, Is.EqualTo(uvs[i + 1].x));
+                Assert.That(uvs[i].x, Is.InRange(0f, 1f));
+            }
+
+            Assert.That(uvs[0].x, Is.GreaterThan(0f));
+            Assert.That(uvs[uvs.Count - 1].x, Is.EqualTo(0f));
+            for (int i = 2; i < uvs.Count; i += 2)
+            {
+                Assert.That(uvs[i].x, Is.LessThanOrEqualTo(uvs[i - 2].x));
             }
         }
 
