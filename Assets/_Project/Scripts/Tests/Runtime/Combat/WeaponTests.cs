@@ -2,7 +2,7 @@
 #if UNITY_EDITOR
 using System.Collections;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using GodOfWar.Characters;
 using GodOfWar.Combat;
 using NUnit.Framework;
 using UnityEditor;
@@ -11,291 +11,213 @@ using UnityEngine.TestTools;
 
 namespace GodOfWar.Tests.Combat
 {
+    // 무기가 스윙 타이밍에 맞춰 부품을 켜고 끄는지 본다. 부품이 실제로 검출하고 그리는 일은 각 부품의 테스트가 본다.
     public class WeaponTests
     {
-        private const float BladeLength = 1f;
-        private const float BladeRadius = 0.05f;
-        private const float TargetRadius = 0.15f;
+        private const float HitStart = 1f;
+        private const float HitEnd = 2f;
+        private const float TrailStart = 0.5f;
+        private const float TrailEnd = 2.5f;
 
-        private readonly List<GameObject> _objects = new List<GameObject>();
-        // 공격자가 무기에 맡긴 콜백으로 받은 판정.
         private readonly List<HitEvent> _dealt = new List<HitEvent>();
-        private Transform _attacker;
-        private Transform _blade;
+        private GameObject _character;
         private Weapon _weapon;
+        private WeaponHitbox _hitbox;
+        private WeaponTrail _trail;
+        private WeaponTrailProfile _profile;
+        private Material _material;
+        private SwingTiming _timing;
 
         [SetUp]
         public void SetUp()
         {
-            // 원점에서 떨어뜨려 오프셋 계산이 월드 원점에 기대지 않는지도 함께 확인한다.
-            _attacker = Create("Attacker").transform;
-            _attacker.position = new Vector3(10f, 0f, 5f);
-            _weapon = CreateWeapon(_attacker);
-            _blade = _weapon.transform;
+            _material = new Material(Shader.Find("GodOfWar/WeaponTrail"));
+            _profile = ScriptableObject.CreateInstance<WeaponTrailProfile>();
+            _timing = new SwingTiming(HitStart, HitEnd, HitStrength.Heavy, TrailStart, TrailEnd, _profile);
             _dealt.Clear();
+            CreateWeapon(withTrail: true);
         }
 
         [TearDown]
         public void TearDown()
         {
-            // Destroy는 프레임 끝까지 미뤄져, 남은 칼이 다음 테스트의 대상을 같은 위치에서 칠 수 있다.
-            foreach (GameObject gameObject in _objects)
+            // 궤적이 캐릭터 밖에 만든 렌더러도 함께 지운다.
+            Object.DestroyImmediate(_character);
+            foreach (MeshRenderer renderer in Object.FindObjectsByType<MeshRenderer>())
             {
-                Object.DestroyImmediate(gameObject);
+                if (renderer.sharedMaterial == _material)
+                {
+                    Object.DestroyImmediate(renderer.gameObject);
+                }
             }
 
-            _objects.Clear();
+            Object.DestroyImmediate(_profile);
+            Object.DestroyImmediate(_material);
         }
 
-        // 한 프레임에 120° 돌면, 두 시점만 검사하거나 칼끝을 직선으로 보간하면 호 위의 대상을 놓친다.
-        [UnityTest]
-        public IEnumerator Weapon_WithBladeSweepingPastTargetInOneFrame_HitsTarget()
+        [Test]
+        public void UpdateSwing_InsideHitWindow_OpensHitbox()
         {
-            SpyHittable target = CreateTarget(AlongBlade(60f, 0.85f));
-            _weapon.Open(HitStrength.Light);
-            yield return null;
+            _weapon.BeginSwing();
 
-            _blade.localRotation = Quaternion.Euler(0f, 120f, 0f);
-            yield return null;
+            _weapon.UpdateSwing(_timing, HitStart);
 
-            Assert.That(target.HitCount, Is.EqualTo(1));
+            Assert.That(_hitbox.IsOpen, Is.True);
         }
 
-        [UnityTest]
-        public IEnumerator Weapon_WithTargetOverlappingAcrossFrames_HitsTargetOnce()
+        [Test]
+        public void UpdateSwing_AfterHitWindow_ClosesHitbox()
         {
-            SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            _weapon.Open(HitStrength.Light);
-            yield return null;
-            yield return null;
-            yield return null;
+            _weapon.BeginSwing();
+            _weapon.UpdateSwing(_timing, HitStart);
 
-            Assert.That(target.HitCount, Is.EqualTo(1));
+            _weapon.UpdateSwing(_timing, HitEnd);
+
+            Assert.That(_hitbox.IsOpen, Is.False);
         }
 
-        [UnityTest]
-        public IEnumerator Weapon_AfterReopen_HitsSameTargetAgain()
+        [Test]
+        public void UpdateSwing_InsideTrailWindow_StartsTrail()
         {
-            SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            _weapon.Open(HitStrength.Light);
-            yield return null;
+            _weapon.BeginSwing();
 
-            _weapon.Close();
-            _weapon.Open(HitStrength.Light);
-            yield return null;
+            _weapon.UpdateSwing(_timing, TrailStart);
 
-            Assert.That(target.HitCount, Is.EqualTo(2));
+            Assert.That(_trail.IsEmitting, Is.True);
         }
 
-        [UnityTest]
-        public IEnumerator Weapon_WithTargetAsChildOfAttacker_DoesNotHitTarget()
+        [Test]
+        public void UpdateSwing_AfterTrailWindow_EndsTrail()
         {
-            SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            target.transform.SetParent(_attacker, true);
-            _weapon.Open(HitStrength.Light);
-            yield return null;
+            _weapon.BeginSwing();
+            _weapon.UpdateSwing(_timing, TrailStart);
 
-            Assert.That(target.HitCount, Is.EqualTo(0));
+            _weapon.UpdateSwing(_timing, TrailEnd);
+
+            Assert.That(_trail.IsEmitting, Is.False);
         }
 
-        [UnityTest]
-        public IEnumerator Weapon_AfterClose_DoesNotHitTarget()
+        // 패링 카운터처럼 판정 구간이 없는 스윙은 궤적만 켜고 판정은 열지 않는다.
+        [Test]
+        public void UpdateSwing_WithoutHitWindow_StartsTrailOnly()
         {
-            SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            _weapon.Open(HitStrength.Light);
-            _weapon.Close();
-            yield return null;
+            SwingTiming timing = SwingTiming.WithoutHit(TrailStart, TrailEnd, _profile);
+            _weapon.BeginSwing();
 
-            Assert.That(target.HitCount, Is.EqualTo(0));
+            _weapon.UpdateSwing(timing, HitStart);
+
+            Assert.That(_hitbox.IsOpen, Is.False);
+            Assert.That(_trail.IsEmitting, Is.True);
         }
 
-        // 첫 타격은 흘리고(무적 구간) 이후로는 맞는 대상. 칼날이 계속 걸쳐 있으면 같은 스윙이 다시 맞혀야 한다.
-        [UnityTest]
-        public IEnumerator Weapon_WithTargetEvadingFirstHit_HitsTargetAgainInSameSwing()
+        [Test]
+        public void UpdateSwing_OnWeaponWithoutTrail_OpensHitbox()
         {
-            SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            target.Outcome = HitOutcome.Evaded;
-            target.OnHit = () => target.Outcome = HitOutcome.Hit;
-            _weapon.Open(HitStrength.Light);
-            yield return null;
-            yield return null;
-            yield return null;
+            Object.DestroyImmediate(_character);
+            CreateWeapon(withTrail: false);
+            _weapon.BeginSwing();
 
-            Assert.That(target.HitCount, Is.EqualTo(2));
+            Assert.DoesNotThrow(() => _weapon.UpdateSwing(_timing, HitStart));
+            Assert.That(_hitbox.IsOpen, Is.True);
         }
 
-        // 검출한 프레임의 끝에서 확인해, 전달이 다음 프레임으로 밀리면 실패한다.
-        [UnityTest]
-        public IEnumerator Weapon_WithTargetOnBlade_HitsTargetBeforeEndOfSameFrame()
+        // 공격 상태가 캔슬·피격으로 구간 도중에 나가도 판정과 궤적이 켜진 채 남지 않아야 한다.
+        [Test]
+        public void EndSwing_InsideWindows_ClosesHitboxAndEndsTrail()
         {
-            SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            // Update가 끝난 뒤에 열어, 이번 프레임의 LateUpdate가 반드시 검사하게 한다.
-            yield return null;
+            _weapon.BeginSwing();
+            _weapon.UpdateSwing(_timing, HitStart);
 
-            _weapon.Open(HitStrength.Light);
-            yield return new WaitForEndOfFrame();
+            _weapon.EndSwing();
 
-            Assert.That(target.HitCount, Is.EqualTo(1));
+            Assert.That(_hitbox.IsOpen, Is.False);
+            Assert.That(_trail.IsEmitting, Is.False);
         }
 
-        // 서로의 칼날 위에 마주 선 두 공격자가 맞으면 자기 칼을 닫는다. 먼저 전해진 타격이 상대의 공격을 끊어도 둘 다 맞아야 한다.
-        [UnityTest]
-        public IEnumerator Weapon_WithOpposingWeaponClosedByFirstDeliveredHit_HitsBothAttackers()
+        [Test]
+        public void BeginSwing_WhileSwinging_EndsPreviousSwing()
         {
-            Transform opponent = Create("Opponent").transform;
-            opponent.position = AlongBlade(0f, 0.5f);
-            opponent.rotation = Quaternion.LookRotation(_attacker.position - opponent.position);
-            Weapon opponentWeapon = CreateWeapon(opponent);
+            _weapon.BeginSwing();
+            _weapon.UpdateSwing(_timing, HitStart);
 
-            SpyHittable attackerBody = AddBody(_attacker.gameObject);
-            SpyHittable opponentBody = AddBody(opponent.gameObject);
-            attackerBody.OnHit = _weapon.Close;
-            opponentBody.OnHit = opponentWeapon.Close;
+            _weapon.BeginSwing();
 
-            _weapon.Open(HitStrength.Light);
-            opponentWeapon.Open(HitStrength.Light);
-            yield return null;
-
-            Assert.That(new[] { attackerBody.HitCount, opponentBody.HitCount }, Is.EqualTo(new[] { 1, 1 }));
+            Assert.That(_hitbox.IsOpen, Is.False);
+            Assert.That(_trail.IsEmitting, Is.False);
         }
 
-        // 먼저 전해진 쪽이 다른 쪽을 파괴하므로, 어느 쪽이 먼저 전해지든 파괴된 대상에게는 전하지 않아야 한다.
-        [UnityTest]
-        public IEnumerator Weapon_WithTargetDestroyedByEarlierDeliveredHit_SkipsDestroyedTarget()
+        [Test]
+        public void Disable_DuringSwing_ClosesHitboxAndEndsTrail()
         {
-            SpyHittable first = CreateTarget(AlongBlade(0f, 0.3f));
-            SpyHittable second = CreateTarget(AlongBlade(0f, 0.7f));
-            first.OnHit = () => Object.DestroyImmediate(second.gameObject);
-            second.OnHit = () => Object.DestroyImmediate(first.gameObject);
+            _weapon.BeginSwing();
+            _weapon.UpdateSwing(_timing, HitStart);
 
-            _weapon.Open(HitStrength.Light);
-            yield return null;
+            _weapon.enabled = false;
 
-            Assert.That(first.HitCount + second.HitCount, Is.EqualTo(1));
+            Assert.That(_hitbox.IsOpen, Is.False);
+            Assert.That(_trail.IsEmitting, Is.False);
         }
 
-        // 두 칼이 떨어진 곳에서 각자 다른 대상을 치고, 맞은 대상이 다른 칼의 공격자를 파괴한다.
-        // 어느 쪽이 먼저 전해지든 공격자가 사라진 타격은 전하지 않아야 한다.
-        [UnityTest]
-        public IEnumerator Weapon_WithAttackerDestroyedByEarlierDeliveredHit_SkipsHitFromDestroyedAttacker()
+        [Test]
+        public void UpdateSwing_WithoutBeginSwing_ThrowsInvalidOperationException()
         {
-            Transform otherAttacker = Create("OtherAttacker").transform;
-            otherAttacker.position = _attacker.position + Vector3.right * 3f;
-            Weapon otherWeapon = CreateWeapon(otherAttacker);
-
-            SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            SpyHittable otherTarget = CreateTarget(otherAttacker.position + Vector3.forward * 0.5f);
-            Transform attacker = _attacker;
-            target.OnHit = () => Object.DestroyImmediate(otherAttacker.gameObject);
-            otherTarget.OnHit = () => Object.DestroyImmediate(attacker.gameObject);
-
-            _weapon.Open(HitStrength.Light);
-            otherWeapon.Open(HitStrength.Light);
-            yield return null;
-
-            Assert.That(target.HitCount + otherTarget.HitCount, Is.EqualTo(1));
-        }
-
-        // 두 대상 모두 맞으면 예외를 던지므로, 어느 쪽이 먼저 전해지든 나머지 대상까지 전해졌는지 확인할 수 있다.
-        // 한 프레임 더 진행해 이미 전한 타격이 다시 전해지지 않는지도 함께 본다.
-        [UnityTest]
-        public IEnumerator Weapon_WithTargetsThrowingOnHit_DeliversToEachTargetOnce()
-        {
-            SpyHittable first = CreateTarget(AlongBlade(0f, 0.3f));
-            SpyHittable second = CreateTarget(AlongBlade(0f, 0.7f));
-            first.OnHit = () => throw new System.InvalidOperationException("first target failed");
-            second.OnHit = () => throw new System.InvalidOperationException("second target failed");
-            LogAssert.Expect(LogType.Exception, new Regex("first target failed"));
-            LogAssert.Expect(LogType.Exception, new Regex("second target failed"));
-
-            _weapon.Open(HitStrength.Light);
-            yield return null;
-            yield return null;
-
-            Assert.That(new[] { first.HitCount, second.HitCount }, Is.EqualTo(new[] { 1, 1 }));
-        }
-
-        // 기본값(Hit)이 아닌 판정을 돌려줘, 무기가 판정을 바꾸거나 지어내지 않고 그대로 넘기는지 본다.
-        [UnityTest]
-        public IEnumerator Weapon_WithTargetOnBlade_PassesOutcomeToOwner()
-        {
-            SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            target.Outcome = HitOutcome.Blocked;
-            _weapon.Open(HitStrength.Light);
-            yield return null;
-
-            Assert.That(_dealt.Count, Is.EqualTo(1));
-            Assert.That(_dealt[0].Target, Is.SameAs(target));
-            Assert.That(_dealt[0].Result.Outcome, Is.EqualTo(HitOutcome.Blocked));
+            Assert.Throws<System.InvalidOperationException>(() => _weapon.UpdateSwing(_timing, HitStart));
         }
 
         // 지정 타격은 칼날 검출을 거치지 않으므로, 판정이 소유자에게 돌아오는 경로를 따로 확인한다.
         [UnityTest]
-        public IEnumerator Strike_WithClosedWeapon_PassesOutcomeToOwner()
+        public IEnumerator Strike_WithoutSwing_PassesOutcomeToOwner()
         {
             // 칼날에서 떨어진 곳에 두어, 칼날 검출로는 맞을 수 없게 한다.
-            SpyHittable target = CreateTarget(_attacker.position + Vector3.back * 3f);
+            var targetObject = new GameObject("Target");
+            targetObject.transform.position = _character.transform.position + Vector3.back * 3f;
+            SpyHittable target = targetObject.AddComponent<SpyHittable>();
             target.Outcome = HitOutcome.Parried;
+
             _weapon.Strike(target, HitStrength.Heavy);
             yield return null;
 
+            Object.DestroyImmediate(targetObject);
             Assert.That(_dealt.Count, Is.EqualTo(1));
             Assert.That(_dealt[0].Target, Is.SameAs(target));
-            Assert.That(_dealt[0].Attack.Attacker, Is.SameAs(_attacker));
+            Assert.That(_dealt[0].Attack.Attacker, Is.SameAs(_character.transform));
             Assert.That(_dealt[0].Result.Outcome, Is.EqualTo(HitOutcome.Parried));
         }
 
-        private GameObject Create(string name)
+        // 궤적은 주인의 시계로 나이를 재므로 캐릭터에 시계를 두고, 칼은 그 자식으로 둔다.
+        private void CreateWeapon(bool withTrail)
         {
-            var gameObject = new GameObject(name);
-            _objects.Add(gameObject);
-            return gameObject;
-        }
+            // Awake의 설정 검사보다 먼저 연결하도록 비활성 상태로 만든다.
+            _character = new GameObject("Character");
+            _character.SetActive(false);
+            _character.AddComponent<CharacterClock>();
 
-        /// <summary>
-        /// <paramref name="attacker"/>의 정면으로 뻗은 칼날 판정을 만들어 그 공격자에게 맡긴다. 칼날 축은 공격자 위치다.
-        /// 받은 판정은 <see cref="_dealt"/>에 모은다.
-        /// </summary>
-        private Weapon CreateWeapon(Transform attacker)
-        {
-            // Awake의 참조 검사보다 먼저 연결하도록 비활성 상태로 만든다.
-            GameObject blade = Create("Blade");
-            blade.SetActive(false);
-            blade.transform.SetParent(attacker, false);
-
+            var blade = new GameObject("Blade");
+            blade.transform.SetParent(_character.transform, false);
             var tip = new GameObject("Tip").transform;
             tip.SetParent(blade.transform, false);
-            tip.localPosition = Vector3.forward * BladeLength;
+            tip.localPosition = Vector3.forward;
 
-            var weapon = blade.AddComponent<Weapon>();
-            var serialized = new SerializedObject(weapon);
-            serialized.FindProperty("_base").objectReferenceValue = blade.transform;
-            serialized.FindProperty("_tip").objectReferenceValue = tip;
-            serialized.FindProperty("_radius").floatValue = BladeRadius;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            blade.SetActive(true);
-            weapon.Bind(attacker, _dealt.Add);
-            return weapon;
-        }
+            _weapon = blade.AddComponent<Weapon>();
+            _hitbox = blade.AddComponent<WeaponHitbox>();
+            var weapon = new SerializedObject(_weapon);
+            weapon.FindProperty("_base").objectReferenceValue = blade.transform;
+            weapon.FindProperty("_tip").objectReferenceValue = tip;
+            weapon.FindProperty("_hitbox").objectReferenceValue = _hitbox;
 
-        private SpyHittable CreateTarget(Vector3 position)
-        {
-            GameObject target = Create("Target");
-            target.transform.position = position;
-            return AddBody(target);
-        }
+            _trail = null;
+            if (withTrail)
+            {
+                _trail = blade.AddComponent<WeaponTrail>();
+                var trail = new SerializedObject(_trail);
+                trail.FindProperty("_material").objectReferenceValue = _material;
+                trail.ApplyModifiedPropertiesWithoutUndo();
+                weapon.FindProperty("_trail").objectReferenceValue = _trail;
+            }
 
-        /// <summary>칼에 맞을 수 있도록 <paramref name="owner"/>에 몸 콜라이더와 피격 대상을 붙인다.</summary>
-        private static SpyHittable AddBody(GameObject owner)
-        {
-            owner.AddComponent<SphereCollider>().radius = TargetRadius;
-            return owner.AddComponent<SpyHittable>();
-        }
-
-        /// <summary>칼날 축(공격자 위치)에서 칼날 정면 기준 <paramref name="yaw"/>(도) 방향으로 <paramref name="distance"/>만큼 떨어진 위치.</summary>
-        private Vector3 AlongBlade(float yaw, float distance)
-        {
-            return _attacker.position + Quaternion.Euler(0f, yaw, 0f) * Vector3.forward * distance;
+            weapon.ApplyModifiedPropertiesWithoutUndo();
+            _character.SetActive(true);
+            _weapon.Bind(_character.transform, _dealt.Add);
         }
     }
 }

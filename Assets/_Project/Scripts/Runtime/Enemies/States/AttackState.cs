@@ -10,8 +10,8 @@ namespace GodOfWar.Enemies.States
     /// 테스트용 공격 상태. <see cref="Prepare"/>로 받은 공격 한 타를 공격 클립 → 복귀 클립 순으로 재생하고
     /// <see cref="IdleState"/>로 돌아간다. 콤보로 이어지지 않는다.
     /// 공격 위치가 매번 바뀌지 않도록 공격 데이터의 전진 변위는 쓰지 않고 제자리에서 휘두른다.
-    /// 무기 판정은 타격 구간 동안만 열고, 피격 등 어떤 경로로 상태를 나가든 닫는다.
-    /// 검 궤적도 궤적 구간 동안만 그리고, 상태를 나가면 새 기록을 멈춘다.
+    /// 한 타가 무기의 스윙 하나다. 매 프레임 그 타의 <see cref="SwingTiming"/>과 경과 시간을 무기에 넘기고,
+    /// 피격 등 어떤 경로로 상태를 나가든 스윙을 끝낸다.
     /// </summary>
     public sealed class AttackState : IState
     {
@@ -29,6 +29,7 @@ namespace GodOfWar.Enemies.States
         private AttackAction _pendingAction;
 
         private AttackAction _action;
+        private SwingTiming _swingTiming;
         private float _elapsed;
         private bool _isReturning;
 
@@ -58,14 +59,16 @@ namespace GodOfWar.Enemies.States
             _elapsed = 0f;
             _isReturning = false;
 
+            _swingTiming = _action.SwingTiming;
+            _weapon.BeginSwing();
+
             _animator.CrossFadeInFixedTime(Animator.StringToHash(_action.StateName), _action.CrossFadeDuration);
         }
 
         public void Tick(float deltaTime)
         {
             _elapsed += deltaTime;
-            UpdateHitWindow();
-            UpdateTrailWindow();
+            _weapon.UpdateSwing(_swingTiming, _elapsed);
             _motor.Move(Vector3.zero, deltaTime);
 
             if (!_isReturning)
@@ -90,36 +93,7 @@ namespace GodOfWar.Enemies.States
         public void Exit()
         {
             // 피격으로 끊겨도 판정이 열린 채 남지 않고, 궤적도 새 기록을 멈춘다.
-            _weapon.Close();
-            _weapon.EndTrail();
-        }
-
-        /// <summary>타격 구간에 맞춰 무기 판정을 열고 닫는다. 경과 시간은 줄지 않으므로 한 타에서 판정은 한 번만 열린다.</summary>
-        private void UpdateHitWindow()
-        {
-            bool isInWindow = _action.IsInHitWindow(_elapsed);
-            if (isInWindow && !_weapon.IsOpen)
-            {
-                _weapon.Open(_action.HitStrength);
-            }
-            else if (!isInWindow && _weapon.IsOpen)
-            {
-                _weapon.Close();
-            }
-        }
-
-        /// <summary>궤적 구간에 맞춰 검 궤적을 켜고 끈다. 경과 시간은 줄지 않으므로 한 타에서 궤적은 한 번만 켜진다.</summary>
-        private void UpdateTrailWindow()
-        {
-            bool isInWindow = _action.IsInTrailWindow(_elapsed);
-            if (isInWindow && !_weapon.IsTrailEmitting)
-            {
-                _weapon.BeginTrail(_action.TrailProfile);
-            }
-            else if (!isInWindow && _weapon.IsTrailEmitting)
-            {
-                _weapon.EndTrail();
-            }
+            _weapon.EndSwing();
         }
     }
 }

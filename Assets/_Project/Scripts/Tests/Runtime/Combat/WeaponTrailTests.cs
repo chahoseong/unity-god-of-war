@@ -54,6 +54,7 @@ namespace GodOfWar.Tests.Combat
             var weapon = new SerializedObject(_blade.gameObject.AddComponent<Weapon>());
             weapon.FindProperty("_base").objectReferenceValue = bladeBase;
             weapon.FindProperty("_tip").objectReferenceValue = _tip;
+            weapon.FindProperty("_hitbox").objectReferenceValue = _blade.gameObject.AddComponent<WeaponHitbox>();
             weapon.ApplyModifiedPropertiesWithoutUndo();
 
             _trail = _blade.gameObject.AddComponent<WeaponTrail>();

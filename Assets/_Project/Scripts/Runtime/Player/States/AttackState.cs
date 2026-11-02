@@ -19,8 +19,8 @@ namespace GodOfWar.Player.States
     /// 약공격·강공격 버튼으로 진입한다. 선딜레이·스윙 동안은 다른 액션이 끼어들 수 없고,
     /// 후딜레이(<see cref="AttackAction.RecoveryStart"/> 이후)에는 회피 등으로 캔슬할 수 있다.
     /// 연계 구간이 끝난 뒤 예약된 타 없이 이동 입력이 있으면 복귀 클립을 끝까지 기다리지 않고 이동으로 돌아간다.
-    /// 무기 판정은 타격 구간(<see cref="AttackAction.HitWindowStart"/>~<see cref="AttackAction.HitWindowEnd"/>) 동안만 열고,
-    /// 어떤 경로로 상태를 나가든 닫는다. 검 궤적도 궤적 구간 동안만 그리고, 상태를 나가면 새 기록을 멈춘다.
+    /// 한 타가 무기의 스윙 하나다. 매 프레임 그 타의 <see cref="SwingTiming"/>과 경과 시간을 무기에 넘기고,
+    /// 어떤 경로로 상태를 나가든 스윙을 끝낸다. 판정·궤적을 언제 켜고 끌지는 무기가 정한다.
     /// </summary>
     public sealed class AttackState : IState, ICancellable, IChainable, IComboWindow, IActionProgress, IDefensible
     {
@@ -42,6 +42,7 @@ namespace GodOfWar.Player.States
         private PlayerAction _pendingInput;
 
         private AttackAction _action;
+        private SwingTiming _swingTiming;
         private PlayerAction _chainInput;
         private float _elapsed;
         private bool _isReturning;
@@ -137,6 +138,9 @@ namespace GodOfWar.Player.States
             _isReturning = false;
             _queuedAction = null;
 
+            _swingTiming = _action.SwingTiming;
+            _weapon.BeginSwing();
+
             _animator.CrossFade(Animator.StringToHash(_action.StateName), _action.CrossFadeDuration);
             // 공격 궤적은 몸 정면 기준으로 구워져 있으므로 몸이 바라보는 방향으로 내딛는다.
             _movement.Begin(_action.Movement, _motor.transform.eulerAngles.y);
@@ -145,8 +149,7 @@ namespace GodOfWar.Player.States
         public void Tick(float deltaTime)
         {
             _elapsed += deltaTime;
-            UpdateHitWindow();
-            UpdateTrailWindow();
+            _weapon.UpdateSwing(_swingTiming, _elapsed);
 
             // 선딜레이 동안은 카메라 정면을 계속 따라가 조준을 고칠 수 있고, 스윙에 들어가면 방향이 고정된다.
             // 몸은 회전 속도만큼 늦게 따라가므로, 궤적은 카메라가 아니라 몸의 현재 정면에 맞춘다.
@@ -196,9 +199,8 @@ namespace GodOfWar.Player.States
         public void Exit()
         {
             // 캔슬·연계·복귀 모두 여기를 지나므로, 판정 구간 도중에 나가도 판정이 열린 채 남지 않는다.
-            // 궤적도 같은 이유로 멈춘다. 다음 타로 이어지면 그 타의 궤적은 앞 띠와 잇지 않고 새로 시작한다.
-            _weapon.Close();
-            _weapon.EndTrail();
+            // 다음 타로 이어지면 Enter에서 새 스윙을 시작하므로, 그 타의 궤적은 앞 띠와 잇지 않는다.
+            _weapon.EndSwing();
         }
 
         public bool TryChain(PlayerActionEvent e)
@@ -220,37 +222,6 @@ namespace GodOfWar.Player.States
             _queuedAction = next;
             _queuedInput = e.Action;
             return true;
-        }
-
-        /// <summary>
-        /// 타격 구간에 맞춰 무기 판정을 열고 닫는다. 실제 검사는 애니메이션이 칼을 옮긴 뒤 히트박스가 한다.
-        /// 경과 시간은 줄지 않으므로 한 타에서 판정은 한 번만 열린다.
-        /// </summary>
-        private void UpdateHitWindow()
-        {
-            bool isInWindow = _action.IsInHitWindow(_elapsed);
-            if (isInWindow && !_weapon.IsOpen)
-            {
-                _weapon.Open(_action.HitStrength);
-            }
-            else if (!isInWindow && _weapon.IsOpen)
-            {
-                _weapon.Close();
-            }
-        }
-
-        /// <summary>궤적 구간에 맞춰 검 궤적을 켜고 끈다. 경과 시간은 줄지 않으므로 한 타에서 궤적은 한 번만 켜진다.</summary>
-        private void UpdateTrailWindow()
-        {
-            bool isInWindow = _action.IsInTrailWindow(_elapsed);
-            if (isInWindow && !_weapon.IsTrailEmitting)
-            {
-                _weapon.BeginTrail(_action.TrailProfile);
-            }
-            else if (!isInWindow && _weapon.IsTrailEmitting)
-            {
-                _weapon.EndTrail();
-            }
         }
 
         /// <summary>공격 버튼(약·강)을 누른 순간인지 판정한다.</summary>

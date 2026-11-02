@@ -64,24 +64,17 @@ namespace GodOfWar.Combat
         public float ComboWindowEnd => _comboWindowEnd;
         public float RecoveryStart => _recoveryStart;
         public HitStrength HitStrength => _hitStrength;
-        public WeaponTrailProfile TrailProfile => _trailProfile;
 
         /// <summary>카운터 동작의 길이(초).</summary>
         public float Duration => _clip.length;
+
+        /// <summary>카운터 동안 무기가 궤적을 켜고 끌 시각. 타격은 칼날 판정 없이 직접 전하므로 판정 구간은 없다.</summary>
+        public SwingTiming SwingTiming => SwingTiming.WithoutHit(_trailStart, _trailEnd, _trailProfile);
 
         /// <summary><paramref name="elapsed"/>가 연계 구간 안인지 판정한다. 구간의 양 끝을 포함한다.</summary>
         public bool IsInComboWindow(float elapsed)
         {
             return elapsed >= _comboWindowStart && elapsed <= _comboWindowEnd;
-        }
-
-        /// <summary>
-        /// <paramref name="elapsed"/>가 검 궤적 구간 안인지 판정한다. 시작 시각은 포함하고 끝 시각은 포함하지 않는다.
-        /// 외형이 비어 있으면 궤적을 그리지 않으므로 항상 아니다.
-        /// </summary>
-        public bool IsInTrailWindow(float elapsed)
-        {
-            return _trailProfile != null && elapsed >= _trailStart && elapsed < _trailEnd;
         }
 
         /// <summary><paramref name="elapsed"/>가 후딜레이 캔슬 구간 안인지 판정한다. 시작 시각을 포함한다.</summary>

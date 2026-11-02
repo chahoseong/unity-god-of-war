@@ -322,6 +322,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1530859087307534, guid: ca8d427b471a77745835639d65f3c276, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6430895607758215265}
+    - targetCorrespondingSourceObject: {fileID: 1530859087307534, guid: ca8d427b471a77745835639d65f3c276, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 837164597729542196}
   m_SourcePrefab: {fileID: 100100000, guid: ca8d427b471a77745835639d65f3c276, type: 3}
 --- !u!1 &2847208187161396951 stripped
 GameObject:
@@ -342,11 +345,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.Hitbox
   _base: {fileID: 8248300020079606010}
   _tip: {fileID: 7904509850958489200}
-  _radius: 0.05
-  _targetLayers:
-    serializedVersion: 2
-    m_Bits: 256
-  _maxSubsteps: 16
+  _hitbox: {fileID: 837164597729542196}
   _trail: {fileID: 6430895607758215265}
 --- !u!114 &6430895607758215265
 MonoBehaviour:
@@ -362,6 +361,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.WeaponTrail
   _material: {fileID: 2100000, guid: 73db6bc63466c1e4aa056e64d15d194f, type: 2}
   _sectionSpacing: 0.05
+  _maxSubsteps: 16
+--- !u!114 &837164597729542196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2847208187161396951}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eb4078bf1bfb4b49a13520937894beb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.WeaponHitbox
+  _radius: 0.05
+  _targetLayers:
+    serializedVersion: 2
+    m_Bits: 256
   _maxSubsteps: 16
 --- !u!4 &2852641772139153837 stripped
 Transform:
