@@ -11,6 +11,7 @@ namespace GodOfWar.Enemies.States
     /// <see cref="IdleState"/>로 돌아간다. 콤보로 이어지지 않는다.
     /// 공격 위치가 매번 바뀌지 않도록 공격 데이터의 전진 변위는 쓰지 않고 제자리에서 휘두른다.
     /// 무기 판정은 타격 구간 동안만 열고, 피격 등 어떤 경로로 상태를 나가든 닫는다.
+    /// 검 궤적도 궤적 구간 동안만 그리고, 상태를 나가면 새 기록을 멈춘다.
     /// </summary>
     public sealed class AttackState : IState
     {
@@ -64,6 +65,7 @@ namespace GodOfWar.Enemies.States
         {
             _elapsed += deltaTime;
             UpdateHitWindow();
+            UpdateTrailWindow();
             _motor.Move(Vector3.zero, deltaTime);
 
             if (!_isReturning)
@@ -87,8 +89,9 @@ namespace GodOfWar.Enemies.States
 
         public void Exit()
         {
-            // 피격으로 끊겨도 판정이 열린 채 남지 않는다.
+            // 피격으로 끊겨도 판정이 열린 채 남지 않고, 궤적도 새 기록을 멈춘다.
             _weapon.Close();
+            _weapon.EndTrail();
         }
 
         /// <summary>타격 구간에 맞춰 무기 판정을 열고 닫는다. 경과 시간은 줄지 않으므로 한 타에서 판정은 한 번만 열린다.</summary>
@@ -102,6 +105,20 @@ namespace GodOfWar.Enemies.States
             else if (!isInWindow && _weapon.IsOpen)
             {
                 _weapon.Close();
+            }
+        }
+
+        /// <summary>궤적 구간에 맞춰 검 궤적을 켜고 끈다. 경과 시간은 줄지 않으므로 한 타에서 궤적은 한 번만 켜진다.</summary>
+        private void UpdateTrailWindow()
+        {
+            bool isInWindow = _action.IsInTrailWindow(_elapsed);
+            if (isInWindow && !_weapon.IsTrailEmitting)
+            {
+                _weapon.BeginTrail(_action.TrailProfile);
+            }
+            else if (!isInWindow && _weapon.IsTrailEmitting)
+            {
+                _weapon.EndTrail();
             }
         }
     }

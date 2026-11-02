@@ -261,7 +261,8 @@ namespace GodOfWar.Combat
             }
 
             // Awake 검증에서 실패하면 메쉬를 만들기 전에 꺼진다.
-            if (_mesh == null)
+            // 렌더러 오브젝트는 캐릭터 밖에 있어, 씬을 내릴 때 이 컴포넌트보다 먼저 파괴될 수 있다.
+            if (_mesh == null || _renderer == null)
             {
                 return;
             }

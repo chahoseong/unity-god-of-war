@@ -18,6 +18,7 @@ namespace GodOfWar.Player.States
     /// 후딜레이부터는 회피 등으로 캔슬할 수 있고, 복귀 클립 없이 클립이 끝나면 이동으로 돌아간다.
     /// 연계 구간이 끝난 뒤 예약된 타 없이 이동 입력이 있으면 클립 끝을 기다리지 않고 이동으로 돌아간다.
     /// 패링 동작에서만 이어지므로 진입 트리거를 선언하지 않는다.
+    /// 검 궤적은 궤적 구간 동안만 그리고, 상태를 나가면 새 기록을 멈춘다.
     /// </summary>
     public sealed class CounterState : IState, ICancellable, IChainable, IActionProgress, IDefensible
     {
@@ -108,6 +109,7 @@ namespace GodOfWar.Player.States
         {
             float previous = _elapsed;
             _elapsed += deltaTime;
+            UpdateTrailWindow();
 
             Vector3 velocity = TickTowardTarget(previous, deltaTime);
             _motor.Move(_movement.Tick(deltaTime) + velocity, deltaTime);
@@ -143,6 +145,22 @@ namespace GodOfWar.Player.States
 
         public void Exit()
         {
+            // 피격·캔슬·연계·복귀 모두 여기를 지나므로, 궤적 구간 도중에 나가도 궤적이 계속 그려지지 않는다.
+            _weapon.EndTrail();
+        }
+
+        /// <summary>궤적 구간에 맞춰 검 궤적을 켜고 끈다. 경과 시간은 줄지 않으므로 카운터 한 번에 궤적은 한 번만 켜진다.</summary>
+        private void UpdateTrailWindow()
+        {
+            bool isInWindow = _action.IsInTrailWindow(_elapsed);
+            if (isInWindow && !_weapon.IsTrailEmitting)
+            {
+                _weapon.BeginTrail(_action.TrailProfile);
+            }
+            else if (!isInWindow && _weapon.IsTrailEmitting)
+            {
+                _weapon.EndTrail();
+            }
         }
 
         public bool TryChain(PlayerActionEvent e)

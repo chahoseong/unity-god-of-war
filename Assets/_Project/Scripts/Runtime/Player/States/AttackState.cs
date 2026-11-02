@@ -20,7 +20,7 @@ namespace GodOfWar.Player.States
     /// 후딜레이(<see cref="AttackAction.RecoveryStart"/> 이후)에는 회피 등으로 캔슬할 수 있다.
     /// 연계 구간이 끝난 뒤 예약된 타 없이 이동 입력이 있으면 복귀 클립을 끝까지 기다리지 않고 이동으로 돌아간다.
     /// 무기 판정은 타격 구간(<see cref="AttackAction.HitWindowStart"/>~<see cref="AttackAction.HitWindowEnd"/>) 동안만 열고,
-    /// 어떤 경로로 상태를 나가든 닫는다.
+    /// 어떤 경로로 상태를 나가든 닫는다. 검 궤적도 궤적 구간 동안만 그리고, 상태를 나가면 새 기록을 멈춘다.
     /// </summary>
     public sealed class AttackState : IState, ICancellable, IChainable, IComboWindow, IActionProgress, IDefensible
     {
@@ -146,6 +146,7 @@ namespace GodOfWar.Player.States
         {
             _elapsed += deltaTime;
             UpdateHitWindow();
+            UpdateTrailWindow();
 
             // 선딜레이 동안은 카메라 정면을 계속 따라가 조준을 고칠 수 있고, 스윙에 들어가면 방향이 고정된다.
             // 몸은 회전 속도만큼 늦게 따라가므로, 궤적은 카메라가 아니라 몸의 현재 정면에 맞춘다.
@@ -195,7 +196,9 @@ namespace GodOfWar.Player.States
         public void Exit()
         {
             // 캔슬·연계·복귀 모두 여기를 지나므로, 판정 구간 도중에 나가도 판정이 열린 채 남지 않는다.
+            // 궤적도 같은 이유로 멈춘다. 다음 타로 이어지면 그 타의 궤적은 앞 띠와 잇지 않고 새로 시작한다.
             _weapon.Close();
+            _weapon.EndTrail();
         }
 
         public bool TryChain(PlayerActionEvent e)
@@ -233,6 +236,20 @@ namespace GodOfWar.Player.States
             else if (!isInWindow && _weapon.IsOpen)
             {
                 _weapon.Close();
+            }
+        }
+
+        /// <summary>궤적 구간에 맞춰 검 궤적을 켜고 끈다. 경과 시간은 줄지 않으므로 한 타에서 궤적은 한 번만 켜진다.</summary>
+        private void UpdateTrailWindow()
+        {
+            bool isInWindow = _action.IsInTrailWindow(_elapsed);
+            if (isInWindow && !_weapon.IsTrailEmitting)
+            {
+                _weapon.BeginTrail(_action.TrailProfile);
+            }
+            else if (!isInWindow && _weapon.IsTrailEmitting)
+            {
+                _weapon.EndTrail();
             }
         }
 

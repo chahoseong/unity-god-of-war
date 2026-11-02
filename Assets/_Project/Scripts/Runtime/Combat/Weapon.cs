@@ -12,6 +12,7 @@ namespace GodOfWar.Combat
     /// 검출한 타격은 <see cref="HitSystem"/>에 기록해, 모든 LateUpdate가 끝난 뒤 같은 프레임 안에 전한다.
     /// 패링 카운터처럼 대상이 정해진 타격은 칼날로 찾지 않고 <see cref="Strike"/>로 같은 경로에 넣는다.
     /// 피격자가 내린 판정은 <see cref="Bind"/>로 소유자가 맡긴 콜백으로만 넘긴다.
+    /// 검 궤적은 같은 무기에 붙은 <see cref="WeaponTrail"/>에 맡기며, 공격하는 쪽은 이 무기를 통해서만 켜고 끈다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class Weapon : MonoBehaviour
@@ -32,6 +33,9 @@ namespace GodOfWar.Combat
 
         [Tooltip("한 프레임에 보간하는 최대 단계 수. 프레임이 크게 끊길 때의 비용 상한이다.")]
         [SerializeField, Min(1)] private int _maxSubsteps = 16;
+
+        [Tooltip("검 궤적. 비우면 이 무기는 궤적 없이 판정만 한다.")]
+        [SerializeField] private WeaponTrail _trail;
 
         private readonly Collider[] _overlaps = new Collider[MaxOverlaps];
         private readonly HashSet<IHittable> _hitTargets = new HashSet<IHittable>();
@@ -58,6 +62,9 @@ namespace GodOfWar.Combat
 #endif
 
         public bool IsOpen { get; private set; }
+
+        /// <summary>지금 검 궤적을 그리는 중인지. 궤적이 없는 무기는 항상 아니다.</summary>
+        public bool IsTrailEmitting => _trail != null && _trail.IsEmitting;
 
         private void Awake()
         {
@@ -119,6 +126,24 @@ namespace GodOfWar.Combat
         public void Close()
         {
             IsOpen = false;
+        }
+
+        /// <summary><paramref name="profile"/> 외형으로 새 검 궤적을 그리기 시작한다. 궤적이 없는 무기는 아무 일도 하지 않는다.</summary>
+        public void BeginTrail(WeaponTrailProfile profile)
+        {
+            if (_trail != null)
+            {
+                _trail.Begin(profile);
+            }
+        }
+
+        /// <summary>검 궤적의 새 기록을 멈춘다. 이미 그린 궤적은 흐려지며 남는다. 궤적이 없는 무기는 아무 일도 하지 않는다.</summary>
+        public void EndTrail()
+        {
+            if (_trail != null)
+            {
+                _trail.End();
+            }
         }
 
         /// <summary>

@@ -44,6 +44,15 @@ namespace GodOfWar.Combat
         [Tooltip("상대에게 전하는 타격 세기.")]
         [SerializeField] private HitStrength _hitStrength = HitStrength.Heavy;
 
+        [Tooltip("검 궤적을 그리기 시작하는 시각. 칼이 빨라지는 스윙 시작에 맞춘다.")]
+        [SerializeField, Min(0f)] private float _trailStart;
+
+        [Tooltip("검 궤적을 그만 그리는 시각. 이미 그린 궤적은 외형의 수명 동안 흐려지며 남는다.")]
+        [SerializeField, Min(0f)] private float _trailEnd;
+
+        [Tooltip("검 궤적의 외형. 비우면 카운터는 궤적을 그리지 않는다.")]
+        [SerializeField] private WeaponTrailProfile _trailProfile;
+
         public string StateName => _stateName;
         public AnimationClip Clip => _clip;
         public float CrossFadeDuration => _crossFadeDuration;
@@ -55,6 +64,7 @@ namespace GodOfWar.Combat
         public float ComboWindowEnd => _comboWindowEnd;
         public float RecoveryStart => _recoveryStart;
         public HitStrength HitStrength => _hitStrength;
+        public WeaponTrailProfile TrailProfile => _trailProfile;
 
         /// <summary>카운터 동작의 길이(초).</summary>
         public float Duration => _clip.length;
@@ -63,6 +73,15 @@ namespace GodOfWar.Combat
         public bool IsInComboWindow(float elapsed)
         {
             return elapsed >= _comboWindowStart && elapsed <= _comboWindowEnd;
+        }
+
+        /// <summary>
+        /// <paramref name="elapsed"/>가 검 궤적 구간 안인지 판정한다. 시작 시각은 포함하고 끝 시각은 포함하지 않는다.
+        /// 외형이 비어 있으면 궤적을 그리지 않으므로 항상 아니다.
+        /// </summary>
+        public bool IsInTrailWindow(float elapsed)
+        {
+            return _trailProfile != null && elapsed >= _trailStart && elapsed < _trailEnd;
         }
 
         /// <summary><paramref name="elapsed"/>가 후딜레이 캔슬 구간 안인지 판정한다. 시작 시각을 포함한다.</summary>

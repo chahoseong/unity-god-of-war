@@ -24,6 +24,9 @@ MonoBehaviour:
   _hitWindowStart: 0.93333334
   _hitWindowEnd: 1.1666666
   _hitStrength: 1
+  _trailStart: 0.8333333
+  _trailEnd: 1.1666666
+  _trailProfile: {fileID: 11400000, guid: eaece9bf28129444c86f7189842624fc, type: 2}
   _movement: {fileID: 11400000, guid: 9e9c2acc21d2f404c8c6777fcc710a35, type: 2}
   _returnMovement: {fileID: 11400000, guid: dcdadef76613f834c870ac22c284c780, type: 2}
   _next: {fileID: 0}

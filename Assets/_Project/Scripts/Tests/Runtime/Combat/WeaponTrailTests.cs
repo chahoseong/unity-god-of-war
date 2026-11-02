@@ -163,6 +163,19 @@ namespace GodOfWar.Tests.Combat
             Assert.That(IsDrawn(), Is.False);
         }
 
+        // 씬을 내릴 때처럼, 캐릭터 밖에 있는 띠 렌더러가 궤적보다 먼저 파괴된 경우.
+        [UnityTest]
+        public IEnumerator Disable_AfterRibbonRendererDestroyed_LogsNoError()
+        {
+            _trail.Begin(_profile);
+            yield return Swing(3, 40f);
+            Object.DestroyImmediate(RibbonRenderer().gameObject);
+
+            _trail.enabled = false;
+
+            LogAssert.NoUnexpectedReceived();
+        }
+
         [Test]
         public void End_WithoutBegin_DoesNothing()
         {

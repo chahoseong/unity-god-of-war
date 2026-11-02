@@ -48,6 +48,15 @@ namespace GodOfWar.Combat
         [Tooltip("이 공격에 맞은 대상에게 전하는 타격 세기. 어떤 반응을 낼지는 피격자가 정한다.")]
         [SerializeField] private HitStrength _hitStrength;
 
+        [Tooltip("검 궤적을 그리기 시작하는 시각. 칼이 빨라지는 스윙 시작에 맞춘다.")]
+        [SerializeField, Min(0f)] private float _trailStart;
+
+        [Tooltip("검 궤적을 그만 그리는 시각. 이미 그린 궤적은 외형의 수명 동안 흐려지며 남는다.")]
+        [SerializeField, Min(0f)] private float _trailEnd;
+
+        [Tooltip("검 궤적의 외형. 비우면 이 공격은 궤적을 그리지 않는다.")]
+        [SerializeField] private WeaponTrailProfile _trailProfile;
+
         [Tooltip("공격 구간 동안의 전진 이동.")]
         [SerializeField] private BakedRootMotion _movement;
 
@@ -69,6 +78,7 @@ namespace GodOfWar.Combat
         public float HitWindowStart => _hitWindowStart;
         public float HitWindowEnd => _hitWindowEnd;
         public HitStrength HitStrength => _hitStrength;
+        public WeaponTrailProfile TrailProfile => _trailProfile;
         public BakedRootMotion Movement => _movement;
         public BakedRootMotion ReturnMovement => _returnMovement;
         public AttackAction Next => _next;
@@ -89,6 +99,15 @@ namespace GodOfWar.Combat
         public bool IsInHitWindow(float elapsed)
         {
             return elapsed >= _hitWindowStart && elapsed < _hitWindowEnd;
+        }
+
+        /// <summary>
+        /// <paramref name="elapsed"/>가 검 궤적 구간 안인지 판정한다. 시작 시각은 포함하고 끝 시각은 포함하지 않는다.
+        /// 외형이 비어 있으면 궤적을 그리지 않으므로 항상 아니다.
+        /// </summary>
+        public bool IsInTrailWindow(float elapsed)
+        {
+            return _trailProfile != null && elapsed >= _trailStart && elapsed < _trailEnd;
         }
 
         /// <summary><paramref name="elapsed"/>가 후딜레이 캔슬 구간 안인지 판정한다. 시작 시각을 포함한다.</summary>
