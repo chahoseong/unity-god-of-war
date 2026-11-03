@@ -229,6 +229,23 @@ namespace GodOfWar.Tests.Combat
             Assert.That(_dealt[0].Result.Outcome, Is.EqualTo(HitOutcome.Blocked));
         }
 
+        // 칼날이 대상 중심에서 비켜 지나가게 해, 접점이 중심이 아니라 칼날 쪽 표면에 생기는지 본다.
+        [UnityTest]
+        public IEnumerator WeaponHitbox_WithTargetBesideBlade_PassesImpactPointOnTargetSurfaceTowardBlade()
+        {
+            SpyHittable target = CreateTarget(AlongBlade(15f, 0.5f));
+            Vector3 center = target.transform.position;
+            _hitbox.Open(HitStrength.Light);
+            yield return null;
+
+            Assert.That(_dealt.Count, Is.EqualTo(1));
+            ImpactPoint impact = _dealt[0].Attack.ImpactPoint;
+            Assert.That(Vector3.Distance(impact.Position, center), Is.EqualTo(TargetRadius).Within(1e-4f));
+            Assert.That(Vector3.Distance(impact.Normal, (impact.Position - center).normalized), Is.LessThan(1e-4f));
+            // 대상은 칼날의 오른쪽에 있으므로 칼날 쪽 표면은 대상의 왼쪽이다.
+            Assert.That(Vector3.Dot(impact.Normal, _attacker.right), Is.LessThan(0f));
+        }
+
         private GameObject Create(string name)
         {
             var gameObject = new GameObject(name);

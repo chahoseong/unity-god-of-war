@@ -164,7 +164,9 @@ namespace GodOfWar.Combat
                     continue;
                 }
 
-                HitSystem.Record(target, new AttackInfo(_owner, _strength), _onResolved);
+                // 이 선분은 이번 단계에만 있으므로, 처음 닿은 순간에 몸 표면의 접점을 구해 둔다.
+                ImpactPoint impactPoint = ImpactPoint.OnSurface(other, start, end, _owner.position);
+                HitSystem.Record(target, new AttackInfo(_owner, _strength, impactPoint), _onResolved);
             }
         }
 

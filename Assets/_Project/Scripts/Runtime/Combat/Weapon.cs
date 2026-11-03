@@ -21,6 +21,9 @@ namespace GodOfWar.Combat
         [Tooltip("타격부 끝. 이 오브젝트나 그 자식이어야 한다.")]
         [SerializeField] private Transform _tip;
 
+        [Tooltip("직접 타격(Strike)이 몸에 닿는 기준점. 칼날 밖(손잡이 등)이어도 된다. 직접 타격을 하는 무기만 필요하다.")]
+        [SerializeField] private Transform _strikePoint;
+
         [Tooltip("공격 판정. 같은 오브젝트에 있어야 한다.")]
         [SerializeField] private WeaponHitbox _hitbox;
 
@@ -145,8 +148,9 @@ namespace GodOfWar.Combat
         /// <summary>
         /// 칼날로 찾지 않고 <paramref name="target"/>에게 타격 한 번을 전한다. 스윙·판정 상태와 관계없다.
         /// 칼날로 찾은 타격과 같은 시점(모든 LateUpdate 뒤)에 전하고, 판정도 같은 콜백으로 넘긴다.
+        /// 접점은 지금 기준점(<c>_strikePoint</c>)에서 가장 가까운 대상의 몸 표면이다. 대상에 콜라이더가 없으면 기준점 그대로다.
         /// </summary>
-        /// <exception cref="InvalidOperationException">주인이 정해지지 않았다.</exception>
+        /// <exception cref="InvalidOperationException">주인이 정해지지 않았거나 직접 타격 기준점이 없다.</exception>
         public void Strike(IHittable target, HitStrength strength)
         {
             if (_owner == null)
@@ -154,8 +158,31 @@ namespace GodOfWar.Combat
                 throw new InvalidOperationException($"'{name}' has no owner. Call {nameof(Bind)} first.");
             }
 
-            HitSystem.Record(
-                target ?? throw new ArgumentNullException(nameof(target)), new AttackInfo(_owner, strength), _onDealt);
+            if (target == null)
+            {
+                throw new ArgumentNullException(nameof(target));
+            }
+
+            if (_strikePoint == null)
+            {
+                throw new InvalidOperationException($"'{name}' has no strike point assigned.");
+            }
+
+            HitSystem.Record(target, new AttackInfo(_owner, strength, StrikeImpact(target)), _onDealt);
+        }
+
+        // 애니메이션 갱신 전에 불리면 직전 프레임의 기준점 위치를 쓴다. 접점을 몸 표면으로 끌어당기므로 차이는 표면을 따라 생긴다.
+        private ImpactPoint StrikeImpact(IHittable target)
+        {
+            Vector3 point = _strikePoint.position;
+            if (target is Component component && component.TryGetComponent(out Collider body))
+            {
+                return ImpactPoint.OnSurface(body, point, point, _owner.position);
+            }
+
+            Vector3 toAttacker = _owner.position - point;
+            toAttacker.y = 0f;
+            return new ImpactPoint(point, toAttacker.sqrMagnitude > 0f ? toAttacker.normalized : -_owner.forward);
         }
 
         private void RequireHitbox()
@@ -180,6 +207,12 @@ namespace GodOfWar.Combat
             {
                 Gizmos.DrawWireSphere(_base.position, _hitbox.Radius);
                 Gizmos.DrawWireSphere(_tip.position, _hitbox.Radius);
+            }
+
+            if (_strikePoint != null)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireSphere(_strikePoint.position, 0.03f);
             }
         }
 #endif

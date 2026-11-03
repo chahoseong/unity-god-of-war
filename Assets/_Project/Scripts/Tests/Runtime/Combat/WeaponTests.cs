@@ -22,6 +22,7 @@ namespace GodOfWar.Tests.Combat
         private readonly List<HitEvent> _dealt = new List<HitEvent>();
         private GameObject _character;
         private Weapon _weapon;
+        private Transform _strikePoint;
         private WeaponHitbox _hitbox;
         private WeaponTrail _trail;
         private WeaponTrailProfile _profile;
@@ -184,6 +185,27 @@ namespace GodOfWar.Tests.Combat
             Assert.That(_dealt[0].Result.Outcome, Is.EqualTo(HitOutcome.Parried));
         }
 
+        // 직접 타격은 칼날로 찾지 않으므로, 접점은 기준점에서 가장 가까운 대상의 몸 표면이어야 한다.
+        [UnityTest]
+        public IEnumerator Strike_WithTargetCollider_PassesImpactPointOnSurfaceNearestStrikePoint()
+        {
+            const float targetRadius = 0.4f;
+            var targetObject = new GameObject("Target");
+            targetObject.transform.position = _strikePoint.position + new Vector3(1f, 0f, 0f);
+            targetObject.AddComponent<SphereCollider>().radius = targetRadius;
+            SpyHittable target = targetObject.AddComponent<SpyHittable>();
+
+            _weapon.Strike(target, HitStrength.Heavy);
+            yield return null;
+
+            Vector3 center = targetObject.transform.position;
+            Object.DestroyImmediate(targetObject);
+            Assert.That(_dealt.Count, Is.EqualTo(1));
+            ImpactPoint impact = _dealt[0].Attack.ImpactPoint;
+            Assert.That(Vector3.Distance(impact.Position, center + Vector3.left * targetRadius), Is.LessThan(1e-4f));
+            Assert.That(Vector3.Distance(impact.Normal, Vector3.left), Is.LessThan(1e-4f));
+        }
+
         // 궤적은 주인의 시계로 나이를 재므로 캐릭터에 시계를 두고, 칼은 그 자식으로 둔다.
         private void CreateWeapon(bool withTrail)
         {
@@ -197,12 +219,17 @@ namespace GodOfWar.Tests.Combat
             var tip = new GameObject("Tip").transform;
             tip.SetParent(blade.transform, false);
             tip.localPosition = Vector3.forward;
+            // 손잡이로 치는 카운터처럼 칼날 밖에 둔다.
+            _strikePoint = new GameObject("StrikePoint").transform;
+            _strikePoint.SetParent(blade.transform, false);
+            _strikePoint.localPosition = Vector3.back * 0.2f;
 
             _weapon = blade.AddComponent<Weapon>();
             _hitbox = blade.AddComponent<WeaponHitbox>();
             var weapon = new SerializedObject(_weapon);
             weapon.FindProperty("_base").objectReferenceValue = blade.transform;
             weapon.FindProperty("_tip").objectReferenceValue = tip;
+            weapon.FindProperty("_strikePoint").objectReferenceValue = _strikePoint;
             weapon.FindProperty("_hitbox").objectReferenceValue = _hitbox;
 
             _trail = null;

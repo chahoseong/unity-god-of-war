@@ -67,7 +67,7 @@ namespace GodOfWar.Tests.Combat
         public void Resolve_WithGuardingStanceAndAttackOutsideFrontSectorButWithinWiderHalfAngle_ReturnsBlocked()
         {
             HitOutcome outcome = HitOutcomeResolver.Resolve(
-                DefenseStance.Guarding, new AttackInfo(AttackerAt(60f), HitStrength.Light),
+                DefenseStance.Guarding, new AttackInfo(AttackerAt(60f), HitStrength.Light, default),
                 DefenderPosition, DefenderForward, 90f);
 
             Assert.That(outcome, Is.EqualTo(HitOutcome.Blocked));
@@ -102,7 +102,7 @@ namespace GodOfWar.Tests.Combat
         private static HitOutcome Resolve(DefenseStance stance, HitStrength strength, Transform attacker)
         {
             return HitOutcomeResolver.Resolve(
-                stance, new AttackInfo(attacker, strength), DefenderPosition, DefenderForward, GuardHalfAngle);
+                stance, new AttackInfo(attacker, strength, default), DefenderPosition, DefenderForward, GuardHalfAngle);
         }
 
         /// <summary>피격자 정면 기준 <paramref name="yaw"/>(도, 오른쪽이 양수) 방향 2m에 공격자를 둔다.</summary>
