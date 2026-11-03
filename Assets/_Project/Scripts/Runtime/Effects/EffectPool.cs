@@ -82,7 +82,7 @@ namespace GodOfWar.Effects
             pool = new ObjectPool<PooledEffect>(
                 () => Create(prefab, pool),
                 actionOnRelease: effect => effect.gameObject.SetActive(false),
-                actionOnDestroy: effect => UnityEngine.Object.Destroy(effect.gameObject),
+                actionOnDestroy: DestroyInstance,
                 maxSize: MaxSize);
             s_pools.Add(prefab, pool);
             return pool;
@@ -108,6 +108,15 @@ namespace GodOfWar.Effects
             staging.transform.SetParent(container.transform, false);
             s_container = container.transform;
             s_staging = staging.transform;
+        }
+
+        // 에디터는 플레이 모드가 바뀔 때 모든 ObjectPool을 비우는데, 그때는 지난 세션의 인스턴스가 이미 파괴돼 있다.
+        private static void DestroyInstance(PooledEffect effect)
+        {
+            if (effect != null)
+            {
+                UnityEngine.Object.Destroy(effect.gameObject);
+            }
         }
 
         private static PooledEffect Create(ParticleSystem prefab, ObjectPool<PooledEffect> pool)

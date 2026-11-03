@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 6929729124445471486}
   - component: {fileID: 169158004819119297}
   - component: {fileID: 3537862291848399081}
+  - component: {fileID: 2546249145816372224}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -224,6 +225,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.HitFlash
   _settings: {fileID: 11400000, guid: 40d666cc2f3dbd64e8264eb6007cb448, type: 2}
+--- !u!114 &2546249145816372224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 168932584551449046}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e20660376371c64cb999af2ad7f50b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.ImpactEffects
+  _settings: {fileID: 11400000, guid: fc47df4def83f8041a5e57d62c4813e5, type: 2}
 --- !u!1 &504034824806651937
 GameObject:
   m_ObjectHideFlags: 0

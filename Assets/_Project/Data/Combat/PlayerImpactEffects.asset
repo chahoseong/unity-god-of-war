@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b17237860eefaf44839f7800bf9ecca, type: 3}
+  m_Name: PlayerImpactEffects
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.ImpactEffectSettings
+  _hitLight: {fileID: 7573903438290696266, guid: 9fe3db40fb2bc2b4799f692ef789d5ed, type: 3}
+  _hitHeavy: {fileID: 8229467775213306615, guid: f27a115e5fc3bb84d95700d53c5b7d00, type: 3}
+  _blocked: {fileID: 3608797389274099121, guid: 3843adbcadd151841afe35bb118885a2, type: 3}
+  _guardBroken: {fileID: 8548979142168222150, guid: c6ccaaed65615c34795b58b4c10bffe3, type: 3}
+  _parried: {fileID: 7825498801708814953, guid: 2c1171e3da0492b40807133d71709a93, type: 3}

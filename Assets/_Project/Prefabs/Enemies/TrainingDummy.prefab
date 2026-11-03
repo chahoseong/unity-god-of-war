@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 7197608377638734546}
   - component: {fileID: 8956545634383562312}
   - component: {fileID: 6556447950204838586}
+  - component: {fileID: 1581170980423230831}
   m_Layer: 8
   m_Name: TrainingDummy
   m_TagString: Untagged
@@ -156,6 +157,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.HitFlash
   _settings: {fileID: 11400000, guid: 40d666cc2f3dbd64e8264eb6007cb448, type: 2}
+--- !u!114 &1581170980423230831
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 590756983412817316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e20660376371c64cb999af2ad7f50b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.ImpactEffects
+  _settings: {fileID: 11400000, guid: 3b8ff7ad985280446ba02fe705bfba08, type: 2}
 --- !u!1 &813722903328741532
 GameObject:
   m_ObjectHideFlags: 0
