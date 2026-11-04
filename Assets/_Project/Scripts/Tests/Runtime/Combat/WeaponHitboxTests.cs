@@ -52,7 +52,7 @@ namespace GodOfWar.Tests.Combat
         public IEnumerator WeaponHitbox_WithBladeSweepingPastTargetInOneFrame_HitsTarget()
         {
             SpyHittable target = CreateTarget(AlongBlade(60f, 0.85f));
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return null;
 
             _blade.localRotation = Quaternion.Euler(0f, 120f, 0f);
@@ -65,7 +65,7 @@ namespace GodOfWar.Tests.Combat
         public IEnumerator WeaponHitbox_WithTargetOverlappingAcrossFrames_HitsTargetOnce()
         {
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return null;
             yield return null;
             yield return null;
@@ -77,11 +77,11 @@ namespace GodOfWar.Tests.Combat
         public IEnumerator WeaponHitbox_AfterReopen_HitsSameTargetAgain()
         {
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return null;
 
             _hitbox.Close();
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return null;
 
             Assert.That(target.HitCount, Is.EqualTo(2));
@@ -92,7 +92,7 @@ namespace GodOfWar.Tests.Combat
         {
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
             target.transform.SetParent(_attacker, true);
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return null;
 
             Assert.That(target.HitCount, Is.EqualTo(0));
@@ -102,7 +102,7 @@ namespace GodOfWar.Tests.Combat
         public IEnumerator WeaponHitbox_AfterClose_DoesNotHitTarget()
         {
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             _hitbox.Close();
             yield return null;
 
@@ -116,7 +116,7 @@ namespace GodOfWar.Tests.Combat
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
             target.Outcome = HitOutcome.Evaded;
             target.OnHit = () => target.Outcome = HitOutcome.Hit;
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return null;
             yield return null;
             yield return null;
@@ -132,7 +132,7 @@ namespace GodOfWar.Tests.Combat
             // Update가 끝난 뒤에 열어, 이번 프레임의 LateUpdate가 반드시 검사하게 한다.
             yield return null;
 
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return new WaitForEndOfFrame();
 
             Assert.That(target.HitCount, Is.EqualTo(1));
@@ -152,8 +152,8 @@ namespace GodOfWar.Tests.Combat
             attackerBody.OnHit = _hitbox.Close;
             opponentBody.OnHit = opponentHitbox.Close;
 
-            _hitbox.Open(HitStrength.Light);
-            opponentHitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
+            opponentHitbox.Open(HitStrength.Light, false);
             yield return null;
 
             Assert.That(new[] { attackerBody.HitCount, opponentBody.HitCount }, Is.EqualTo(new[] { 1, 1 }));
@@ -168,7 +168,7 @@ namespace GodOfWar.Tests.Combat
             first.OnHit = () => Object.DestroyImmediate(second.gameObject);
             second.OnHit = () => Object.DestroyImmediate(first.gameObject);
 
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return null;
 
             Assert.That(first.HitCount + second.HitCount, Is.EqualTo(1));
@@ -189,8 +189,8 @@ namespace GodOfWar.Tests.Combat
             target.OnHit = () => Object.DestroyImmediate(otherAttacker.gameObject);
             otherTarget.OnHit = () => Object.DestroyImmediate(attacker.gameObject);
 
-            _hitbox.Open(HitStrength.Light);
-            otherHitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
+            otherHitbox.Open(HitStrength.Light, false);
             yield return null;
 
             Assert.That(target.HitCount + otherTarget.HitCount, Is.EqualTo(1));
@@ -208,7 +208,7 @@ namespace GodOfWar.Tests.Combat
             LogAssert.Expect(LogType.Exception, new Regex("first target failed"));
             LogAssert.Expect(LogType.Exception, new Regex("second target failed"));
 
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return null;
             yield return null;
 
@@ -221,7 +221,7 @@ namespace GodOfWar.Tests.Combat
         {
             SpyHittable target = CreateTarget(AlongBlade(0f, 0.5f));
             target.Outcome = HitOutcome.Blocked;
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return null;
 
             Assert.That(_dealt.Count, Is.EqualTo(1));
@@ -235,7 +235,7 @@ namespace GodOfWar.Tests.Combat
         {
             SpyHittable target = CreateTarget(AlongBlade(15f, 0.5f));
             Vector3 center = target.transform.position;
-            _hitbox.Open(HitStrength.Light);
+            _hitbox.Open(HitStrength.Light, false);
             yield return null;
 
             Assert.That(_dealt.Count, Is.EqualTo(1));
@@ -244,6 +244,18 @@ namespace GodOfWar.Tests.Combat
             Assert.That(Vector3.Distance(impact.Normal, (impact.Position - center).normalized), Is.LessThan(1e-4f));
             // 대상은 칼날의 오른쪽에 있으므로 칼날 쪽 표면은 대상의 왼쪽이다.
             Assert.That(Vector3.Dot(impact.Normal, _attacker.right), Is.LessThan(0f));
+        }
+
+        // 넉다운 여부는 세기와 따로 판정을 열 때 받으므로, 맞은 대상에게 넘기는 타격 정보에 그대로 실리는지 본다.
+        [UnityTest]
+        public IEnumerator WeaponHitbox_OpenedWithKnockdown_PassesKnockdownToTarget()
+        {
+            CreateTarget(AlongBlade(0f, 0.5f));
+            _hitbox.Open(HitStrength.Light, true);
+            yield return null;
+
+            Assert.That(_dealt.Count, Is.EqualTo(1));
+            Assert.That(_dealt[0].Attack.Knockdown, Is.True);
         }
 
         private GameObject Create(string name)

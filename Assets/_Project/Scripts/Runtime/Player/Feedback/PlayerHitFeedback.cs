@@ -61,7 +61,8 @@ namespace GodOfWar.Player.Feedback
 
         private void OnHitDealt(HitEvent hitEvent)
         {
-            if (_settings.TryGetDealt(hitEvent.Result.Outcome, hitEvent.Attack.Strength, out HitFeedback feedback))
+            AttackInfo attack = hitEvent.Attack;
+            if (_settings.TryGetDealt(hitEvent.Result.Outcome, attack.Strength, attack.Knockdown, out HitFeedback feedback))
             {
                 Apply(feedback, hitEvent.Target as Component);
             }

@@ -38,6 +38,7 @@ namespace GodOfWar.Combat
         private Action<HitEvent> _onResolved;
 
         private HitStrength _strength;
+        private bool _knockdown;
         private SwingTracker _tracker;
 
 #if UNITY_EDITOR
@@ -82,7 +83,7 @@ namespace GodOfWar.Combat
 
         /// <summary>새 스윙의 판정을 연다. 맞은 대상 기록을 비우고, 지금 칼 포즈부터 쓸기 시작한다.</summary>
         /// <exception cref="InvalidOperationException">주인이 정해지지 않았다.</exception>
-        public void Open(HitStrength strength)
+        public void Open(HitStrength strength, bool knockdown)
         {
             if (_owner == null)
             {
@@ -90,6 +91,7 @@ namespace GodOfWar.Combat
             }
 
             _strength = strength;
+            _knockdown = knockdown;
             _hitTargets.Clear();
 
             // 지난 스윙이 끝난 포즈부터 쓸면 그 사이의 대상을 잘못 친다.
@@ -166,7 +168,7 @@ namespace GodOfWar.Combat
 
                 // 이 선분은 이번 단계에만 있으므로, 처음 닿은 순간에 몸 표면의 접점을 구해 둔다.
                 ImpactPoint impactPoint = ImpactPoint.OnSurface(other, start, end, _owner.position);
-                HitSystem.Record(target, new AttackInfo(_owner, _strength, impactPoint), _onResolved);
+                HitSystem.Record(target, new AttackInfo(_owner, _strength, _knockdown, impactPoint), _onResolved);
             }
         }
 

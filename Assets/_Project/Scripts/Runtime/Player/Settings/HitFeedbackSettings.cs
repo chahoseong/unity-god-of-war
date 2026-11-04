@@ -19,6 +19,12 @@ namespace GodOfWar.Player.Settings
         [Tooltip("플레이어의 강한 타격(패링 카운터 포함)이 적에게 맞았을 때.")]
         [SerializeField] private HitFeedback _dealtHitHeavy = new HitFeedback();
 
+        [Tooltip("플레이어의 넉다운시키는 약한 타격(약공격 마지막 타 등)이 적에게 맞았을 때.")]
+        [SerializeField] private HitFeedback _dealtKnockdownLight = new HitFeedback();
+
+        [Tooltip("플레이어의 넉다운시키는 강한 타격(강공격 마지막 타 등)이 적에게 맞았을 때.")]
+        [SerializeField] private HitFeedback _dealtKnockdownHeavy = new HitFeedback();
+
         [Header("Taken")]
         [Tooltip("적의 약한 타격에 맞았을 때.")]
         [SerializeField] private HitFeedback _takenHitLight = new HitFeedback();
@@ -40,9 +46,10 @@ namespace GodOfWar.Player.Settings
 
         /// <summary>
         /// 플레이어가 친 타격의 피드백을 찾는다. 흘린 타격이면 피드백이 없어 false를 반환한다.
+        /// 넉다운시키는 타격이 맞으면 같은 세기의 넉다운 칸을 쓴다.
         /// 적은 아직 막거나 튕겨 내지 않으므로 그 판정에는 칸이 없다.
         /// </summary>
-        public bool TryGetDealt(HitOutcome outcome, HitStrength strength, out HitFeedback feedback)
+        public bool TryGetDealt(HitOutcome outcome, HitStrength strength, bool knockdown, out HitFeedback feedback)
         {
             switch (outcome)
             {
@@ -50,7 +57,9 @@ namespace GodOfWar.Player.Settings
                     feedback = null;
                     return false;
                 case HitOutcome.Hit:
-                    feedback = Pick(strength, _dealtHitLight, _dealtHitHeavy);
+                    feedback = knockdown
+                        ? Pick(strength, _dealtKnockdownLight, _dealtKnockdownHeavy)
+                        : Pick(strength, _dealtHitLight, _dealtHitHeavy);
                     return true;
                 default:
                     throw new ArgumentOutOfRangeException(

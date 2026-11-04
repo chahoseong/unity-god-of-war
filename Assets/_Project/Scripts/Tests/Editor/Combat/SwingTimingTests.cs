@@ -64,7 +64,7 @@ namespace GodOfWar.Tests.Combat
 
         private static SwingTiming Timing(WeaponTrailProfile profile)
         {
-            return new SwingTiming(HitStart, HitEnd, HitStrength.Light, TrailStart, TrailEnd, profile);
+            return new SwingTiming(HitStart, HitEnd, HitStrength.Light, false, TrailStart, TrailEnd, profile);
         }
     }
 }

@@ -28,6 +28,8 @@ namespace GodOfWar.Tests.Player.Settings
             SetHitstopDuration(serialized, "_guardBroken", 0.06f);
             SetHitstopDuration(serialized, "_parriedLight", 0.07f);
             SetHitstopDuration(serialized, "_parriedHeavy", 0.08f);
+            SetHitstopDuration(serialized, "_dealtKnockdownLight", 0.09f);
+            SetHitstopDuration(serialized, "_dealtKnockdownHeavy", 0.10f);
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -39,9 +41,20 @@ namespace GodOfWar.Tests.Player.Settings
 
         [TestCase(HitStrength.Light, 0.01f)]
         [TestCase(HitStrength.Heavy, 0.02f)]
-        public void TryGetDealt_ForHit_ReturnsSlotOfStrength(HitStrength strength, float expectedHitstopDuration)
+        public void TryGetDealt_ForHitWithoutKnockdown_ReturnsSlotOfStrength(
+            HitStrength strength, float expectedHitstopDuration)
         {
-            _settings.TryGetDealt(HitOutcome.Hit, strength, out HitFeedback feedback);
+            _settings.TryGetDealt(HitOutcome.Hit, strength, false, out HitFeedback feedback);
+
+            Assert.That(feedback.HitstopDuration, Is.EqualTo(expectedHitstopDuration));
+        }
+
+        [TestCase(HitStrength.Light, 0.09f)]
+        [TestCase(HitStrength.Heavy, 0.10f)]
+        public void TryGetDealt_ForHitWithKnockdown_ReturnsKnockdownSlotOfStrength(
+            HitStrength strength, float expectedHitstopDuration)
+        {
+            _settings.TryGetDealt(HitOutcome.Hit, strength, true, out HitFeedback feedback);
 
             Assert.That(feedback.HitstopDuration, Is.EqualTo(expectedHitstopDuration));
         }
@@ -63,7 +76,7 @@ namespace GodOfWar.Tests.Player.Settings
         [Test]
         public void TryGetDealt_ForEvaded_ReturnsFalse()
         {
-            Assert.That(_settings.TryGetDealt(HitOutcome.Evaded, HitStrength.Heavy, out _), Is.False);
+            Assert.That(_settings.TryGetDealt(HitOutcome.Evaded, HitStrength.Heavy, false, out _), Is.False);
         }
 
         [Test]
@@ -78,7 +91,7 @@ namespace GodOfWar.Tests.Player.Settings
         [TestCase(HitOutcome.Parried)]
         public void TryGetDealt_ForDefendedOutcome_ThrowsArgumentOutOfRangeException(HitOutcome outcome)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => _settings.TryGetDealt(outcome, HitStrength.Light, out _));
+            Assert.Throws<ArgumentOutOfRangeException>(() => _settings.TryGetDealt(outcome, HitStrength.Light, false, out _));
         }
 
         // 가드는 약한 타격만 막고 강한 타격에는 무너지므로, 반대 조합은 판정 규칙이 바뀐 경우에만 나온다.

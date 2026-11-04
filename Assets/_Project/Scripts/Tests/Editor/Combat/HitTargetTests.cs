@@ -128,7 +128,7 @@ namespace GodOfWar.Tests.Combat
 
         private AttackInfo Attack()
         {
-            return new AttackInfo(_attacker.transform, HitStrength.Light, default);
+            return new AttackInfo(_attacker.transform, HitStrength.Light, false, default);
         }
 
         private static HitHandler HandlerReturning(HitOutcome outcome)

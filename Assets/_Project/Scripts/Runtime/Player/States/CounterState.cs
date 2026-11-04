@@ -207,7 +207,8 @@ namespace GodOfWar.Player.States
                 return;
             }
 
-            _weapon.Strike(_hittable, _action.HitStrength);
+            // 카운터는 받아친 상대를 경직시킬 뿐 쓰러뜨리지 않는다.
+            _weapon.Strike(_hittable, _action.HitStrength, knockdown: false);
         }
 
         private Vector3 HorizontalOffsetToTarget()

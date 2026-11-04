@@ -34,7 +34,7 @@ namespace GodOfWar.Tests.Combat
         {
             _material = new Material(Shader.Find("GodOfWar/WeaponTrail"));
             _profile = ScriptableObject.CreateInstance<WeaponTrailProfile>();
-            _timing = new SwingTiming(HitStart, HitEnd, HitStrength.Heavy, TrailStart, TrailEnd, _profile);
+            _timing = new SwingTiming(HitStart, HitEnd, HitStrength.Heavy, false, TrailStart, TrailEnd, _profile);
             _dealt.Clear();
             CreateWeapon(withTrail: true);
         }
@@ -175,7 +175,7 @@ namespace GodOfWar.Tests.Combat
             SpyHittable target = targetObject.AddComponent<SpyHittable>();
             target.Outcome = HitOutcome.Parried;
 
-            _weapon.Strike(target, HitStrength.Heavy);
+            _weapon.Strike(target, HitStrength.Heavy, false);
             yield return null;
 
             Object.DestroyImmediate(targetObject);
@@ -195,7 +195,7 @@ namespace GodOfWar.Tests.Combat
             targetObject.AddComponent<SphereCollider>().radius = targetRadius;
             SpyHittable target = targetObject.AddComponent<SpyHittable>();
 
-            _weapon.Strike(target, HitStrength.Heavy);
+            _weapon.Strike(target, HitStrength.Heavy, false);
             yield return null;
 
             Vector3 center = targetObject.transform.position;

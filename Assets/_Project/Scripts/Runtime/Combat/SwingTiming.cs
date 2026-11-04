@@ -13,12 +13,13 @@ namespace GodOfWar.Combat
         private readonly float _trailEnd;
 
         public SwingTiming(
-            float hitStart, float hitEnd, HitStrength hitStrength,
+            float hitStart, float hitEnd, HitStrength hitStrength, bool knockdown,
             float trailStart, float trailEnd, WeaponTrailProfile trailProfile)
         {
             _hitStart = hitStart;
             _hitEnd = hitEnd;
             HitStrength = hitStrength;
+            Knockdown = knockdown;
             _trailStart = trailStart;
             _trailEnd = trailEnd;
             TrailProfile = trailProfile;
@@ -26,6 +27,9 @@ namespace GodOfWar.Combat
 
         /// <summary>판정 구간 동안 맞은 대상에게 전하는 타격 세기.</summary>
         public HitStrength HitStrength { get; }
+
+        /// <summary>판정 구간 동안 맞은 대상을 넉다운시키는지.</summary>
+        public bool Knockdown { get; }
 
         /// <summary>궤적 구간 동안 그릴 궤적의 외형. 비어 있으면 궤적을 그리지 않는다.</summary>
         public WeaponTrailProfile TrailProfile { get; }
@@ -35,7 +39,7 @@ namespace GodOfWar.Combat
         /// </summary>
         public static SwingTiming WithoutHit(float trailStart, float trailEnd, WeaponTrailProfile trailProfile)
         {
-            return new SwingTiming(0f, 0f, default, trailStart, trailEnd, trailProfile);
+            return new SwingTiming(0f, 0f, default, false, trailStart, trailEnd, trailProfile);
         }
 
         /// <summary><paramref name="elapsed"/>가 판정 구간 안인지 판정한다.</summary>

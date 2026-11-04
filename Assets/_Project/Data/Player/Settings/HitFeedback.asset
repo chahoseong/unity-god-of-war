@@ -24,6 +24,18 @@ MonoBehaviour:
     _shakeShape: 0
     _shakeDuration: 0.18
     _shakeForce: 0.04
+  _dealtKnockdownLight:
+    _hitstopDuration: 0.12
+    _hitstopTimeScale: 0.1
+    _shakeShape: 2
+    _shakeDuration: 0.25
+    _shakeForce: 0.05
+  _dealtKnockdownHeavy:
+    _hitstopDuration: 0.18
+    _hitstopTimeScale: 0.05
+    _shakeShape: 2
+    _shakeDuration: 0.3
+    _shakeForce: 0.07
   _takenHitLight:
     _hitstopDuration: 0.08
     _hitstopTimeScale: 0.2
