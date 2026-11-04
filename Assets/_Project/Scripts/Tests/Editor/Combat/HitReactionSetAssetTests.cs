@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using GodOfWar.Combat;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEngine;
 using static GodOfWar.Tests.Combat.AnimationAssetAssertions;
 
 namespace GodOfWar.Tests.Combat
@@ -20,6 +21,9 @@ namespace GodOfWar.Tests.Combat
             ("TrainingDummy", "Assets/_Project/Animations/Enemies/TrainingDummy.controller"),
             ("Player", "Assets/_Project/Animations/Player/Player.controller")
         };
+
+        // 넉다운 반응은 쓰러지는 캐릭터의 애니메이터에만 있다.
+        private const string KnockdownControllerPath = "Assets/_Project/Animations/Enemies/TrainingDummy.controller";
 
         private static readonly HitDirection[] Directions =
             { HitDirection.Front, HitDirection.Back, HitDirection.Left, HitDirection.Right };
@@ -95,6 +99,35 @@ namespace GodOfWar.Tests.Combat
                 _ => throw new System.ArgumentOutOfRangeException(nameof(direction), direction, null)
             };
             Assert.That(reaction.Clip.name, Does.StartWith($"A_Hit_{expectedLetter}_"));
+        }
+
+        // 쓰러지는·일어나는 구간의 길이를 클립 길이로 정하므로, 애니메이터가 재생하는 클립과 다르면 동작이 끊기거나 멈춰 선다.
+        [Test]
+        public void KnockdownClips_ForKnockdownReaction_MatchMotionsOfStatesWithSameNames()
+        {
+            KnockdownReaction knockdown = LoadSet().Knockdown;
+
+            Assert.That(FindStateMotion(KnockdownControllerPath, knockdown.BeginStateName), Is.SameAs(knockdown.BeginClip));
+            Assert.That(FindStateMotion(KnockdownControllerPath, knockdown.EndStateName), Is.SameAs(knockdown.EndClip));
+        }
+
+        // 누워 있는 시간은 클립 길이와 관계없이 정하므로, 반복하지 않는 클립이면 그 시간 동안 마지막 자세로 멈춰 있다.
+        [Test]
+        public void KnockdownLoopState_ForKnockdownReaction_PlaysLoopingClip()
+        {
+            KnockdownReaction knockdown = LoadSet().Knockdown;
+
+            var motion = FindStateMotion(KnockdownControllerPath, knockdown.LoopStateName) as AnimationClip;
+            Assert.That(motion, Is.Not.Null);
+            Assert.That(motion.isLooping, Is.True);
+        }
+
+        [Test]
+        public void KnockdownMovement_ForKnockdownReaction_IsBakedFromRootMotionVersionOfBeginClip()
+        {
+            KnockdownReaction knockdown = LoadSet().Knockdown;
+
+            AssertBakedFromRootMotionVersion(knockdown.BeginMovement, knockdown.BeginClip);
         }
 
         private static HitReactionSet LoadSet()

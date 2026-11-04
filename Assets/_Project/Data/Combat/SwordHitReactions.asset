@@ -60,3 +60,14 @@ MonoBehaviour:
     _movement: {fileID: 11400000, guid: 9302ce06d985c2f4eb5bcf113329f343, type: 2}
     _crossFadeInDuration: 0
     _crossFadeOutDuration: 0.1
+  _knockdown:
+    _beginStateName: KnockDown_Begin
+    _beginClip: {fileID: 3719875270879779954, guid: 7ba7023334e89e340927c5c166306e04, type: 3}
+    _beginMovement: {fileID: 11400000, guid: 9c18ecf7f8685ad488b79ddb45c77103, type: 2}
+    _loopStateName: KnockDown_Loop
+    _lyingDuration: 0.5
+    _endStateName: KnockDown_End
+    _endClip: {fileID: -7560739488375888718, guid: 8a405eac44feba441a02a2df3f42f432, type: 3}
+    _crossFadeInDuration: 0
+    _phaseCrossFadeDuration: 0.1
+    _crossFadeOutDuration: 0.2

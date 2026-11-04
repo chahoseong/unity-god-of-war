@@ -11,6 +11,7 @@ namespace GodOfWar.Enemies
     /// 피격·방어 테스트용 훈련용 더미. 상태 머신의 컴포지션 루트이자 상태들이 속한 Context다.
     /// 맞으면 공격자가 있는 쪽과 타격 세기에 맞는 피격 반응을 재생하고, 끝나면 대기로 돌아간다.
     /// 반응 중에 다시 맞으면 가장 최근 타격으로 반응을 새로 시작한다. 공격자를 향해 돌지 않는다.
+    /// 넉다운시키는 타격에는 공격자를 향해 돌아선 뒤 쓰러졌다가 일어난다. 쓰러져 있는 동안은 맞아도 반응을 바꾸지 않는다.
     /// 자동 공격을 켜면 대기가 정해진 시간 동안 이어질 때마다 공격 패턴을 차례로 휘두른다.
     /// 휘두른 공격이 저스트 패링당하면 공격을 끊고 튕겨 나가는 반응(역경직)을 재생한다. 그동안 맞으면 피격 반응으로 바뀐다.
     /// </summary>
@@ -44,6 +45,7 @@ namespace GodOfWar.Enemies
         private IdleState _idle;
         private AttackState _attack;
         private HitReactState _hitReact;
+        private KnockdownState _knockdown;
 
         private float _idleTime;
         private int _nextAttackIndex;
@@ -67,6 +69,12 @@ namespace GodOfWar.Enemies
             if (_hitReactions == null)
             {
                 throw new InvalidOperationException($"'{name}' has no {nameof(HitReactionSet)} assigned.");
+            }
+
+            KnockdownReaction knockdown = _hitReactions.Knockdown;
+            if (knockdown == null || knockdown.BeginClip == null || knockdown.EndClip == null)
+            {
+                throw new InvalidOperationException($"'{name}' has no knockdown clips assigned in its {nameof(HitReactionSet)}.");
             }
 
             if (_deflectedReaction == null || _deflectedReaction.Clip == null)
@@ -95,6 +103,7 @@ namespace GodOfWar.Enemies
             _idle = Register(new IdleState(this));
             _attack = Register(new AttackState(this));
             _hitReact = Register(new HitReactState(this));
+            _knockdown = Register(new KnockdownState(this));
             // 판정이 상태를 쓰므로, 검증에 실패해 조립이 덜 된 채로 타격을 받지 않도록 상태를 모두 등록한 뒤에 맡긴다.
             hitTarget.Bind(HandleHit);
 
@@ -135,6 +144,19 @@ namespace GodOfWar.Enemies
         // HitTarget에 맡긴 판정. 더미는 막지 않으므로 늘 맞는다.
         private HitResult HandleHit(in AttackInfo attack)
         {
+            // 쓰러져 있는 몸에 서서 맞는 반응을 재생하면 선 자세로 튀므로, 맞기만 하고 넉다운을 이어 간다.
+            if (_machine.CurrentState == _knockdown)
+            {
+                return new HitResult(HitOutcome.Hit);
+            }
+
+            if (attack.Knockdown)
+            {
+                _knockdown.Prepare(_hitReactions.Knockdown, attack.Attacker.position);
+                _machine.ChangeState(_knockdown);
+                return new HitResult(HitOutcome.Hit);
+            }
+
             HitDirection direction = HitDirectionResolver.Resolve(
                 transform.position, transform.forward, attack.Attacker.position);
 
@@ -150,7 +172,8 @@ namespace GodOfWar.Enemies
         /// </summary>
         private void OnHitDealt(HitEvent hitEvent)
         {
-            if (hitEvent.Result.Outcome != HitOutcome.Parried)
+            // 쓰러진 뒤에 같은 프레임의 판정이 늦게 와도 넉다운을 끊지 않는다.
+            if (hitEvent.Result.Outcome != HitOutcome.Parried || _machine.CurrentState == _knockdown)
             {
                 return;
             }
