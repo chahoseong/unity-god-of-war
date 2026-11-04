@@ -25,5 +25,8 @@ namespace GodOfWar.Enemies
 
         /// <summary>상태가 전이 대상 상태를 찾는 창구.</summary>
         IStateLocator States { get; }
+
+        /// <summary>쓰러지는 몸이 바닥에 부딪혔음을 알린다. 넉다운 상태가 쓰러질 때마다 한 번 호출한다.</summary>
+        void NotifyGroundImpact();
     }
 }

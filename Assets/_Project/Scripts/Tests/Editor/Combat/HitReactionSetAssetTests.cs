@@ -122,6 +122,15 @@ namespace GodOfWar.Tests.Combat
             Assert.That(motion.isLooping, Is.True);
         }
 
+        // 쓰러짐이 끝날 때까지 이 시각에 닿지 못하면 지면 충돌을 알리지 않아, 흔들림이 조용히 사라진다.
+        [Test]
+        public void GroundImpactTime_ForKnockdownReaction_IsWithinBeginClip()
+        {
+            KnockdownReaction knockdown = LoadSet().Knockdown;
+
+            Assert.That(knockdown.GroundImpactTime, Is.LessThan(knockdown.BeginDuration));
+        }
+
         [Test]
         public void KnockdownMovement_ForKnockdownReaction_IsBakedFromRootMotionVersionOfBeginClip()
         {

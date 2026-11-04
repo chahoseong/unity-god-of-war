@@ -1,4 +1,5 @@
 using System;
+using GodOfWar.CameraSystem;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -22,7 +23,7 @@ namespace GodOfWar.Player.Feedback
 
         [Header("Camera Shake")]
         [Tooltip("흔들림의 모양.")]
-        [SerializeField] private HitShakeShape _shakeShape;
+        [SerializeField] private CameraShakeShape _shakeShape;
 
         [Tooltip("흔들리는 시간(초, 전역 게임 시간).")]
         [SerializeField, Min(0f)] private float _shakeDuration = 0.15f;
@@ -32,7 +33,7 @@ namespace GodOfWar.Player.Feedback
 
         public float HitstopDuration => _hitstopDuration;
         public float HitstopTimeScale => _hitstopTimeScale;
-        public HitShakeShape ShakeShape => _shakeShape;
+        public CameraShakeShape ShakeShape => _shakeShape;
         public float ShakeDuration => _shakeDuration;
         public float ShakeForce => _shakeForce;
     }

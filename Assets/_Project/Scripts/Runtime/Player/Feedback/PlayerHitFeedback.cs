@@ -1,8 +1,8 @@
 using System;
+using GodOfWar.CameraSystem;
 using GodOfWar.Characters;
 using GodOfWar.Combat;
 using GodOfWar.Player.Settings;
-using Unity.Cinemachine;
 using UnityEngine;
 
 namespace GodOfWar.Player.Feedback
@@ -85,37 +85,8 @@ namespace GodOfWar.Player.Feedback
                 opponentClock.Slow(feedback.HitstopDuration, feedback.HitstopTimeScale);
             }
 
-            Shake(feedback);
-        }
-
-        private void Shake(HitFeedback feedback)
-        {
-            if (feedback.ShakeForce <= 0f)
-            {
-                return;
-            }
-
-            // 플레이어가 늘 당사자라 흔들림이 거리에 따라 약해지지 않게 한다. 정의는 진행 중인 흔들림이 계속 읽으므로 매번 새로 만든다.
-            var impulse = new CinemachineImpulseDefinition
-            {
-                ImpulseType = CinemachineImpulseDefinition.ImpulseTypes.Uniform,
-                ImpulseShape = ToImpulseShape(feedback.ShakeShape),
-                ImpulseDuration = feedback.ShakeDuration
-            };
-            // 리스너가 카메라 공간으로 해석하므로, 카메라 각도와 관계없이 화면 아래쪽으로 민다.
-            impulse.CreateEvent(transform.position, Vector3.down * feedback.ShakeForce);
-        }
-
-        private static CinemachineImpulseDefinition.ImpulseShapes ToImpulseShape(HitShakeShape shape)
-        {
-            return shape switch
-            {
-                HitShakeShape.Recoil => CinemachineImpulseDefinition.ImpulseShapes.Recoil,
-                HitShakeShape.Bump => CinemachineImpulseDefinition.ImpulseShapes.Bump,
-                HitShakeShape.Explosion => CinemachineImpulseDefinition.ImpulseShapes.Explosion,
-                HitShakeShape.Rumble => CinemachineImpulseDefinition.ImpulseShapes.Rumble,
-                _ => throw new ArgumentOutOfRangeException(nameof(shape), shape, null)
-            };
+            // 플레이어가 늘 당사자라 흔들림이 거리에 따라 약해지지 않는 것이 맞다.
+            CameraShake.Emit(transform.position, feedback.ShakeShape, feedback.ShakeDuration, feedback.ShakeForce);
         }
     }
 }

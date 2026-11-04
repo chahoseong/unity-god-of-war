@@ -64,6 +64,7 @@ MonoBehaviour:
     _beginStateName: KnockDown_Begin
     _beginClip: {fileID: 3719875270879779954, guid: 7ba7023334e89e340927c5c166306e04, type: 3}
     _beginMovement: {fileID: 11400000, guid: 9c18ecf7f8685ad488b79ddb45c77103, type: 2}
+    _groundImpactTime: 0.333
     _loopStateName: KnockDown_Loop
     _lyingDuration: 0.5
     _endStateName: KnockDown_End

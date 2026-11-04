@@ -6,7 +6,7 @@ namespace GodOfWar.Combat
 {
     /// <summary>
     /// 넉다운 반응의 데이터. 쓰러지는 동작(Begin) → 누운 채 기다림(Loop) → 일어나는 동작(End) 순으로 재생한다.
-    /// 쓰러지는 동안 정해 둔 만큼 뒤로 밀려난다. 동작은 뒤로 넘어지는 한 방향뿐이라, 재생하는 쪽이 먼저 공격자를 향해 돌아선다.
+    /// 쓰러지는 동안 정해 둔 만큼 뒤로 밀려나고, 정해 둔 시각에 몸이 바닥에 부딪힌다. 동작은 뒤로 넘어지는 한 방향뿐이라, 재생하는 쪽이 먼저 공격자를 향해 돌아선다.
     /// </summary>
     [Serializable]
     public sealed class KnockdownReaction
@@ -19,6 +19,9 @@ namespace GodOfWar.Combat
 
         [Tooltip("쓰러지는 동안 밀려나는 이동. 제자리에서 쓰러지면 비워 둔다.")]
         [SerializeField] private BakedRootMotion _beginMovement;
+
+        [Tooltip("쓰러지는 몸이 바닥에 부딪히는 시각(초, 쓰러지기 시작부터, 캐릭터 시계 기준). 쓰러지는 클립 길이보다 짧아야 한다.")]
+        [SerializeField, Min(0f)] private float _groundImpactTime = 0.333f;
 
         [Tooltip("누운 채 기다리는 동작을 재생할 애니메이터 상태 이름. 반복 클립이어야 한다.")]
         [SerializeField] private string _loopStateName;
@@ -44,6 +47,7 @@ namespace GodOfWar.Combat
         public string BeginStateName => _beginStateName;
         public AnimationClip BeginClip => _beginClip;
         public BakedRootMotion BeginMovement => _beginMovement;
+        public float GroundImpactTime => _groundImpactTime;
         public string LoopStateName => _loopStateName;
         public float LyingDuration => _lyingDuration;
         public string EndStateName => _endStateName;

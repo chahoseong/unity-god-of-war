@@ -59,6 +59,14 @@ namespace GodOfWar.Enemies
         StateMachine ITrainingDummyStateContext.Machine => _machine;
         IStateLocator ITrainingDummyStateContext.States => _registry;
 
+        /// <summary>넉다운으로 쓰러지는 몸이 바닥에 부딪혔다. 카메라 흔들림 같은 연출이 구독한다.</summary>
+        public event Action GroundImpacted;
+
+        void ITrainingDummyStateContext.NotifyGroundImpact()
+        {
+            GroundImpacted?.Invoke();
+        }
+
         private void Awake()
         {
             if (_animator == null)

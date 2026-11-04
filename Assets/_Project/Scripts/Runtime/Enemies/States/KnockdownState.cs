@@ -9,6 +9,7 @@ namespace GodOfWar.Enemies.States
     /// <summary>
     /// 넉다운 상태. <see cref="Prepare"/>로 받은 공격자를 향해 곧바로 돌아선 뒤 뒤로 쓰러지고,
     /// 누운 채 정해진 시간을 기다렸다가 일어나 <see cref="IdleState"/>로 돌아간다.
+    /// 쓰러지는 몸이 바닥에 부딪히는 시각에 한 번 알린다. 그 전에 상태를 나가면 알리지 않는다.
     /// 이 상태에 있는 동안의 타격으로는 반응을 바꾸지 않는다. 그 판단은 판정을 받는 쪽이 이 상태를 보고 한다.
     /// </summary>
     public sealed class KnockdownState : IState
@@ -22,6 +23,7 @@ namespace GodOfWar.Enemies.States
             GettingUp
         }
 
+        private readonly ITrainingDummyStateContext _context;
         private readonly StateMachine _machine;
         private readonly IStateLocator _locator;
         private readonly CharacterMotor _motor;
@@ -36,12 +38,14 @@ namespace GodOfWar.Enemies.States
 
         private KnockdownReaction _reaction;
         private bool _hasMovement;
+        private bool _hasHitGround;
         private Phase _phase;
         // 지금 단계를 시작한 뒤 흐른 시간(초).
         private float _phaseElapsed;
 
         public KnockdownState(ITrainingDummyStateContext context)
         {
+            _context = context;
             _machine = context.Machine;
             _locator = context.States;
             _motor = context.Motor;
@@ -63,6 +67,7 @@ namespace GodOfWar.Enemies.States
             _reaction = _pendingReaction ?? throw new InvalidOperationException(
                 $"{nameof(KnockdownState)} was entered without a reaction. Call {nameof(Prepare)} first.");
             _pendingReaction = null;
+            _hasHitGround = false;
 
             // 뒤로 넘어지는 동작뿐이라, 공격자를 마주 봐야 공격자에게서 멀어지는 쪽으로 쓰러진다.
             FaceAttacker(_pendingAttackerPosition);
@@ -81,6 +86,13 @@ namespace GodOfWar.Enemies.States
             _phaseElapsed += deltaTime;
             bool isFalling = _phase == Phase.Falling && _hasMovement;
             _motor.Move(isFalling ? _movement.Tick(deltaTime) : Vector3.zero, deltaTime);
+
+            // 시각은 경과 시간으로 재므로, 한 프레임이 길어 시각을 건너뛰어도 그 프레임에 한 번 알린다.
+            if (_phase == Phase.Falling && !_hasHitGround && _phaseElapsed >= _reaction.GroundImpactTime)
+            {
+                _hasHitGround = true;
+                _context.NotifyGroundImpact();
+            }
 
             switch (_phase)
             {
