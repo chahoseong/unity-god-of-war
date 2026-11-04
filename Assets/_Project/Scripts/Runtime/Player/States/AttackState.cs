@@ -19,6 +19,8 @@ namespace GodOfWar.Player.States
     /// 약공격·강공격 버튼으로 진입한다. 선딜레이·스윙 동안은 다른 액션이 끼어들 수 없고,
     /// 후딜레이(<see cref="AttackAction.RecoveryStart"/> 이후)에는 회피 등으로 캔슬할 수 있다.
     /// 연계 구간이 끝난 뒤 예약된 타 없이 이동 입력이 있으면 복귀 클립을 끝까지 기다리지 않고 이동으로 돌아간다.
+    /// 콤보의 마지막 타(다음 타가 없는 공격)는 연계 구간이 없어, 휘두르는 동안 어떤 입력으로도 끊기지 않는다.
+    /// 후딜레이부터는 회피·다음 공격·이동으로 벗어날 수 있다.
     /// 한 타가 무기의 스윙 하나다. 매 프레임 그 타의 <see cref="SwingTiming"/>과 경과 시간을 무기에 넘기고,
     /// 어떤 경로로 상태를 나가든 스윙을 끝낸다. 판정·궤적을 언제 켜고 끌지는 무기가 정한다.
     /// </summary>
@@ -74,7 +76,10 @@ namespace GodOfWar.Player.States
 
         public DefenseStance DefenseStance => DefenseStance.Open;
 
-        public bool IsComboWindowOpen => _action.IsInComboWindow(_elapsed);
+        public bool IsComboWindowOpen => !IsLastHit && _action.IsInComboWindow(_elapsed);
+
+        // 콤보의 마지막 타는 연계로 이어지지 않는다. 무거운 마무리를 끝까지 보여 주고, 다음 공격은 후딜레이에서 새로 시작한다.
+        private bool IsLastHit => _action.Next == null;
 
         public bool HasQueuedFollowUp => _queuedAction != null;
 
@@ -162,8 +167,10 @@ namespace GodOfWar.Player.States
             _motor.Move(_movement.Tick(deltaTime), deltaTime);
 
             // 연계 구간의 마지막 순간까지는 공격 입력이 우선이므로, 구간이 끝난 뒤부터 이동으로 일찍 복귀한다.
+            // 마지막 타는 연계 구간이 없어, 다른 입력처럼 후딜레이부터 이동으로 벗어난다.
+            bool canLeaveEarly = IsLastHit ? _action.IsInRecovery(_elapsed) : _elapsed > _action.ComboWindowEnd;
             if (_queuedAction == null
-                && _elapsed > _action.ComboWindowEnd
+                && canLeaveEarly
                 && _input.Move.magnitude >= _settings.MinInput)
             {
                 ReturnToLocomotion();
@@ -206,7 +213,7 @@ namespace GodOfWar.Player.States
         public bool TryChain(PlayerActionEvent e)
         {
             // 연계 구간 밖의 공격과 회피 등 다른 입력은 라우터의 판정에 맡긴다.
-            if (!IsAttackPress(e) || !_action.IsInComboWindow(_elapsed))
+            if (!IsAttackPress(e) || !IsComboWindowOpen)
             {
                 return false;
             }

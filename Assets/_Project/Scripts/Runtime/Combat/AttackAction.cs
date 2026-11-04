@@ -6,6 +6,7 @@ namespace GodOfWar.Combat
     /// <summary>
     /// 콤보를 이루는 공격 한 타의 액션 데이터.
     /// 공격 클립이 끝나면 복귀 클립으로 이어지고, 연계 구간 안의 입력은 <see cref="Next"/> 또는 다른 버튼의 1타로 이어진다.
+    /// 다음 타가 없는 마지막 타는 연계 구간을 쓰지 않는다.
     /// 시각은 모두 액션 시작부터 잰 초다.
     /// </summary>
     [CreateAssetMenu(menuName = "GodOfWar/Combat/Attack Action", fileName = "AttackAction")]
@@ -33,7 +34,7 @@ namespace GodOfWar.Combat
         [Tooltip("스윙이 끝나 후딜레이 캔슬 구간이 열리는 시각. 이때부터 액션이 끝날 때까지 회피 등 다른 액션으로 캔슬할 수 있다.")]
         [SerializeField, Min(0f)] private float _recoveryStart;
 
-        [Tooltip("후속 입력을 받기 시작하는 시각.")]
+        [Tooltip("후속 입력을 받기 시작하는 시각. 다음 타가 없는 마지막 타에서는 쓰지 않는다.")]
         [SerializeField, Min(0f)] private float _comboWindowStart;
 
         [Tooltip("후속 입력을 받는 마지막 시각. 공격 클립 길이를 넘겨 복귀 구간까지 둘 수 있다.")]
@@ -66,7 +67,7 @@ namespace GodOfWar.Combat
         [Tooltip("복귀 구간 동안의 이동.")]
         [SerializeField] private BakedRootMotion _returnMovement;
 
-        [Tooltip("같은 버튼을 다시 눌렀을 때 이어지는 다음 타. 비우면 같은 버튼은 1타부터 다시 시작한다.")]
+        [Tooltip("같은 버튼을 다시 눌렀을 때 이어지는 다음 타. 비우면 콤보의 마지막 타라 연계 구간을 쓰지 않고, 후딜레이부터 다른 액션으로 벗어난다.")]
         [SerializeField] private AttackAction _next;
 
         public string StateName => _stateName;
