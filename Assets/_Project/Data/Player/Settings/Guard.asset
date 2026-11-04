@@ -31,8 +31,9 @@ MonoBehaviour:
   _parryCooldown: 0.5
   _parry:
     _stateName: Parry
-    _clip: {fileID: -8364131450492058579, guid: 7966ebc17e0dc2a4b8faaf62594fb9b2, type: 3}
-    _movement: {fileID: 0}
+    _clip: {fileID: 4023623632855673703, guid: 828888b34302fe14287e9cd61695aa75, type: 3}
+    _movement: {fileID: 11400000, guid: 53e38b972dbd9a744a3be521c84e385e, type: 2}
     _crossFadeInDuration: 0
-    _crossFadeOutDuration: 0.1
+    _crossFadeOutDuration: 0.5
+  _parryCounterStart: 0.4
   _counter: {fileID: 11400000, guid: 2ca8dc51065ae0a49a629c8b00552bd4, type: 2}

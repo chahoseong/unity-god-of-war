@@ -51,10 +51,13 @@ namespace GodOfWar.Player.Settings
         [Tooltip("패링 없이 윈도우가 닫힌 뒤(시간 경과·가드 해제) 다시 눌러도 윈도우가 열리지 않는 시간(초). 패링에 성공하면 바로 풀린다.")]
         [SerializeField, Min(0f)] private float _parryCooldown = 0.5f;
 
-        [Tooltip("저스트 패링에 성공했을 때 재생할 전신 반응. 이 클립 길이 동안 제자리에서 움직이지 않는다.")]
+        [Tooltip("저스트 패링에 성공했을 때 재생할 전신 반응. 상대를 밀쳐 내며 정해 둔 만큼 나아가고, 막는 자세로 끝나 이동으로 돌아간다.")]
         [SerializeField] private HitReaction _parry = new HitReaction();
 
-        [Tooltip("패링 동작 중 공격 버튼을 누르면 패링 동작이 끝난 뒤 나가는 카운터. 약·강 버튼 모두 같은 카운터다.")]
+        [Tooltip("패링 반응을 시작한 뒤 카운터·캔슬을 받기 시작하는 시각(초, 플레이어 시계 기준). 그 전에 누른 공격은 이 시각에 카운터로 나간다. 패링 클립 길이보다 짧아야 한다.")]
+        [SerializeField, Min(0f)] private float _parryCounterStart = 0.4f;
+
+        [Tooltip("패링 반응 중 공격 버튼을 누르면 나가는 카운터. 약·강 버튼 모두 같은 카운터다.")]
         [SerializeField] private CounterAction _counter;
 
         public float WalkSpeed => _walkSpeed;
@@ -70,6 +73,7 @@ namespace GodOfWar.Player.Settings
         public float ParryWindow => _parryWindow;
         public float ParryCooldown => _parryCooldown;
         public HitReaction Parry => _parry;
+        public float ParryCounterStart => _parryCounterStart;
         public CounterAction Counter => _counter;
     }
 }

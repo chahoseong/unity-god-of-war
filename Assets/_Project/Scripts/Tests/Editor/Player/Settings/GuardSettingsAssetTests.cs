@@ -32,13 +32,30 @@ namespace GodOfWar.Tests.Player.Settings
             AssertBakedFromRootMotionVersion(reaction.Movement, reaction.Clip);
         }
 
-        // 패링 클립 길이로 가드·이동 복귀 시점을 정하므로, 애니메이터가 재생하는 클립과 다르면 동작이 끊기거나 멈춰 선다.
+        // 패링 클립 길이로 이동 복귀 시점을 정하므로, 애니메이터가 재생하는 클립과 다르면 동작이 끊기거나 멈춰 선다.
         [Test]
         public void ParryClip_ForPlayer_MatchesMotionOfStateWithSameName()
         {
             HitReaction reaction = LoadSettings().Parry;
 
             Assert.That(FindStateMotion(ControllerPath, reaction.StateName), Is.SameAs(reaction.Clip));
+        }
+
+        [Test]
+        public void ParryMovement_ForPlayer_IsBakedFromRootMotionVersionOfClip()
+        {
+            HitReaction reaction = LoadSettings().Parry;
+
+            AssertBakedFromRootMotionVersion(reaction.Movement, reaction.Clip);
+        }
+
+        // 카운터 시각이 패링 동작이 끝난 뒤면 카운터 구간이 열리지 않아, 예약한 공격이 나가지 않고 이동으로 돌아간다.
+        [Test]
+        public void ParryCounterStart_ForPlayer_IsWithinParryClip()
+        {
+            GuardSettings settings = LoadSettings();
+
+            Assert.That(settings.ParryCounterStart, Is.LessThan(settings.Parry.Duration));
         }
 
         // 카운터 클립 길이로 이동 복귀 시점을 정하므로, 애니메이터가 재생하는 클립과 다르면 동작이 끊기거나 멈춰 선다.
