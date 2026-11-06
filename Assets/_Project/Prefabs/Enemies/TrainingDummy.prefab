@@ -18,6 +18,8 @@ GameObject:
   - component: {fileID: 6556447950204838586}
   - component: {fileID: 1581170980423230831}
   - component: {fileID: 1416876532471036284}
+  - component: {fileID: 952432266746366934}
+  - component: {fileID: 299601802738467093}
   m_Layer: 8
   m_Name: TrainingDummy
   m_TagString: Untagged
@@ -186,6 +188,37 @@ MonoBehaviour:
   _shape: 1
   _duration: 0.2
   _force: 0.04
+--- !u!114 &952432266746366934
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 590756983412817316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13ad8e3287c49154c8fb5655ce5566b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Combat.HitSounds
+  _settings: {fileID: 11400000, guid: 5859688428358a1428511df52c502049, type: 2}
+--- !u!114 &299601802738467093
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 590756983412817316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c7817670f5e06249a7fbd7afb0ff434, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GodOfWar.Runtime::GodOfWar.Enemies.GroundImpactSound
+  _sound:
+    _clips: []
+    _volume: 1
+    _minPitch: 0.9
+    _maxPitch: 1
+  _spatialBlend: 0
 --- !u!1 &813722903328741532
 GameObject:
   m_ObjectHideFlags: 0
@@ -412,6 +445,7 @@ MonoBehaviour:
   _strikePoint: {fileID: 8192518165530851638}
   _hitbox: {fileID: 837164597729542196}
   _trail: {fileID: 6430895607758215265}
+  _swingSoundSpatialBlend: 0
 --- !u!114 &6430895607758215265
 MonoBehaviour:
   m_ObjectHideFlags: 0

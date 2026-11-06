@@ -24,9 +24,20 @@ MonoBehaviour:
   _hitWindowStart: 0.16666667
   _hitWindowEnd: 0.33333334
   _hitStrength: 0
+  _knockdown: 0
   _trailStart: 0.06666667
   _trailEnd: 0.33333334
   _trailProfile: {fileID: 11400000, guid: 274fee17eda523c47b9c45b223888301, type: 2}
+  _swingSound:
+    _clips:
+    - {fileID: 8300000, guid: 49f24f05633e22544a1a788110856f03, type: 3}
+    - {fileID: 8300000, guid: c857e99d717d4b140915a1181e805496, type: 3}
+    - {fileID: 8300000, guid: 7ef7d159fedd0e44eb67765f501ba467, type: 3}
+    - {fileID: 8300000, guid: 966c9f32e6f4b894b89593dc475053d7, type: 3}
+    _volume: 1
+    _minPitch: 0.95
+    _maxPitch: 1.05
+  _swingSoundTime: 0.06666667
   _movement: {fileID: 11400000, guid: c9328906746328447ab3a374fc681c01, type: 2}
   _returnMovement: {fileID: 11400000, guid: 42b8683d59d185045a4ce65b7d2ab8f8, type: 2}
   _next: {fileID: 11400000, guid: 093df3b009893ed49a2c611897211166, type: 2}

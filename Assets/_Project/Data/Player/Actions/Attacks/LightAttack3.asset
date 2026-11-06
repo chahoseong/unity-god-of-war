@@ -28,6 +28,16 @@ MonoBehaviour:
   _trailStart: 0.26666668
   _trailEnd: 0.46666667
   _trailProfile: {fileID: 11400000, guid: 274fee17eda523c47b9c45b223888301, type: 2}
+  _swingSound:
+    _clips:
+    - {fileID: 8300000, guid: 49f24f05633e22544a1a788110856f03, type: 3}
+    - {fileID: 8300000, guid: c857e99d717d4b140915a1181e805496, type: 3}
+    - {fileID: 8300000, guid: 7ef7d159fedd0e44eb67765f501ba467, type: 3}
+    - {fileID: 8300000, guid: 966c9f32e6f4b894b89593dc475053d7, type: 3}
+    _volume: 1
+    _minPitch: 0.95
+    _maxPitch: 1.05
+  _swingSoundTime: 0.26666668
   _movement: {fileID: 11400000, guid: 051dfd392cbf0604285cc810b6ba6d6b, type: 2}
   _returnMovement: {fileID: 11400000, guid: 45ec507c9673e3c458cdc8303bdf03b5, type: 2}
   _next: {fileID: 0}

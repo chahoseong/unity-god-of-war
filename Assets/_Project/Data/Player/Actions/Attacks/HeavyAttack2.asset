@@ -24,9 +24,17 @@ MonoBehaviour:
   _hitWindowStart: 0.8
   _hitWindowEnd: 1.0333333
   _hitStrength: 1
+  _knockdown: 0
   _trailStart: 0.7
   _trailEnd: 1.0333333
   _trailProfile: {fileID: 11400000, guid: eaece9bf28129444c86f7189842624fc, type: 2}
+  _swingSound:
+    _clips:
+    - {fileID: 8300000, guid: 60050471263cf0548974a03ec2e27a4a, type: 3}
+    _volume: 1
+    _minPitch: 0.92
+    _maxPitch: 1.04
+  _swingSoundTime: 0.5
   _movement: {fileID: 11400000, guid: 3c16f80bc9f2d0842bd77c5ad33ee269, type: 2}
   _returnMovement: {fileID: 11400000, guid: c5b201b911c905141a73d34671299e92, type: 2}
   _next: {fileID: 11400000, guid: 686474abf8b2c2a4085c7d9d8c359665, type: 2}
