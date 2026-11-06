@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using GodOfWar.Characters;
 using GodOfWar.Combat;
+using GodOfWar.Effects;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -11,13 +12,14 @@ using UnityEngine.TestTools;
 
 namespace GodOfWar.Tests.Combat
 {
-    // 무기가 스윙 타이밍에 맞춰 부품을 켜고 끄는지 본다. 부품이 실제로 검출하고 그리는 일은 각 부품의 테스트가 본다.
+    // 무기가 스윙 타이밍에 맞춰 부품을 켜고 끄고 소리를 내는지 본다. 부품이 실제로 검출하고 그리는 일은 각 부품의 테스트가 본다.
     public class WeaponTests
     {
         private const float HitStart = 1f;
         private const float HitEnd = 2f;
         private const float TrailStart = 0.5f;
         private const float TrailEnd = 2.5f;
+        private const float SwingSoundTime = 0.8f;
 
         private readonly List<HitEvent> _dealt = new List<HitEvent>();
         private GameObject _character;
@@ -28,6 +30,8 @@ namespace GodOfWar.Tests.Combat
         private WeaponTrailProfile _profile;
         private Material _material;
         private SwingTiming _timing;
+        private AudioClip _swingClip;
+        private SwingTiming _soundTiming;
 
         [SetUp]
         public void SetUp()
@@ -35,6 +39,11 @@ namespace GodOfWar.Tests.Combat
             _material = new Material(Shader.Find("GodOfWar/WeaponTrail"));
             _profile = ScriptableObject.CreateInstance<WeaponTrailProfile>();
             _timing = new SwingTiming(HitStart, HitEnd, HitStrength.Heavy, false, TrailStart, TrailEnd, _profile);
+            // 무음 10초. 테스트 동안 재생이 끝나지 않는다.
+            _swingClip = AudioClip.Create("Swing", 44100 * 10, 1, 44100, false);
+            _soundTiming = new SwingTiming(
+                HitStart, HitEnd, HitStrength.Heavy, false, TrailStart, TrailEnd, _profile,
+                new SoundCue(new[] { _swingClip }, 1f, 1f, 1f), SwingSoundTime);
             _dealt.Clear();
             CreateWeapon(withTrail: true);
         }
@@ -54,6 +63,8 @@ namespace GodOfWar.Tests.Combat
 
             Object.DestroyImmediate(_profile);
             Object.DestroyImmediate(_material);
+            Object.DestroyImmediate(_swingClip);
+            Object.DestroyImmediate(GameObject.Find(nameof(SoundPlayer)));
         }
 
         [Test]
@@ -165,6 +176,63 @@ namespace GodOfWar.Tests.Combat
             Assert.Throws<System.InvalidOperationException>(() => _weapon.UpdateSwing(_timing, HitStart));
         }
 
+        [Test]
+        public void UpdateSwing_BeforeSwingSoundTime_PlaysNoSound()
+        {
+            _weapon.BeginSwing();
+
+            _weapon.UpdateSwing(_soundTiming, TrailStart);
+
+            Assert.That(CountPlayingSounds(), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void UpdateSwing_AtSwingSoundTime_PlaysSwingSound()
+        {
+            _weapon.BeginSwing();
+
+            _weapon.UpdateSwing(_soundTiming, SwingSoundTime);
+
+            Assert.That(CountPlayingSounds(), Is.EqualTo(1));
+        }
+
+        // 소리를 낼 시각을 지난 뒤로도 매 프레임 부르므로, 같은 스윙에서 다시 내면 소리가 겹친다.
+        [Test]
+        public void UpdateSwing_AfterSwingSoundPlayed_DoesNotPlaySoundAgain()
+        {
+            _weapon.BeginSwing();
+            _weapon.UpdateSwing(_soundTiming, SwingSoundTime);
+
+            _weapon.UpdateSwing(_soundTiming, HitStart);
+
+            Assert.That(CountPlayingSounds(), Is.EqualTo(1));
+        }
+
+        // 콤보의 다음 타는 새 스윙이므로 다시 소리를 낸다. 앞 소리는 끊지 않고 겹친다.
+        [Test]
+        public void UpdateSwing_AtSwingSoundTimeOfNextSwing_PlaysSoundAgain()
+        {
+            _weapon.BeginSwing();
+            _weapon.UpdateSwing(_soundTiming, SwingSoundTime);
+            _weapon.BeginSwing();
+
+            _weapon.UpdateSwing(_soundTiming, SwingSoundTime);
+
+            Assert.That(CountPlayingSounds(), Is.EqualTo(2));
+        }
+
+        // 칼은 이미 휘둘렸으므로, 캔슬로 스윙이 끝나도 난 소리는 잔향까지 그대로 둔다.
+        [Test]
+        public void EndSwing_AfterSwingSoundPlayed_KeepsSoundPlaying()
+        {
+            _weapon.BeginSwing();
+            _weapon.UpdateSwing(_soundTiming, SwingSoundTime);
+
+            _weapon.EndSwing();
+
+            Assert.That(CountPlayingSounds(), Is.EqualTo(1));
+        }
+
         // 지정 타격은 칼날 검출을 거치지 않으므로, 판정이 소유자에게 돌아오는 경로를 따로 확인한다.
         [UnityTest]
         public IEnumerator Strike_WithoutSwing_PassesOutcomeToOwner()
@@ -204,6 +272,26 @@ namespace GodOfWar.Tests.Combat
             ImpactPoint impact = _dealt[0].Attack.ImpactPoint;
             Assert.That(Vector3.Distance(impact.Position, center + Vector3.left * targetRadius), Is.LessThan(1e-4f));
             Assert.That(Vector3.Distance(impact.Normal, Vector3.left), Is.LessThan(1e-4f));
+        }
+
+        private int CountPlayingSounds()
+        {
+            int count = 0;
+            GameObject container = GameObject.Find(nameof(SoundPlayer));
+            if (container == null)
+            {
+                return 0;
+            }
+
+            foreach (AudioSource source in container.GetComponentsInChildren<AudioSource>())
+            {
+                if (source.isPlaying)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         // 궤적은 주인의 시계로 나이를 재므로 캐릭터에 시계를 두고, 칼은 그 자식으로 둔다.

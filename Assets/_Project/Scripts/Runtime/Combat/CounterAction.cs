@@ -1,4 +1,5 @@
 using GodOfWar.Characters;
+using GodOfWar.Effects;
 using UnityEngine;
 
 namespace GodOfWar.Combat
@@ -53,6 +54,12 @@ namespace GodOfWar.Combat
         [Tooltip("검 궤적의 외형. 비우면 카운터는 궤적을 그리지 않는다.")]
         [SerializeField] private WeaponTrailProfile _trailProfile;
 
+        [Tooltip("칼을 휘두르는 소리. 클립을 비우면 소리 없이 휘두른다.")]
+        [SerializeField] private SoundCue _swingSound = new SoundCue();
+
+        [Tooltip("휘두르는 소리를 내는 시각. 칼이 빨라지는 스윙 시작에 맞춘다. 이 시각 전에 캔슬되면 소리를 내지 않는다.")]
+        [SerializeField, Min(0f)] private float _swingSoundTime;
+
         public string StateName => _stateName;
         public AnimationClip Clip => _clip;
         public float CrossFadeDuration => _crossFadeDuration;
@@ -68,8 +75,9 @@ namespace GodOfWar.Combat
         /// <summary>카운터 동작의 길이(초).</summary>
         public float Duration => _clip.length;
 
-        /// <summary>카운터 동안 무기가 궤적을 켜고 끌 시각. 타격은 칼날 판정 없이 직접 전하므로 판정 구간은 없다.</summary>
-        public SwingTiming SwingTiming => SwingTiming.WithoutHit(_trailStart, _trailEnd, _trailProfile);
+        /// <summary>카운터 동안 무기가 궤적을 켜고 끄고 휘두르는 소리를 낼 시각. 타격은 칼날 판정 없이 직접 전하므로 판정 구간은 없다.</summary>
+        public SwingTiming SwingTiming =>
+            SwingTiming.WithoutHit(_trailStart, _trailEnd, _trailProfile, _swingSound, _swingSoundTime);
 
         /// <summary><paramref name="elapsed"/>가 연계 구간 안인지 판정한다. 구간의 양 끝을 포함한다.</summary>
         public bool IsInComboWindow(float elapsed)

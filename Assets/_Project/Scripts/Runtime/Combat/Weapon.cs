@@ -1,13 +1,15 @@
 using System;
+using GodOfWar.Effects;
 using UnityEngine;
 
 namespace GodOfWar.Combat
 {
     /// <summary>
-    /// 캐릭터 한 명의 무기. 무기에 붙은 부품(<see cref="WeaponHitbox"/> 판정, <see cref="WeaponTrail"/> 궤적)을 스윙에 맞춰 켜고 끈다.
+    /// 캐릭터 한 명의 무기. 무기에 붙은 부품(<see cref="WeaponHitbox"/> 판정, <see cref="WeaponTrail"/> 궤적)을 스윙에 맞춰 켜고 끄고,
+    /// 정해진 시각에 휘두르는 소리를 낸다.
     /// 공격하는 쪽은 스윙을 <see cref="BeginSwing"/>으로 시작하고, 매 프레임 <see cref="SwingTiming"/>과 경과 시간을
     /// <see cref="UpdateSwing"/>에 넘기며, 어떤 경로로 끝나든 <see cref="EndSwing"/>을 부른다.
-    /// 경과 시간이 구간에 들어가고 나가는 순간을 이 무기가 판단하므로, 공격하는 쪽은 부품의 상태를 알 필요가 없다.
+    /// 경과 시간이 구간에 들어가고 나가는 순간과 소리를 낼 순간을 이 무기가 판단하므로, 공격하는 쪽은 부품의 상태를 알 필요가 없다.
     /// 패링 카운터처럼 대상이 정해진 타격은 칼날로 찾지 않고 <see cref="Strike"/>로 같은 전달 경로에 넣는다.
     /// 피격자가 내린 판정은 <see cref="Bind"/>로 소유자가 맡긴 콜백으로만 넘긴다.
     /// 타격부 양 끝은 이 무기에만 두고, 부품은 <see cref="CreateTracker"/>로 받아 쓴다.
@@ -30,11 +32,15 @@ namespace GodOfWar.Combat
         [Tooltip("검 궤적. 비우면 이 무기는 궤적 없이 판정만 한다.")]
         [SerializeField] private WeaponTrail _trail;
 
+        [Tooltip("휘두르는 소리의 공간감. 0이면 거리와 방향이 없는 2D, 1이면 무기 위치에서 나는 3D 소리.")]
+        [SerializeField, Range(0f, 1f)] private float _swingSoundSpatialBlend;
+
         // 소유자가 Bind로 맡긴 공격자와 판정을 넘길 곳. 무기의 주인은 바뀌지 않는다.
         private Transform _owner;
         private Action<HitEvent> _onDealt;
 
         private bool _isSwinging;
+        private bool _isSwingSoundPlayed;
 
         private void Awake()
         {
@@ -85,6 +91,7 @@ namespace GodOfWar.Combat
         {
             EndSwing();
             _isSwinging = true;
+            _isSwingSoundPlayed = false;
         }
 
         /// <summary>
@@ -98,6 +105,13 @@ namespace GodOfWar.Combat
             if (!_isSwinging)
             {
                 throw new InvalidOperationException($"'{name}' is not swinging. Call {nameof(BeginSwing)} first.");
+            }
+
+            // 소리는 스윙마다 한 번이다. 시각 전에 스윙이 끝나면 내지 않고, 이미 낸 소리는 스윙이 끝나도 끊지 않는다.
+            if (!_isSwingSoundPlayed && timing.IsPastSwingSoundTime(elapsed))
+            {
+                _isSwingSoundPlayed = true;
+                SoundPlayer.Play(timing.SwingSound, transform.position, _swingSoundSpatialBlend);
             }
 
             bool isInHitWindow = timing.IsInHitWindow(elapsed);

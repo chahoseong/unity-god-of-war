@@ -62,6 +62,13 @@ namespace GodOfWar.Tests.Combat
             Assert.That(timing.IsInHitWindow(elapsed), Is.False);
         }
 
+        // 소리를 정하지 않은 스윙(소리 칸이 없는 액션)은 시각과 관계없이 소리를 내지 않는다.
+        [Test]
+        public void IsPastSwingSoundTime_WithoutSwingSound_ReturnsFalse()
+        {
+            Assert.That(Timing(_profile).IsPastSwingSoundTime(HitEnd), Is.False);
+        }
+
         private static SwingTiming Timing(WeaponTrailProfile profile)
         {
             return new SwingTiming(HitStart, HitEnd, HitStrength.Light, false, TrailStart, TrailEnd, profile);
