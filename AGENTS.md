@@ -12,10 +12,12 @@
 ```text
 ├── Docs/
 │   ├── GDD.md          # 게임 디자인 및 구현 범위
+│   ├── CREDITS.md      # 서드파티 에셋 출처와 라이선스
 │   └── ADRs/           # 아키텍처 의사결정 기록
 │── Assets/
 │   ├── _Project/       # 프로젝트에서 직접 제작, 관리하는 에셋
-│   └── Synty/          # 서드파티 에셋
+│   ├── Synty/          # 서드파티 에셋 (레포에 올리지 않음)
+│   └── Sonniss/        # 서드파티 사운드 (재배포 금지, 레포에 올리지 않음)
 ├── Packages/           # Unity 패키지 의존성
 └── ProjectSettings/    # Unity 프로젝트 설정
 ```
