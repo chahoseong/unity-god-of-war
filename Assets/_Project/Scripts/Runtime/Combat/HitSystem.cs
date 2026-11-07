@@ -135,6 +135,12 @@ namespace GodOfWar.Combat
                 return;
             }
 
+            // 기록한 뒤 같은 프레임의 앞선 타격으로 처치됐을 수 있어, 기록할 때가 아니라 전하기 직전에 본다.
+            if (!hit.Target.CanBeHit)
+            {
+                return;
+            }
+
             // 한 대상의 오류로 같은 프레임의 다른 타격까지 사라지지 않도록 기록하고 이어서 전한다.
             try
             {

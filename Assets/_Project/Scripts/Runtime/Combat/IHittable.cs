@@ -13,5 +13,11 @@ namespace GodOfWar.Combat
         /// 모든 칼의 검출이 끝난 뒤 같은 프레임의 LateUpdate 직후에 호출되며, 그 사이 칼이 닫혀도 호출된다.
         /// </summary>
         HitResult ReceiveHit(in AttackInfo attack);
+
+        /// <summary>
+        /// 지금 타격을 받을 수 있는지. 거짓이면 타격을 전하지 않고 버리므로 판정도 알림도 없다.
+        /// 처치된 캐릭터처럼 칼이 닿아도 맞지 않아야 하는 동안 거짓이다. 타격은 전하기 직전에 이 값을 본다.
+        /// </summary>
+        bool CanBeHit { get; }
     }
 }

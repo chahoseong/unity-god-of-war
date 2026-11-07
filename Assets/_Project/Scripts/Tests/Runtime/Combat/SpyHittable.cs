@@ -15,6 +15,9 @@ namespace GodOfWar.Tests.Combat
         /// <summary>돌려줄 판정. 회피 무적처럼 흘리는 대상을 흉내 낼 때 바꾼다.</summary>
         public HitOutcome Outcome { get; set; } = HitOutcome.Hit;
 
+        /// <summary>타격을 받을 수 있는지. 처치된 대상을 흉내 낼 때 끈다.</summary>
+        public bool CanBeHit { get; set; } = true;
+
         public HitResult ReceiveHit(in AttackInfo attack)
         {
             HitCount++;

@@ -14,10 +14,12 @@ namespace GodOfWar.Enemies
     /// 넉다운시키는 타격에는 공격자를 향해 돌아선 뒤 쓰러졌다가 일어난다. 쓰러져 있는 동안은 맞아도 반응을 바꾸지 않는다.
     /// 자동 공격을 켜면 대기가 정해진 시간 동안 이어질 때마다 공격 패턴을 차례로 휘두른다.
     /// 휘두른 공격이 저스트 패링당하면 공격을 끊고 튕겨 나가는 반응(역경직)을 재생한다. 그동안 맞으면 피격 반응으로 바뀐다.
+    /// 체력이 바닥나면 처치된다. 마지막 타격이 들어온 쪽의 처치 반응으로 쓰러지고, 넉다운으로 쓰러지는 몸은 일어나지 않는다.
+    /// 처치된 동안은 타격을 받지 않고 락온 대상에서 빠지며 공격하지 않는다.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CharacterMotor), typeof(CharacterClock), typeof(HitTarget))]
-    [RequireComponent(typeof(CharacterHealth))]
+    [RequireComponent(typeof(CharacterHealth), typeof(LockOnTarget))]
     public sealed class TrainingDummy : MonoBehaviour, ITrainingDummyStateContext
     {
         [SerializeField] private Animator _animator;
@@ -42,12 +44,15 @@ namespace GodOfWar.Enemies
         private CharacterMotor _motor;
         private CharacterClock _clock;
         private CharacterHealth _health;
+        private HitTarget _hitTarget;
+        private LockOnTarget _lockOnTarget;
         private Weapon _weapon;
         private StateMachine _machine;
         private IdleState _idle;
         private AttackState _attack;
         private HitReactState _hitReact;
         private KnockdownState _knockdown;
+        private DeathState _death;
 
         private float _idleTime;
         private int _nextAttackIndex;
@@ -87,6 +92,16 @@ namespace GodOfWar.Enemies
                 throw new InvalidOperationException($"'{name}' has no knockdown clips assigned in its {nameof(HitReactionSet)}.");
             }
 
+            foreach (HitDirection direction in (HitDirection[])Enum.GetValues(typeof(HitDirection)))
+            {
+                DeathReaction death = _hitReactions.GetDeath(direction);
+                if (death == null || death.Clip == null)
+                {
+                    throw new InvalidOperationException(
+                        $"'{name}' has no {direction} death clip assigned in its {nameof(HitReactionSet)}.");
+                }
+            }
+
             if (_deflectedReaction == null || _deflectedReaction.Clip == null)
             {
                 throw new InvalidOperationException($"'{name}' has no deflected reaction clip assigned.");
@@ -107,7 +122,12 @@ namespace GodOfWar.Enemies
                 throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterHealth)} component.");
             }
 
-            if (!TryGetComponent(out HitTarget hitTarget))
+            if (!TryGetComponent(out _lockOnTarget))
+            {
+                throw new InvalidOperationException($"'{name}' requires a {nameof(LockOnTarget)} component.");
+            }
+
+            if (!TryGetComponent(out _hitTarget))
             {
                 throw new InvalidOperationException($"'{name}' requires a {nameof(HitTarget)} component.");
             }
@@ -119,8 +139,9 @@ namespace GodOfWar.Enemies
             _attack = Register(new AttackState(this));
             _hitReact = Register(new HitReactState(this));
             _knockdown = Register(new KnockdownState(this));
+            _death = Register(new DeathState(this));
             // 판정이 상태를 쓰므로, 검증에 실패해 조립이 덜 된 채로 타격을 받지 않도록 상태를 모두 등록한 뒤에 맡긴다.
-            hitTarget.Bind(HandleHit);
+            _hitTarget.Bind(HandleHit);
 
             _isAssembled = true;
         }
@@ -157,13 +178,28 @@ namespace GodOfWar.Enemies
         }
 
         // HitTarget에 맡긴 판정. 더미는 막지 않으므로 늘 맞고, 어떤 반응이든 체력은 깎인다.
+        // 처치하는 타격도 맞은 것이라 판정은 그대로 Hit이고, 그래서 결정타의 피드백도 모두 난다.
         private HitResult HandleHit(in AttackInfo attack)
         {
             _health.TakeDamage(attack.Damage);
+            bool isKilled = _health.IsDepleted;
 
             // 쓰러져 있는 몸에 서서 맞는 반응을 재생하면 선 자세로 튀므로, 맞기만 하고 넉다운을 이어 간다.
             if (_machine.CurrentState == _knockdown)
             {
+                if (isKilled)
+                {
+                    // 이미 일어나는 중이면 누운 자세로 되돌리지 않고 처치 반응으로 쓰러진다.
+                    if (_knockdown.TryStayDown())
+                    {
+                        StopTakingPart();
+                    }
+                    else
+                    {
+                        Die(attack);
+                    }
+                }
+
                 return new HitResult(HitOutcome.Hit);
             }
 
@@ -171,16 +207,49 @@ namespace GodOfWar.Enemies
             {
                 _knockdown.Prepare(_hitReactions.Knockdown, attack.Attacker.position);
                 _machine.ChangeState(_knockdown);
+                // 넉다운 타격으로 처치되면 날아가 쓰러지는 무게감은 그대로 두고 일어나지만 않는다.
+                if (isKilled)
+                {
+                    _knockdown.TryStayDown();
+                    StopTakingPart();
+                }
+
                 return new HitResult(HitOutcome.Hit);
             }
 
-            HitDirection direction = HitDirectionResolver.Resolve(
-                transform.position, transform.forward, attack.Attacker.position);
+            if (isKilled)
+            {
+                Die(attack);
+                return new HitResult(HitOutcome.Hit);
+            }
+
+            HitDirection direction = ResolveHitDirection(attack);
 
             // 반응 중이어도 같은 상태로 다시 전이해 최신 타격의 반응을 처음부터 재생한다.
             _hitReact.Prepare(_hitReactions.Get(attack.Strength, direction));
             _machine.ChangeState(_hitReact);
             return new HitResult(HitOutcome.Hit);
+        }
+
+        // 마지막 타격이 들어온 쪽의 처치 반응으로 쓰러진다. 돌아서지 않는다.
+        private void Die(in AttackInfo attack)
+        {
+            _death.Prepare(_hitReactions.GetDeath(ResolveHitDirection(attack)));
+            _machine.ChangeState(_death);
+            StopTakingPart();
+        }
+
+        // 처치된 몸이 어느 상태로 누워 있든 같게 정리한다. 공격 중이었다면 상태를 나가며 칼 판정이 이미 닫혔다.
+        // 자동 공격은 대기 상태에서만 하므로 따로 끄지 않는다.
+        private void StopTakingPart()
+        {
+            _hitTarget.CanBeHit = false;
+            _lockOnTarget.IsTargetable = false;
+        }
+
+        private HitDirection ResolveHitDirection(in AttackInfo attack)
+        {
+            return HitDirectionResolver.Resolve(transform.position, transform.forward, attack.Attacker.position);
         }
 
         /// <summary>
@@ -190,7 +259,8 @@ namespace GodOfWar.Enemies
         private void OnHitDealt(HitEvent hitEvent)
         {
             // 쓰러진 뒤에 같은 프레임의 판정이 늦게 와도 넉다운을 끊지 않는다.
-            if (hitEvent.Result.Outcome != HitOutcome.Parried || _machine.CurrentState == _knockdown)
+            // 처치된 뒤에 늦게 온 판정으로 일어서지 않는다.
+            if (hitEvent.Result.Outcome != HitOutcome.Parried || _machine.CurrentState == _knockdown || _health.IsDepleted)
             {
                 return;
             }

@@ -139,6 +139,50 @@ namespace GodOfWar.Tests.Combat
             AssertBakedFromRootMotionVersion(knockdown.BeginMovement, knockdown.BeginClip);
         }
 
+        private static IEnumerable<TestCaseData> DeathDirections()
+        {
+            foreach (HitDirection direction in Directions)
+            {
+                yield return new TestCaseData(direction).SetName($"{{m}}({direction})");
+            }
+        }
+
+        // 처치 반응은 처치되는 캐릭터(더미)의 애니메이터에만 있다. 상태와 클립이 다르면 재생되는 쓰러짐과 데이터가 어긋난다.
+        [TestCaseSource(nameof(DeathDirections))]
+        public void DeathClip_ForDirection_MatchesMotionOfStateWithSameName(HitDirection direction)
+        {
+            DeathReaction death = LoadSet().GetDeath(direction);
+
+            Assert.That(FindStateMotion(KnockdownControllerPath, death.StateName), Is.SameAs(death.Clip));
+        }
+
+        // 처치된 몸은 클립이 끝난 뒤 마지막 자세로 멈춰 있어야 하므로 반복 클립이면 다시 일어서 쓰러지기를 되풀이한다.
+        [TestCaseSource(nameof(DeathDirections))]
+        public void DeathClip_ForDirection_DoesNotLoop(HitDirection direction)
+        {
+            DeathReaction death = LoadSet().GetDeath(direction);
+
+            Assert.That(death.Clip.isLooping, Is.False);
+        }
+
+        // 맞은 쪽 반대로 쓰러져야 한다. Synty 처치 클립은 피격 클립과 글자 규칙이 달라 실측으로 정했다
+        // (클립 끝 머리 위치: F는 앞, B는 뒤, L은 오른쪽, R은 왼쪽으로 쓰러진다). 칸 연결과 GetDeath의 방향 매핑이 함께 뒤바뀌는 실수를 잡는다.
+        [TestCaseSource(nameof(DeathDirections))]
+        public void DeathClip_ForHitDirection_FallsAwayFromHit(HitDirection direction)
+        {
+            DeathReaction death = LoadSet().GetDeath(direction);
+
+            string expectedLetter = direction switch
+            {
+                HitDirection.Front => "B",
+                HitDirection.Back => "F",
+                HitDirection.Left => "L",
+                HitDirection.Right => "R",
+                _ => throw new System.ArgumentOutOfRangeException(nameof(direction), direction, null)
+            };
+            Assert.That(death.Clip.name, Does.StartWith($"A_Death_{expectedLetter}_"));
+        }
+
         private static HitReactionSet LoadSet()
         {
             var set = AssetDatabase.LoadAssetAtPath<HitReactionSet>(SetPath);

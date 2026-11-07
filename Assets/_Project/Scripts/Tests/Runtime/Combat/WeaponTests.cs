@@ -253,6 +253,40 @@ namespace GodOfWar.Tests.Combat
             Assert.That(_dealt[0].Result.Outcome, Is.EqualTo(HitOutcome.Parried));
         }
 
+        // 처치된 대상은 칼이 닿아도 맞지 않아야 하므로, 판정도 연출(판정 콜백)도 없어야 한다.
+        [UnityTest]
+        public IEnumerator Strike_TargetCannotBeHit_DeliversNothing()
+        {
+            var targetObject = new GameObject("Target");
+            SpyHittable target = targetObject.AddComponent<SpyHittable>();
+            target.CanBeHit = false;
+
+            _weapon.Strike(target, HitStrength.Heavy, false, 0);
+            yield return null;
+
+            Object.DestroyImmediate(targetObject);
+            Assert.That(target.HitCount, Is.EqualTo(0));
+            Assert.That(_dealt.Count, Is.EqualTo(0));
+        }
+
+        // 타격은 프레임 끝에 몰아서 전하므로, 같은 프레임에 앞선 타격으로 처치된 대상에게 뒤의 타격이 가지 않는지 본다.
+        [UnityTest]
+        public IEnumerator Strike_TargetKilledBySameFrameEarlierHit_DeliversOnlyEarlierHit()
+        {
+            var targetObject = new GameObject("Target");
+            SpyHittable target = targetObject.AddComponent<SpyHittable>();
+            target.OnHit = () => target.CanBeHit = false;
+
+            _weapon.Strike(target, HitStrength.Heavy, false, 30);
+            _weapon.Strike(target, HitStrength.Heavy, false, 30);
+            yield return null;
+
+            Object.DestroyImmediate(targetObject);
+            Assert.That(target.HitCount, Is.EqualTo(1));
+            Assert.That(_dealt.Count, Is.EqualTo(1));
+            Assert.That(_dealt[0].Attack.Damage, Is.EqualTo(30));
+        }
+
         // 직접 타격은 칼날로 찾지 않으므로, 접점은 기준점에서 가장 가까운 대상의 몸 표면이어야 한다.
         [UnityTest]
         public IEnumerator Strike_WithTargetCollider_PassesImpactPointOnSurfaceNearestStrikePoint()

@@ -19,12 +19,20 @@ namespace GodOfWar.Combat
     public sealed class HitTarget : MonoBehaviour, IHittable
     {
         private HitHandler _handler;
+        private bool _canBeHit = true;
 
         /// <summary>
         /// 받은 타격을 판정과 상태 전이까지 마친 뒤 알린다. 회피로 흘린 타격도 알리므로 무엇을 거를지는 구독자가 정한다.
         /// 타격을 전하는 흐름 안에서 동기로 호출된다. 구독자 하나가 예외를 던져도 기록만 하고 다른 구독자와 판정은 그대로 이어진다.
         /// </summary>
         public event Action<HitEvent> HitTaken;
+
+        /// <summary>지금 타격을 받을 수 있는지. 소유자가 처치 같은 동안 끈다. 컴포넌트가 꺼져 있으면 항상 거짓이다.</summary>
+        public bool CanBeHit
+        {
+            get => _canBeHit && isActiveAndEnabled;
+            set => _canBeHit = value;
+        }
 
         /// <summary>이 대상이 받은 타격을 판정할 쪽을 정한다. 소유자가 한 번만 호출한다.</summary>
         /// <exception cref="InvalidOperationException">이미 판정할 쪽이 정해져 있다.</exception>
