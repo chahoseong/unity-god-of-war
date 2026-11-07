@@ -9,7 +9,7 @@ namespace GodOfWar.Enemies
 {
     /// <summary>
     /// 피격·방어 테스트용 훈련용 더미. 상태 머신의 컴포지션 루트이자 상태들이 속한 Context다.
-    /// 맞으면 공격자가 있는 쪽과 타격 세기에 맞는 피격 반응을 재생하고, 끝나면 대기로 돌아간다.
+    /// 맞으면 공격자가 있는 쪽과 타격 세기에 맞는 피격 반응을 재생하고, 끝나면 대기로 돌아간다. 맞을 때마다 공격의 피해량만큼 체력이 깎인다.
     /// 반응 중에 다시 맞으면 가장 최근 타격으로 반응을 새로 시작한다. 공격자를 향해 돌지 않는다.
     /// 넉다운시키는 타격에는 공격자를 향해 돌아선 뒤 쓰러졌다가 일어난다. 쓰러져 있는 동안은 맞아도 반응을 바꾸지 않는다.
     /// 자동 공격을 켜면 대기가 정해진 시간 동안 이어질 때마다 공격 패턴을 차례로 휘두른다.
@@ -17,6 +17,7 @@ namespace GodOfWar.Enemies
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CharacterMotor), typeof(CharacterClock), typeof(HitTarget))]
+    [RequireComponent(typeof(CharacterHealth))]
     public sealed class TrainingDummy : MonoBehaviour, ITrainingDummyStateContext
     {
         [SerializeField] private Animator _animator;
@@ -40,6 +41,7 @@ namespace GodOfWar.Enemies
         private readonly StateRegistry _registry = new StateRegistry();
         private CharacterMotor _motor;
         private CharacterClock _clock;
+        private CharacterHealth _health;
         private Weapon _weapon;
         private StateMachine _machine;
         private IdleState _idle;
@@ -100,6 +102,11 @@ namespace GodOfWar.Enemies
                 throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterClock)} component.");
             }
 
+            if (!TryGetComponent(out _health))
+            {
+                throw new InvalidOperationException($"'{name}' requires a {nameof(CharacterHealth)} component.");
+            }
+
             if (!TryGetComponent(out HitTarget hitTarget))
             {
                 throw new InvalidOperationException($"'{name}' requires a {nameof(HitTarget)} component.");
@@ -149,9 +156,11 @@ namespace GodOfWar.Enemies
             UpdateAutoAttack(_clock.DeltaTime);
         }
 
-        // HitTarget에 맡긴 판정. 더미는 막지 않으므로 늘 맞는다.
+        // HitTarget에 맡긴 판정. 더미는 막지 않으므로 늘 맞고, 어떤 반응이든 체력은 깎인다.
         private HitResult HandleHit(in AttackInfo attack)
         {
+            _health.TakeDamage(attack.Damage);
+
             // 쓰러져 있는 몸에 서서 맞는 반응을 재생하면 선 자세로 튀므로, 맞기만 하고 넉다운을 이어 간다.
             if (_machine.CurrentState == _knockdown)
             {

@@ -115,7 +115,7 @@ namespace GodOfWar.Tests.Combat
 
         private AttackInfo Attack(bool knockdown = false)
         {
-            return new AttackInfo(_attacker.transform, HitStrength.Light, knockdown, new ImpactPoint(Vector3.zero, Vector3.forward));
+            return new AttackInfo(_attacker.transform, HitStrength.Light, knockdown, 0, new ImpactPoint(Vector3.zero, Vector3.forward));
         }
 
         private static void Fill(SerializedObject settings, string slot, AudioClip clip)

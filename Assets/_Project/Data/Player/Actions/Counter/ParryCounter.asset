@@ -23,6 +23,13 @@ MonoBehaviour:
   _comboWindowEnd: 0.9
   _recoveryStart: 0.63
   _hitStrength: 1
+  _damage: 30
   _trailStart: 0.1
   _trailEnd: 0.45
   _trailProfile: {fileID: 11400000, guid: d4bda2e140d2b624aa57f0c1bbfb7022, type: 2}
+  _swingSound:
+    _clips: []
+    _volume: 1
+    _minPitch: 0.95
+    _maxPitch: 1.05
+  _swingSoundTime: 0

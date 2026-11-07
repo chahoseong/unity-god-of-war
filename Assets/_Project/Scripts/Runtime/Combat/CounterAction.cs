@@ -45,6 +45,9 @@ namespace GodOfWar.Combat
         [Tooltip("상대에게 전하는 타격 세기.")]
         [SerializeField] private HitStrength _hitStrength = HitStrength.Heavy;
 
+        [Tooltip("상대에게 전하는 피해량. 실제로 체력을 얼마나 깎을지는 피격자가 정한다.")]
+        [SerializeField, Min(0)] private int _damage;
+
         [Tooltip("검 궤적을 그리기 시작하는 시각. 칼이 빨라지는 스윙 시작에 맞춘다.")]
         [SerializeField, Min(0f)] private float _trailStart;
 
@@ -71,6 +74,7 @@ namespace GodOfWar.Combat
         public float ComboWindowEnd => _comboWindowEnd;
         public float RecoveryStart => _recoveryStart;
         public HitStrength HitStrength => _hitStrength;
+        public int Damage => _damage;
 
         /// <summary>카운터 동작의 길이(초).</summary>
         public float Duration => _clip.length;

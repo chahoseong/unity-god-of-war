@@ -210,7 +210,7 @@ namespace GodOfWar.Tests.Combat
         {
             _hitTarget.Bind((in AttackInfo _) => new HitResult(HitOutcome.Hit));
 
-            _hitTarget.ReceiveHit(new AttackInfo(_attacker.transform, HitStrength.Heavy, false, default));
+            _hitTarget.ReceiveHit(new AttackInfo(_attacker.transform, HitStrength.Heavy, false, 0, default));
 
             Assert.That(Brightness(), Is.EqualTo(HeavyIntensity).Within(Tolerance));
         }
@@ -224,7 +224,7 @@ namespace GodOfWar.Tests.Combat
         {
             _hitTarget.Bind((in AttackInfo _) => new HitResult(outcome));
 
-            _hitTarget.ReceiveHit(new AttackInfo(_attacker.transform, HitStrength.Heavy, false, default));
+            _hitTarget.ReceiveHit(new AttackInfo(_attacker.transform, HitStrength.Heavy, false, 0, default));
 
             Assert.That(_flash.IsFlashing, Is.False);
         }
@@ -236,7 +236,7 @@ namespace GodOfWar.Tests.Combat
             _hitTarget.Bind((in AttackInfo _) => new HitResult(HitOutcome.Hit));
             _flash.enabled = false;
 
-            _hitTarget.ReceiveHit(new AttackInfo(_attacker.transform, HitStrength.Heavy, false, default));
+            _hitTarget.ReceiveHit(new AttackInfo(_attacker.transform, HitStrength.Heavy, false, 0, default));
 
             Assert.That(_body.sharedMaterials, Is.EqualTo(new[] { _original }));
         }

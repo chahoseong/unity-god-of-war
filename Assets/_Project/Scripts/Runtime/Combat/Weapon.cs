@@ -117,7 +117,7 @@ namespace GodOfWar.Combat
             bool isInHitWindow = timing.IsInHitWindow(elapsed);
             if (isInHitWindow && !_hitbox.IsOpen)
             {
-                _hitbox.Open(timing.HitStrength, timing.Knockdown);
+                _hitbox.Open(timing.HitStrength, timing.Knockdown, timing.Damage);
             }
             else if (!isInHitWindow && _hitbox.IsOpen)
             {
@@ -165,7 +165,7 @@ namespace GodOfWar.Combat
         /// 접점은 지금 기준점(<c>_strikePoint</c>)에서 가장 가까운 대상의 몸 표면이다. 대상에 콜라이더가 없으면 기준점 그대로다.
         /// </summary>
         /// <exception cref="InvalidOperationException">주인이 정해지지 않았거나 직접 타격 기준점이 없다.</exception>
-        public void Strike(IHittable target, HitStrength strength, bool knockdown)
+        public void Strike(IHittable target, HitStrength strength, bool knockdown, int damage)
         {
             if (_owner == null)
             {
@@ -182,7 +182,7 @@ namespace GodOfWar.Combat
                 throw new InvalidOperationException($"'{name}' has no strike point assigned.");
             }
 
-            HitSystem.Record(target, new AttackInfo(_owner, strength, knockdown, StrikeImpact(target)), _onDealt);
+            HitSystem.Record(target, new AttackInfo(_owner, strength, knockdown, damage, StrikeImpact(target)), _onDealt);
         }
 
         // 애니메이션 갱신 전에 불리면 직전 프레임의 기준점 위치를 쓴다. 접점을 몸 표면으로 끌어당기므로 차이는 표면을 따라 생긴다.

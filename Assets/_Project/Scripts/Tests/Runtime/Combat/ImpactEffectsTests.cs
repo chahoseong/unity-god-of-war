@@ -96,7 +96,7 @@ namespace GodOfWar.Tests.Combat
 
         private AttackInfo Attack(HitStrength strength, Vector3 normal)
         {
-            return new AttackInfo(_attacker.transform, strength, false, new ImpactPoint(ImpactPosition, normal));
+            return new AttackInfo(_attacker.transform, strength, false, 0, new ImpactPoint(ImpactPosition, normal));
         }
 
         private ParticleSystem CreatePrefab(string prefabName)

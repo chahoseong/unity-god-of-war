@@ -25,6 +25,7 @@ MonoBehaviour:
   _hitWindowEnd: 1.2333333
   _hitStrength: 1
   _knockdown: 0
+  _damage: 14
   _trailStart: 0.8666666
   _trailEnd: 1.2333333
   _trailProfile: {fileID: 11400000, guid: eaece9bf28129444c86f7189842624fc, type: 2}

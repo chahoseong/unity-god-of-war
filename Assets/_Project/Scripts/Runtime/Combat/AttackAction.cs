@@ -53,6 +53,9 @@ namespace GodOfWar.Combat
         [Tooltip("켜면 이 공격에 맞은 대상을 넉다운시킨다. 콤보의 마지막 타처럼 상대를 쓰러뜨리는 공격에 켠다. 세기와는 따로 정한다.")]
         [SerializeField] private bool _knockdown;
 
+        [Tooltip("이 공격에 맞은 대상에게 전하는 피해량. 실제로 체력을 얼마나 깎을지는 피격자가 정한다.")]
+        [SerializeField, Min(0)] private int _damage;
+
         [Tooltip("검 궤적을 그리기 시작하는 시각. 칼이 빨라지는 스윙 시작에 맞춘다.")]
         [SerializeField, Min(0f)] private float _trailStart;
 
@@ -90,6 +93,7 @@ namespace GodOfWar.Combat
         public float HitWindowEnd => _hitWindowEnd;
         public HitStrength HitStrength => _hitStrength;
         public bool Knockdown => _knockdown;
+        public int Damage => _damage;
         public BakedRootMotion Movement => _movement;
         public BakedRootMotion ReturnMovement => _returnMovement;
         public AttackAction Next => _next;
@@ -102,7 +106,7 @@ namespace GodOfWar.Combat
 
         /// <summary>이 공격 동안 무기가 판정과 궤적을 켜고 끄고 휘두르는 소리를 낼 시각.</summary>
         public SwingTiming SwingTiming => new SwingTiming(
-            _hitWindowStart, _hitWindowEnd, _hitStrength, _knockdown, _trailStart, _trailEnd, _trailProfile,
+            _hitWindowStart, _hitWindowEnd, _hitStrength, _knockdown, _damage, _trailStart, _trailEnd, _trailProfile,
             _swingSound, _swingSoundTime);
 
         /// <summary><paramref name="elapsed"/>가 연계 구간 안인지 판정한다. 구간의 양 끝을 포함한다.</summary>
